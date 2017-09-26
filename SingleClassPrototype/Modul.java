@@ -1,7 +1,8 @@
-import java.lang.reflect.Array;
+import Interfaces.IControl;
+import Interfaces.IView;
+
 import java.util.Arrays;
 import java.util.List;
-import java.util.Queue;
 import java.util.Random;
 
 
@@ -48,7 +49,7 @@ public class Modul {
 
     }
 
-    public static class View{
+    public static class View implements IView {
 
         public View() {
 
@@ -95,19 +96,12 @@ public class Modul {
             AGENTS,BACKGROUND,WALL
         }
 
-        public abstract class Node{
-            Node parent;
-            List<Node> children;
 
-            public int length(){
-                return 0;
-            }
-        }
 
         public class typeNode extends Node{
             ObjectClasses type;
 
-            @Override
+
             public int length() {
                 return 0;
             }
@@ -210,92 +204,22 @@ public class Modul {
                     return floor;
                 }
 
-                public byte[] getNoiseStream(Path p) throws Exception {
+                public byte[] getNoiseStream(Model.Path p) throws Exception {
                     byte[] stream = new byte[p.length()];
                     p.fill(stream);
 
                     return stream;
                 }
 
-                protected   class Path extends Node{
-                    KartesianCoordinates start;
-                    List<PolarCoordinates16> line;
-
-                    private Path() {
-                        start = null;
-                    }
-
-                    public View.Pixel[][] getPainting(){
-                        return null;
-                    }
-
-                    public int length() {
-                        if (parent != null) return parent.length();
-                        return 0;
-                    }
-
-                    public void fill(byte[] stream) throws Exception {
-
-                        int count = 0;
-                        int lineSize = line.size();
-                        KartesianCoordinates currentPossition = start.clone();
-
-                        for (int i = 0; i < lineSize; i++) {
-                            PolarCoordinates16 d = line.get(i);
-                            KartesianCoordinates convert = d.toKartesianCoordinates();
-
-                            KartesianCoordinates end = new KartesianCoordinates();
-                            List<KartesianCoordinates> pixels = fordFulkerson(currentPossition, convert, d, end);
-                            int pixelsSize = 0 + pixels.size();
-                            for (int j = 0; j < pixelsSize; j++) {
-                                KartesianCoordinates kp = pixels.get(j);
-                                stream[j + count] = getNoiseFromCube((int) kp.x, (int) kp.y, (int) kp.z);
-                            }
-                            count += pixelsSize;
-                            currentPossition = end;
-                        }
-                        if (length() != count){
-                            throw new Exception("fillCountIncorrect\ncount: " + count + "\nlength:" + length());
-                        }
-                    }
 
 
-
-
-
-                }
-
-                private List<KartesianCoordinates> fordFulkerson(KartesianCoordinates start, KartesianCoordinates convert, PolarCoordinates16 d, KartesianCoordinates end) {
+                private List<Model.KartesianCoordinates> fordFulkerson(Model.KartesianCoordinates start, KartesianCoordinates convert, PolarCoordinates16 d, KartesianCoordinates end) {
                     return null;
                 }
 
-                private class KartesianCoordinates {
-                    float x;
-                    float y;
-                    float z;
 
-                    public KartesianCoordinates clone() {
-                        KartesianCoordinates kc = new KartesianCoordinates();
-                        kc.x = x;
-                        kc.y = y;
-                        kc.z = z;
-                        return kc;
-                    }
-                }
 
-                private class PolarCoordinates16 {
-                    byte phi;
-                    byte theta;
-                    float r;
 
-                    public KartesianCoordinates toKartesianCoordinates() {
-                        KartesianCoordinates k = new KartesianCoordinates();
-                        k.x = Tangential.sin(theta) * Tangential.cos(phi);
-                        k.y = r *Tangential.sin(phi)*Tangential.sin(theta);
-                        k.z = r *  Tangential.cos(phi);
-                        return k;
-                    }
-                }
             }
 
             public class AccessorNode extends Node{
@@ -305,10 +229,15 @@ public class Modul {
 
     }
 
-    private static class Control {
+    private static class Control implements IControl {
 
         public Control getInstance() throws CloneNotSupportedException {
             return (Control) factoryControl.clone();
+        }
+
+        @Override
+        public boolean setPath(Model.NoiseFloor.Accessor.Path pathway) {
+            return false;
         }
     }
 
@@ -349,16 +278,5 @@ public class Modul {
         }
     }
 
-    private static class Tangential {
-        private final static float[] sins = new float[BYTESIZE];
-        private final static float[] coss = new float[BYTESIZE];
 
-        public static float sin(byte theta) {
-            return sins[theta];
-        }
-
-        public static float cos(byte phi) {
-            return coss[phi];
-        }
-    }
 }
