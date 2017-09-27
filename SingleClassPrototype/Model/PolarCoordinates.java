@@ -1,5 +1,7 @@
 package Model;
 
+import SpecialSettingsEtc.Tangential;
+
 /**
  * Created by Nibbla on 26.09.2017.
  */

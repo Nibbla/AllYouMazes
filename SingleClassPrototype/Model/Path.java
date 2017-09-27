@@ -34,7 +34,7 @@ public class Path extends Node{
             int pixelsSize = 0 + pixels.size();
             for (int j = 0; j < pixelsSize; j++) {
                 KartesianCoordinates kp = pixels.get(j);
-                stream[j + count] = getNoiseFromCube((int) kp.x, (int) kp.y, (int) kp.z);
+                //stream[j + count] = getNoiseFromCube((int) kp.x, (int) kp.y, (int) kp.z);
             }
             count += pixelsSize;
             currentPossition = end;
@@ -44,8 +44,9 @@ public class Path extends Node{
         }
     }
 
-
-
+    private List<KartesianCoordinates> fordFulkerson(KartesianCoordinates currentPossition, KartesianCoordinates convert, PolarCoordinates d, KartesianCoordinates end) {
+        return null;
+    }
 
 
 }
