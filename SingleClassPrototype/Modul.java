@@ -62,7 +62,8 @@ public class Modul {
     private void mainLoop() {
         running = true;
         while (running){
-
+            //something is happening
+            //https://www.youtube.com/watch?v=bjSpO2B6G4s
         }
 
     }
@@ -104,7 +105,7 @@ public class Modul {
     }
 
     private void setWorkmode(Workmode w, boolean b) {
-        workmodes[w.ordinal()] = true;
+        workmodes[w.ordinal()] = b;
     }
 
 
