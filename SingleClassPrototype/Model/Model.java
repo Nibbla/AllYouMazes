@@ -12,7 +12,7 @@ public class Model implements IModel {
     private final NoiseFloor.Accessor quickSimpleAccessor;
     public static final int BYTESIZE = (int) Math.pow(2, 8);
 
-    private final int baseUnit = 100;
+    private static final int baseUnit = 100;
     private static final int CUBE_UNIT = (int) Math.ceil(Math.pow(baseUnit, 1 / 3.));
     private Model factoryModel = new Model(new Random(0));
 
