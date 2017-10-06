@@ -1,4 +1,4 @@
-package Model;
+package model;
 
 /**
  * Created by Nibbla on 26.09.2017.

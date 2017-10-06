@@ -1,15 +1,19 @@
 import Control.Control;
 import Interfaces.*;
-import Model.Model;
+import model.Model;
+import SpecialSettingsEtc.Archivar;
 import View.View;
+import model.Path;
+import model.SpecialGraph;
 
+import java.awt.image.BufferedImage;
 import java.util.Random;
 
 
 /** This class defines the basic structure of our program
  * It is defined by the model view controller architecture.
  * View is responsible for processing the image stream and showing it on screen
- * Model is responsible for converting the visual to the internal data model
+ * model is responsible for converting the visual to the internal data model
  * and it creates pathways
  * Control then converts the path order in orders fors the robot.
  */
@@ -45,10 +49,13 @@ public class Modul {
 
             modul.setWorkmode(Workmode.CAMERAON,true);
             modul.setWorkmode(Workmode.KEYBOARDON, true);
+            modul.setWorkmode(Workmode.SYSTEMOUT, true);
+            modul.setWorkmode(Workmode.SYSTEMOUTARCHIVE, true);
+            modul.setWorkmode(Workmode.SHOWSENSOR,true);
+            //modul.setWorkmode(Workmode.SHOWKLASSIFIED, true);
+            //modul.setWorkmode(Workmode.SHOWTESSELATED, true);
             modul.start(true);
-            modul.show(Showoptions.SENSOR,true);
-            modul.show(Showoptions.KLASSIFIED, true);
-            modul.show(Showoptions.TESSELATED, true);
+
 
 
         } catch (CloneNotSupportedException e) {
@@ -61,11 +68,45 @@ public class Modul {
 
     private void mainLoop() {
         running = true;
+        int loop = -1;
         while (running){
+            loop++;
+            long loopStart = System.currentTimeMillis();
             //something is happening
+            windowManagment();
+
             //https://www.youtube.com/watch?v=bjSpO2B6G4s
+
+            //getImage
+
+            BufferedImage bi = view.getCurrentShot();
+
+            Model m2 = view.classify(bi);
+            SpecialGraph g = view.getGraph();
+           // g.setStart(m.getRobotPosition());
+           // g.setGoal(4f,200f);
+           // Path p = g.calculatePathway();
+           // translateIntoCommands(p);
+
+
+
+
+
+
+
+            long loopEnd = System.currentTimeMillis();
+            double timeHappend = (loopEnd - loopStart)/1000.;
+            Archivar.shout("Loop: "+ loop + " took " + timeHappend + " seconds to complete");
         }
 
+    }
+
+    private void translateIntoCommands(Path p) {
+
+    }
+
+    private void windowManagment() {
+        show(Workmode.SHOWSENSOR,isWorkmode(Workmode.SHOWSENSOR));
     }
 
 
@@ -73,12 +114,14 @@ public class Modul {
         stopProcessingThread();
         if (!b) return;
 
+
         processingThread = new Thread() {
-            private boolean running;
+
             public void run(){
                 mainLoop();
             }
         };
+        processingThread.start();
     }
 
 
@@ -88,16 +131,21 @@ public class Modul {
         processingThread = null;
     }
 
-    private void show(Showoptions tesselated, boolean b) {
+    private void show(Workmode tesselated, boolean b) {
         switch (tesselated) {
-            case KLASSIFIED:
+            case KEYBOARDON:
                 break;
-            case TESSELATED:
+            case SYSTEMOUT:
                 break;
-            case SENSOR:
+            case CAMERAON:
+                break;
+            case SHOWKLASSIFIED:
+                break;
+            case SHOWTESSELATED:
+                break;
+            case SHOWSENSOR:
                 break;
         }
-
     }
 
     public boolean isWorkmode(Workmode w){
@@ -106,6 +154,8 @@ public class Modul {
 
     private void setWorkmode(Workmode w, boolean b) {
         workmodes[w.ordinal()] = b;
+        if (w.equals(Workmode.SYSTEMOUT)) Archivar.liveOutput(b);
+        if (w.equals(Workmode.SYSTEMOUTARCHIVE)) Archivar.setStoreShouts(b);
     }
 
 

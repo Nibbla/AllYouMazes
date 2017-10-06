@@ -1,12 +1,13 @@
-package Model;
+package model;
 
 import Interfaces.IModel;
 
+import java.awt.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-public class Model implements IModel {
+public class Model  implements IModel {
 
     private final NoiseFloor noiseFloor;
     private final NoiseFloor.Accessor quickSimpleAccessor;
@@ -14,7 +15,8 @@ public class Model implements IModel {
 
     private static final int baseUnit = 100;
     private static final int CUBE_UNIT = (int) Math.ceil(Math.pow(baseUnit, 1 / 3.));
-    private Model factoryModel = new Model(new Random(0));
+    private static Model factoryModel = new Model(new Random(0));
+    private Point robotPosition;
 
 
     public Model(Random r) {
@@ -28,6 +30,10 @@ public class Model implements IModel {
 
     public Model getInstance() throws CloneNotSupportedException {
         return (Model) factoryModel.clone();
+    }
+
+    public Point getRobotPosition() {
+        return robotPosition;
     }
 
 
