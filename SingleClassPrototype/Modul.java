@@ -50,7 +50,7 @@ public class Modul {
             modul.setWorkmode(Workmode.CAMERAON,true);
             modul.setWorkmode(Workmode.KEYBOARDON, true);
             modul.setWorkmode(Workmode.SYSTEMOUT, true);
-            modul.setWorkmode(Workmode.SYSTEMOUTARCHIVE, true);
+            modul.setWorkmode(Workmode.SYSTEMOUTARCHIVE, false);
             modul.setWorkmode(Workmode.SHOWSENSOR,true);
             //modul.setWorkmode(Workmode.SHOWKLASSIFIED, true);
             //modul.setWorkmode(Workmode.SHOWTESSELATED, true);
