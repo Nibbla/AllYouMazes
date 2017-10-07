@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -232,10 +233,43 @@ public class View implements IView {
             }
 
         }
+
+        //errode
+        //PixelObjectType[][] ot2 = new PixelObjectType[width2][heigth2];
+      // ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+       // ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+       // ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+
+
+        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot = dialate(ot,ObjectType.wall,width2,heigth2);
+        ot = dialate(ot,ObjectType.wall,width2,heigth2);
+        ot = dialate(ot,ObjectType.wall,width2,heigth2);
+        ot = dialate(ot,ObjectType.wall,width2,heigth2);
+
+         ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+         ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+         ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+        ot = dialate(ot,ObjectType.robot,width2,heigth2);
+        ot = dialate(ot,ObjectType.robot,width2,heigth2);
+        ot = dialate(ot,ObjectType.robot,width2,heigth2);
+        ot = dialate(ot,ObjectType.robot,width2,heigth2);
+        ot = dialate(ot,ObjectType.robot,width2,heigth2);
+        ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+        ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+
+
+
         BufferedImage b3 = new BufferedImage(b2.getWidth(),b2.getHeight(),b2.getType());
         for (int x = 0; x < b3.getWidth(); x++) {
             for (int y = 0; y < b3.getHeight(); y++) {
-                b3.setRGB(x,y,ot[x][y].getSelectedClass().getColor());
+                if (ot[x][y].getSelectedClass()!=ObjectType.floor)b3.setRGB(x,y,ot[x][y].getSelectedClass().getColor());
+                else {
+                    b3.setRGB(x,y,b2.getRGB(x,y));
+                }
             }
 
         }
@@ -252,6 +286,66 @@ public class View implements IView {
         frame.setVisible(true);
 
         return null;
+    }
+
+    private PixelObjectType[][] erode(PixelObjectType[][] ot2, ObjectType typeToErrode, ObjectType typeToReplace, int width2, int heigth2) {
+        PixelObjectType[][] ot3 = new PixelObjectType[ot2.length][ot2[0].length];
+
+        for (int x = 0; x < width2; x+=1) {
+            for (int y = 0; y < heigth2; y += 1) {
+                ot3[x][y] = ot2[x][y].copy();
+                if (ot2[x][y].getSelectedClass() != typeToErrode){
+                    continue;
+                }
+                ArrayList<Integer[]> l = getNeighbours(x,y,width2,heigth2);
+                for (Integer[] c : l){
+                    if (typeToErrode != ot2[c[0]][c[1]].getSelectedClass()){
+                        ot3[x][y].classifiedAs(typeToReplace);
+                        break;
+                    };
+                }
+            }
+        }
+
+        return  ot3;
+    }
+
+    private PixelObjectType[][] dialate(PixelObjectType[][] ot2, ObjectType typeToFill, int width2, int heigth2) {
+        PixelObjectType[][] ot3 = new PixelObjectType[ot2.length][ot2[0].length];
+
+        for (int x = 0; x < width2; x+=1) {
+            for (int y = 0; y < heigth2; y += 1) {
+                ot3[x][y] = ot2[x][y].copy();
+                if (ot2[x][y].getSelectedClass() == typeToFill){
+                    continue;
+                }
+                ArrayList<Integer[]> l = getNeighbours(x,y,width2,heigth2);
+                for (Integer[] c : l){
+                    if (typeToFill == ot2[c[0]][c[1]].getSelectedClass()){
+                        ot3[x][y].classifiedAs(typeToFill);
+                        break;
+                    };
+                }
+            }
+        }
+
+        return  ot3;
+    }
+
+    private ArrayList<Integer[]> getNeighbours(int x, int y, int width2, int heigth2) {
+        ArrayList<Integer[]> neighbours = new ArrayList<>(8);
+        if (x-1>=0&&y-1>=0) neighbours.add(new Integer[]{x-1,y-1});
+        if (x-1>=0&&y>=0) neighbours.add(new Integer[]{x-1,y});
+        if (x-1>=0&&y+1<heigth2) neighbours.add(new Integer[]{x-1,y+1});
+
+        if (x+1<width2&&y-1>=0) neighbours.add(new Integer[]{x+1,y-1});
+        if (x+1<width2&&y>=0) neighbours.add(new Integer[]{x+1,y});
+        if (x+1<width2&&y+1<heigth2) neighbours.add(new Integer[]{x+1,y+1});
+
+       // if (y-1>=0) neighbours.add(new Integer[]{x,y-1});
+       // if (y+1<=heigth2) neighbours.add(new Integer[]{x,y+1});
+
+        return neighbours;
     }
 
     private void calcBlock(BufferedImage bi, int x, int y, int width, int heigth, int stepX, int stepY, int smallStepX, int smallStepY) {
@@ -325,22 +419,56 @@ public class View implements IView {
              green = c.getGreen();
              blue = c.getBlue();
 
+            if (red/green>1.1) wallility+=1;
+            if (red/blue>1.3) wallility+=1;
+            if (red>165) wallility+=1;
 
-            wallility = wc[0] * red + wc[1] * green + wc[2] * blue;
-            floorility = wc[3] * red + wc[4] * green + wc[5] * blue;
-            robotility = wc[6] * red + wc[7] * green + wc[8] * blue;
+            if (red/green<1.2&&red/green>0.8) floorility+=1;
+            if (green/blue<1.2&&green/blue>0.8) floorility+=1;
+            if (blue/green<1.2&&blue/green>0.8) floorility+=1;
+
+
+            if (green/red>1.2) robotility+=2;
+            if (green/blue>1.1) robotility+=1;
+
+
+           // wallility = wc[0] * red + wc[1] * green + wc[2] * blue;
+           // floorility = wc[3] * red + wc[4] * green + wc[5] * blue;
+           // robotility = wc[6] * red + wc[7] * green + wc[8] * blue;
 
         }
 
+        public PixelObjectType(int x, int y, double red, double green, double blue, double wallility, double floorility, double robotility, ObjectType classifiedas) {
+            this.x = x;
+            this.y = y;
+            this.red = red;
+            this.green = green;
+            this.blue = blue;
+            this.wallility = wallility;
+            this.floorility = floorility;
+            this.robotility = robotility;
+            this.classifiedas = classifiedas;
+        }
+
         public ObjectType getSelectedClass() {
+            if (classifiedas != null)  return classifiedas;
             if (wallility > floorility && wallility > robotility) return ObjectType.wall;
             if (floorility > robotility) return ObjectType.floor;
+
             return ObjectType.robot;
 
         }
 
         public void classifiedAs(int i) {
             this.classifiedas = ObjectType.values()[i];
+        }
+        public void classifiedAs(ObjectType i) {
+            this.classifiedas = i;
+        }
+
+        public PixelObjectType copy() {
+            PixelObjectType p = new PixelObjectType(x,y,red,green,blue,wallility,floorility,robotility,classifiedas);
+            return p;
         }
     }
 }
