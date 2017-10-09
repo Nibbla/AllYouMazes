@@ -1,5 +1,7 @@
 package Interfaces;
 
+
+import view.PixelObjectType;
 import model.Model;
 import model.SpecialGraph;
 
@@ -17,7 +19,7 @@ public interface IView extends Cloneable {
 
     SpecialGraph getGraph();
 
-    Model classify(BufferedImage bi);
+    PixelObjectType[][] classify(BufferedImage bi);
 
-    Model classify();
+    PixelObjectType[][] classify();
 }

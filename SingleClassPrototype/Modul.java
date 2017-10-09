@@ -2,9 +2,10 @@ import Control.Control;
 import Interfaces.*;
 import model.Model;
 import SpecialSettingsEtc.Archivar;
-import View.View;
+import view.PixelObjectType;
 import model.Path;
 import model.SpecialGraph;
+import view.View;
 
 import java.awt.image.BufferedImage;
 import java.util.Random;
@@ -12,7 +13,7 @@ import java.util.Random;
 
 /** This class defines the basic structure of our program
  * It is defined by the model view controller architecture.
- * View is responsible for processing the image stream and showing it on screen
+ * view is responsible for processing the image stream and showing it on screen
  * model is responsible for converting the visual to the internal data model
  * and it creates pathways
  * Control then converts the path order in orders fors the robot.
@@ -81,7 +82,7 @@ public class Modul {
 
             BufferedImage bi = view.getCurrentShot();
 
-            Model m2 = view.classify(bi);
+            PixelObjectType[][] m2 = view.classify(bi);
             SpecialGraph g = view.getGraph();
            // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
