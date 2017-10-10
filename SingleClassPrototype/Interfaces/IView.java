@@ -1,9 +1,9 @@
 package Interfaces;
 
 
-import view.PixelObjectType;
-import model.Model;
-import model.SpecialGraph;
+import Model.Model;
+import Model.SpecialGraph;
+import View.View;
 
 import java.awt.image.BufferedImage;
 
@@ -19,7 +19,7 @@ public interface IView extends Cloneable {
 
     SpecialGraph getGraph();
 
-    PixelObjectType[][] classify(BufferedImage bi);
+    View.PixelObjectType[][] classify(BufferedImage bi);
 
-    PixelObjectType[][] classify();
+    View.PixelObjectType[][] classify();
 }

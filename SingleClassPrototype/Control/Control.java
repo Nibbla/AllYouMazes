@@ -1,7 +1,7 @@
 package Control;
 
 import Interfaces.IControl;
-import model.Path;
+import Model.Path;
 import SpecialSettingsEtc.Tangential;
 
 /**

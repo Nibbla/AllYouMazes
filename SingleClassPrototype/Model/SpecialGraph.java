@@ -1,4 +1,4 @@
-package model;
+package Model;
 
 import com.sun.corba.se.impl.orbutil.graph.*;
 import com.sun.corba.se.impl.orbutil.graph.Node;

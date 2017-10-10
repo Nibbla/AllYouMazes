@@ -1,6 +1,6 @@
 package Interfaces;
 
-import model.Path;
+import Model.Path;
 import SpecialSettingsEtc.Tangential;
 
 /**

@@ -4,9 +4,8 @@ import Interfaces.IView;
 import Interfaces.ObjectType;
 import SpecialSettingsEtc.Archivar;
 import SpecialSettingsEtc.Settings;
-import javafx.collections.transformation.SortedList;
-import model.Model;
-import model.SpecialGraph;
+import Model.Model;
+import Model.SpecialGraph;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -16,7 +15,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * Created by Nibbla on 27.09.2017.
@@ -78,7 +76,7 @@ public class View implements IView {
     }
 
     @Override
-    public Model classify(BufferedImage bi) {
+    public PixelObjectType[][] classify(BufferedImage bi) {
         long tick1 = System.currentTimeMillis();
         int width = bi.getWidth();
         int heigth = bi.getHeight();
@@ -285,7 +283,7 @@ public class View implements IView {
         frame.pack();
         frame.setVisible(true);
 
-        return null;
+        return ot;
     }
 
     private PixelObjectType[][] erode(PixelObjectType[][] ot2, ObjectType typeToErrode, ObjectType typeToReplace, int width2, int heigth2) {
@@ -383,7 +381,7 @@ public class View implements IView {
 
 
     @Override
-    public Model classify() {
+    public PixelObjectType[][] classify() {
         return classify(this.getCurrentShot());
     }
 
@@ -396,7 +394,7 @@ public class View implements IView {
     }
 
 
-    private class PixelObjectType {
+    public class PixelObjectType {
 
         private final int y;
         private final int x;

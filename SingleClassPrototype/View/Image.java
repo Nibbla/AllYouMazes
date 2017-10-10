@@ -1,4 +1,4 @@
-package view;
+package View;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
