@@ -1,8 +1,10 @@
 package Model;
 
+import view.Pixel;
+
 import java.util.List;
 
-public class Path extends Node{
+public class Path{
     KartesianCoordinates start;
     List<PolarCoordinates> line;
 
@@ -10,12 +12,12 @@ public class Path extends Node{
         start = null;
     }
 
-    public View.Pixel[][] getPainting(){
+    public Pixel[][] getPainting(){
         return null;
     }
 
     public int length() {
-        if (parent != null) return parent.length();
+      //  if (parent != null) return parent.length();
         return 0;
     }
 

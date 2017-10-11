@@ -42,7 +42,7 @@ public class Model  implements IModel {
     }
 
 
-    public class typeNode extends Node {
+    public class typeNode  {
         ObjectClasses type;
 
 
@@ -164,7 +164,6 @@ public class Model  implements IModel {
 
         }
 
-        public class AccessorNode extends Node {
-        }
+
     }
 }

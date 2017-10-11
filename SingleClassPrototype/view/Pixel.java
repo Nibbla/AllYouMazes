@@ -1,4 +1,4 @@
-package View;
+package view;
 
 /**
  * Created by Nibbla on 26.09.2017.

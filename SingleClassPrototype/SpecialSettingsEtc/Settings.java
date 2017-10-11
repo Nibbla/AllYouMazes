@@ -1,10 +1,12 @@
 package SpecialSettingsEtc;
 
+import java.io.File;
+
 /**
  * Created by Nibbla on 06.10.2017.
  */
 public class Settings {
-    private static String inputPath = System.getProperty("user.dir") + "\\SingleClassPrototype\\Input\\latestScreen.jpg";
+    private static String inputPath = System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator + "latestScreen.jpg";
     private static String defaultInputPath = System.getProperty("user.dir") + "\\Input\\latestScreen.jpg";
     private static int stepX = 5; //should be odd number
     private static int stepY = 5; //should be odd number

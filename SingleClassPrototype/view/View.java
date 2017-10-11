@@ -1,4 +1,4 @@
-package View;
+package view;
 
 import Interfaces.IView;
 import Interfaces.ObjectType;
@@ -6,6 +6,7 @@ import SpecialSettingsEtc.Archivar;
 import SpecialSettingsEtc.Settings;
 import Model.Model;
 import Model.SpecialGraph;
+import javafx.util.Pair;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Stack;
 
 /**
  * Created by Nibbla on 27.09.2017.
@@ -36,7 +38,7 @@ public class View implements IView {
         long tick1 = System.currentTimeMillis();
 
 
-        String path = SpecialSettingsEtc.Settings.getInputPath();
+        String path = Settings.getInputPath();
         Archivar.shout("Loading image at time " + System.currentTimeMillis());
         Archivar.shout("at path " + path);
         Archivar.shout("Working Directory = " +
@@ -71,8 +73,12 @@ public class View implements IView {
     }
 
     @Override
-    public SpecialGraph getGraph() {
-        return null;
+    public SpecialGraph getGraph(PixelObjectType[][] g) {
+
+
+
+
+        return new SpecialGraph(g);
     }
 
     @Override
@@ -378,7 +384,73 @@ public class View implements IView {
         Archivar.shout("Value at " + x + "  " + y + " is R:" + valueR + " G:" + valueG + " B:" + valueB);
     }
 
+    public Pair<Double, Double> getRobotCenter(PixelObjectType[][] m2, int numberOfPixelsToSkip) {
+        ArrayList<ArrayList<Pair<Integer, Integer>>> clusters = new ArrayList<>();
 
+        //Checking every pixel takes way too much computation time, I tested with skipping 50, works fine.
+        for (int i = 0; i < m2.length; i+=numberOfPixelsToSkip) {
+            for (int j = 0; j < m2[i].length; j+=numberOfPixelsToSkip) {
+                if (m2[i][j].getSelectedClass().name().equals("robot")) {
+
+                    for (int k = 0; k < clusters.size(); k++) {
+                        ArrayList<Pair<Integer, Integer>> curCluster = clusters.get(k);
+                        if (curCluster.contains(new Pair(i, j))) {
+                            continue;
+                        }
+                    }
+
+                    Stack<Pair<Integer, Integer>> s = new Stack();
+                    ArrayList<Pair<Integer, Integer>> cluster = new ArrayList<>();
+                    s.push(new Pair(i, j));
+
+                    //Flood fill, also making sure we don't get into loops
+                    while (!s.isEmpty()) {
+                        Pair<Integer, Integer> pair = s.pop();
+                        if (m2[pair.getKey()][pair.getValue()].getSelectedClass().name().equals("robot") && !cluster.contains(pair)) {
+                            //System.out.println(i + ":" + j + " " + s.size());
+                            cluster.add(pair);
+
+                            if (pair.getKey() - 1 > 0 && pair.getKey() + 1 < m2.length && pair.getValue() - 1 > 0 && pair.getValue() + 1 < m2[0].length) {
+                                s.push(new Pair(pair.getKey(), pair.getValue() + 1));
+                                s.push(new Pair(pair.getKey(), pair.getValue() - 1));
+                                s.push(new Pair(pair.getKey() + 1, pair.getValue()));
+                                s.push(new Pair(pair.getKey() - 1, pair.getValue()));
+                            }
+
+                            //We can probably ignore all the other cases as the robot should be around the wall then, also we'd only miss a few pixels
+                        }
+
+                    }
+
+                    if (cluster.size() > 1) {
+                        clusters.add(cluster);
+                    }
+                }
+            }
+        }
+
+        //Extrapolating robot position from the largest cluster that we found (we assume the largest is the robot)
+        ArrayList<Pair<Integer, Integer>> largestCluster = new ArrayList<>();
+        int max = 0;
+        for (int i = 0; i < clusters.size(); i++) {
+            if (clusters.get(i).size() > max) {
+                largestCluster = clusters.get(i);
+                max = clusters.get(i).size();
+            }
+        }
+
+        double xSum = 0;
+        double ySum = 0;
+
+        for (Pair<Integer, Integer> p: largestCluster) {
+            xSum += p.getKey();
+            ySum += p.getValue();
+        }
+
+        double x = xSum / largestCluster.size();
+        double y = ySum / largestCluster.size();
+        return new Pair(x, y);
+    }
 
     @Override
     public PixelObjectType[][] classify() {
@@ -394,79 +466,5 @@ public class View implements IView {
     }
 
 
-    public class PixelObjectType {
 
-        private final int y;
-        private final int x;
-        private final double red;
-        private final double green;
-        private final double blue;
-        public double wallility;
-        public double floorility;
-        public double robotility;
-
-        double[] wc = Settings.wallClassifier;
-        private ObjectType classifiedas;
-
-        public PixelObjectType(int x, int y, BufferedImage rgb) {
-            Integer value = rgb.getRGB(x, y);
-            this.x = x;
-            this.y = y;
-            Color c = new Color(value);
-             red = c.getRed();
-             green = c.getGreen();
-             blue = c.getBlue();
-
-            if (red/green>1.1) wallility+=1;
-            if (red/blue>1.3) wallility+=1;
-            if (red>165) wallility+=1;
-
-            if (red/green<1.2&&red/green>0.8) floorility+=1;
-            if (green/blue<1.2&&green/blue>0.8) floorility+=1;
-            if (blue/green<1.2&&blue/green>0.8) floorility+=1;
-
-
-            if (green/red>1.2) robotility+=2;
-            if (green/blue>1.1) robotility+=1;
-
-
-           // wallility = wc[0] * red + wc[1] * green + wc[2] * blue;
-           // floorility = wc[3] * red + wc[4] * green + wc[5] * blue;
-           // robotility = wc[6] * red + wc[7] * green + wc[8] * blue;
-
-        }
-
-        public PixelObjectType(int x, int y, double red, double green, double blue, double wallility, double floorility, double robotility, ObjectType classifiedas) {
-            this.x = x;
-            this.y = y;
-            this.red = red;
-            this.green = green;
-            this.blue = blue;
-            this.wallility = wallility;
-            this.floorility = floorility;
-            this.robotility = robotility;
-            this.classifiedas = classifiedas;
-        }
-
-        public ObjectType getSelectedClass() {
-            if (classifiedas != null)  return classifiedas;
-            if (wallility > floorility && wallility > robotility) return ObjectType.wall;
-            if (floorility > robotility) return ObjectType.floor;
-
-            return ObjectType.robot;
-
-        }
-
-        public void classifiedAs(int i) {
-            this.classifiedas = ObjectType.values()[i];
-        }
-        public void classifiedAs(ObjectType i) {
-            this.classifiedas = i;
-        }
-
-        public PixelObjectType copy() {
-            PixelObjectType p = new PixelObjectType(x,y,red,green,blue,wallility,floorility,robotility,classifiedas);
-            return p;
-        }
-    }
 }

@@ -3,7 +3,9 @@ package Interfaces;
 
 import Model.Model;
 import Model.SpecialGraph;
-import View.View;
+import javafx.util.Pair;
+import view.View;
+import view.PixelObjectType;
 
 import java.awt.image.BufferedImage;
 
@@ -13,13 +15,13 @@ import java.awt.image.BufferedImage;
 public interface IView extends Cloneable {
     BufferedImage getCurrentShot();
 
-
+    Pair<Double, Double> getRobotCenter(PixelObjectType[][] m2, int numberOfPixelsToSkip);
 
     Model getClassifiedModel();
 
-    SpecialGraph getGraph();
+    SpecialGraph getGraph(PixelObjectType[][] g);
 
-    View.PixelObjectType[][] classify(BufferedImage bi);
+    PixelObjectType[][] classify(BufferedImage bi);
 
-    View.PixelObjectType[][] classify();
+    PixelObjectType[][] classify();
 }

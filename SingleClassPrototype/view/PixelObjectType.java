@@ -1,4 +1,4 @@
-package View;
+package view;
 
 import Interfaces.ObjectType;
 import SpecialSettingsEtc.Settings;
