@@ -93,6 +93,7 @@ public class Modul {
             System.out.println("Robot position is " + robotPos.getKey() + ":" + robotPos.getValue());
 
             SpecialGraph g = view.getGraph(m2);
+            g.calculatePathway(robotPos);
            // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();

@@ -2,8 +2,7 @@ package Model;
 
 import Interfaces.ObjectType;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Nibbla on 26.09.2017.
@@ -12,11 +11,12 @@ public class Node{
     int id;
     static int idcount;
     Node parent;
-    ArrayList<Node> neighbours = new ArrayList<>(8);
+    Map<Node,Double> neighbours = new HashMap<>(8);
     ArrayList<Double> weights = new ArrayList<>(8);
-
+    LinkedList<Node> shortestPath = new LinkedList<>();
     int x;
     int y;
+    private double distance;
 
 
     public Node(int x, int y){
@@ -26,7 +26,26 @@ public class Node{
     }
 
     public void addNeighbour(Node n, double weight){
-        this.neighbours.add(n);
-        this.weights.add(weight);
+        this.neighbours.put(n,weight);
+
+    }
+
+    public void setDistance(double distance) {
+        this.distance = distance;
+    }
+
+    public double getDistance() {
+        return distance;
+    }
+
+    public LinkedList<Node> getShortestPath() {
+        return shortestPath;
+    }
+
+    public void setShortestPath(LinkedList<Node> shortestPath) {
+    }
+
+    public Map<Node, Double> getAdjacentNodes() {
+        return neighbours;
     }
 }
