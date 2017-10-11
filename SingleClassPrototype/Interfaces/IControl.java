@@ -11,4 +11,8 @@ public interface IControl {
     boolean move(Path pathway);
     boolean move(double[] moveDouble);
     boolean move(Tangential.Direction Direction);
+
+    void startConnection();
+    void resetConnection();
+    void closeConnection();
 }
