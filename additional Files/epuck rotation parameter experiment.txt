@@ -1,0 +1,70 @@
+rotation parameter experiment 1 - wooden floor - epuck 2212
+
+speed: 0.1
+duration: 10s
+degrees: 155° //did not exactely rotate on the spot thus not suggested
+result = 15.5°/s
+
+speed: 0.2
+duration: 10s
+degrees: 345°
+result = 34.5°/s
+
+speed: 0.3
+duration: 10s
+degrees: 515°
+result = 51.5°/s
+
+speed: 0.4
+duration: 10s
+degrees: 690°
+result = 69°/s
+
+speed: 0.5
+duration: 10s
+degrees: 875°
+result = 87.5°/s
+
+speed: 1
+duration: 10s
+degrees: 1745°
+result = 174.5°/s
+
+speed: 1.5
+duration: 10s
+degrees: 2650°
+result = 265°/s
+
+speed: 2
+duration: 10s
+degrees: 2645°
+result = 264.5°/s
+
+speed: 3
+duration: 10s
+degrees: 2645°
+result = 264.5°/s
+
+speed: 4
+duration: 10s
+degrees: 2655°
+result = 265.5°/s
+
+speed: 5
+duration: 10s
+degrees: 2655°
+result = 265.5°/s
+
+Fitting those values with a linear function we get the following:
+
+y = 177.429*x - 1.745 with x being the rotation value and y being the actual °/s's. 
+If we are interested in which rotation speed x to choose when we want a certain °/s y we can use the function: x = (y - 1.745)/177.429 .
+
+Note that any rotation speed below 0.2 (and thus below 34.5°/s) is not suggested as the epuck has been observed to not rotate on the spot at this speed.
+
+Also note the maximum rotation speed of 265.5°/s.
+
+With a positive rotation speed the rotation will be counterclockwise and with a negative rotation speed the rotation will be clockwise.
+
+
+
