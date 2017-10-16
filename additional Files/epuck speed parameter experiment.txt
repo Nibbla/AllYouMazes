@@ -1,0 +1,71 @@
+speed parameter experiment 1 - wooden floor - epuck 2212
+
+speed: 0.1
+duration: 10s
+distance: -0.4cm //unusable since it does not move in staight line, depending on the surface friction (wood)
+result = -0.04cm/s
+
+speed: 0.2
+duration: 10s
+distance: 6cm
+result = 0.6cm/s
+
+speed: 0.3
+duration: 10s
+distance: 7cm //unusable since it does not move in staight line, depending on the surface friction (wood)
+result = 0.7cm/s
+
+speed: 0.4
+duration: 10s
+distance: 12.2cm
+result = 1.22cm/s
+
+speed: 0.5
+duration: 10s
+distance: 15.5cm
+result = 1.55cm/s
+
+speed: 1
+duration: 10s
+distance: 31cm //unusable since it does not move in staight line, depending on the surface friction (wood)
+result = 3.1cm/s
+
+speed: 1.5
+duration: 10s
+distance: 47cm
+result = 4.7cm/s
+
+
+speed: 2
+duration: 10s
+distance: 61cm
+result = 6.1cm/s
+
+speed: 3
+duration: 10s
+distance: 95.5cm
+result = 9.55cm/s
+
+speed: 4
+duration: 10s
+distance: 124.5cm
+result = 12.45cm/s
+
+speed: 5
+duration: 10s
+distance: 124.5cm
+result = 12.45cm/s
+
+fitting this data with a linear function we get the following:
+
+y = 3.175*x - 0.134, with y being the actual speed in cm/s and x being the speed value. 
+
+or x = (y + 0.134)/3.175 when I want to set a certain speed x which corresponds to y cm/s.
+
+Note that the maximum speed was measured to be 12.45cm/s which corresponds quite nicely to the theoretical maximum speed of 12.88cm/s (http://www.e-puck.org/index.php?option=com_content&view=article&id=7&Itemid=9) which results out of a 41mm diameter for the weels and maximum 1 revolution per second.
+
+Note that already some of the values above have been found to be faulty depending on the surface fricton. Even tough the above formula can be used to calculate which speed value to use in order to get which cm/s's, it should also be checked that none of the faulty values above is used (e.g. 0.1, 0.3 or 1)
+
+I'd advise using either a functioning slow speed, e.g 0.4 or 0.5 or a functioning fast speed, e.g. 3 or 4 as those were less prune to not driving in a staight line.
+
+Positive values refer to forward speed, while negative values refer to backward speed.
