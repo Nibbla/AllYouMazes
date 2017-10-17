@@ -4,8 +4,11 @@ import Interfaces.ObjectType;
 
 import javafx.util.Pair;
 import view.PixelObjectType;
+import view.View;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -19,12 +22,13 @@ public class SpecialGraph{
     private final int right;
     private final int top;
     private final int botom;
+    private JFrame frame = null;
     private Point start;
     Node[][] temp;
     private Point end;
 
 
-    public SpecialGraph(PixelObjectType[][] source){
+    public SpecialGraph(ObjectType[][] source, int imageType, RoboPos roboPos){
 
          left = 0;
          right = source.length;
@@ -33,12 +37,19 @@ public class SpecialGraph{
 
         temp = new Node[right][botom];
 
+        double radious = roboPos.getRadious();
+
+        int dialate = (int) Math.ceil(radious);
+
+        for (int i = 0; i < dialate; i++) {
+            source = View.dialate(source,ObjectType.wall,right,botom);
+        }
 
        // nodes = new ArrayList<>(source.length*source[0].length);
         for (int x = 0; x < source.length; x++) {
             for (int y = 0; y < source[0].length; y++) {
 
-                if (source[x][y].getSelectedClass()!= ObjectType.wall){
+                if (source[x][y]!= ObjectType.wall){
                     Node current = new Node(x,y);
                    //nodes.add(current);
                     temp[x][y] = current;
@@ -77,6 +88,39 @@ public class SpecialGraph{
             }
         }
 
+
+        BufferedImage b3 = new BufferedImage(right,botom,imageType);
+        for (int x = 0; x < right; x++) {
+            for (int y = 0; y < botom; y++) {
+                //if (ot[x][y]!=ObjectType.floor)b3.setRGB(x,y,ot4[x][y].getColor());
+                //else {
+
+                    b3.setRGB(x, y, source[x][y].getColor());
+                //}
+            }
+
+        }
+
+        for (int x = 0; x < temp.length; x++) {
+            for (int y = 0; y < temp[0].length; y++) {
+                //if (ot[x][y]!=ObjectType.floor)b3.setRGB(x,y,ot4[x][y].getColor());
+                //else {
+                Node n = temp[x][y];
+                if (n != null)b3.setRGB(n.x, n.y, Color.cyan.getRGB());
+                //}
+            }
+
+        }
+
+
+        if (frame!=null) frame.setVisible(false);
+        frame = new JFrame();
+        frame.getContentPane().setLayout(new FlowLayout());
+        frame.getContentPane().add(new JLabel(new ImageIcon(b3)));
+        // frame.getContentPane().add(new JLabel(new ImageIcon(b2)));
+
+        frame.pack();
+        frame.setVisible(true);
         
     }
    

@@ -12,6 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
+import Model.RoboPos;
 
 
 /** This class defines the basic structure of our program
@@ -85,15 +86,15 @@ public class Modul {
 
             BufferedImage bi = view.getCurrentShot();
 
-            view.PixelObjectType[][] m2 = view.classify(bi);
+            ObjectType[][] m2 = view.classify(bi);
 
             //Get robot pos
 
-            Pair<Double, Double> robotPos = view.getRobotCenter(m2, 50);
-            System.out.println("Robot position is " + robotPos.getKey() + ":" + robotPos.getValue());
+           RoboPos rp = view.getRobotCenter(m2, 1);
+           // System.out.println("Robot position is " + robotPos.getKey() + ":" + robotPos.getValue());
 
-            SpecialGraph g = view.getGraph(m2);
-            g.calculatePathway(robotPos);
+            SpecialGraph g = view.getGraph(m2,bi.getType(),rp);
+            //g.calculatePathway(robotPos);
            // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();
@@ -209,6 +210,7 @@ public class Modul {
             return super.nextInt(bound);
         }
     }
+
 
 
 }
