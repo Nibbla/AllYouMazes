@@ -1,17 +1,14 @@
-import Control.Control;
+import control.Control;
 import Interfaces.*;
 import Model.Model;
 import SpecialSettingsEtc.Archivar;
-import view.PixelObjectType;
 import Model.Path;
 import Model.SpecialGraph;
 import view.View;
-import javafx.util.Pair;
 
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.Stack;
+
 import Model.RoboPos;
 
 
@@ -20,7 +17,7 @@ import Model.RoboPos;
  * view is responsible for processing the image stream and showing it on screen
  * model is responsible for converting the visual to the internal data model
  * and it creates pathways
- * Control then converts the path order in orders fors the robot.
+ * control then converts the path order in orders fors the robot.
  */
 public class Modul {
     private static Random rnd = new RandomCount();
@@ -94,8 +91,8 @@ public class Modul {
            // System.out.println("Robot position is " + robotPos.getKey() + ":" + robotPos.getValue());
 
             SpecialGraph g = view.getGraph(m2,bi.getType(),rp);
-            //g.calculatePathway(robotPos);
-           // g.setStart(m.getRobotPosition());
+            g.calculatePathway(rp, 0,0);
+
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();
            // translateIntoCommands(p);
@@ -103,6 +100,7 @@ public class Modul {
             long loopEnd = System.currentTimeMillis();
             double timeHappend = (loopEnd - loopStart)/1000.;
             Archivar.shout("Loop: "+ loop + " took " + timeHappend + " seconds to complete");
+            break;
         }
 
     }

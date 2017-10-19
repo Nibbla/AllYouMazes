@@ -4,6 +4,15 @@ public class RoboPos{
 
     private final double x;
     private final double y;
+
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
     private final double r;
 
 
