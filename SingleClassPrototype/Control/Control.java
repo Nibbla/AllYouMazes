@@ -194,7 +194,6 @@ public class Control implements IControl {
     /**
      * This is used to prepare the rostopic process with a linear and angular speed.
      * <p>
-     * TODO: Figure out what 1 means in terms of m/s or cm/s. According to the manual a linear speed of 1 refers to 1m/s when using a turtlebot. Since we are not using a turtlebot these values need to be estimated by performing small tests like issuing a certain speed X for Y seconds and measuring the distance that to robot covered. Same for the angular speed in terms of degree/s.
      *
      * @param linear  a linear speed. a positive value is for forward, a negative value is for backward.
      * @param angular an anguar speed. a positive value is for counterclockwise, a negative value for clockwise.
