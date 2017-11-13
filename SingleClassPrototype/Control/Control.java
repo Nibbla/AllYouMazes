@@ -11,11 +11,11 @@ import java.util.Map;
  */
 public class Control implements IControl {
 
-    // Use this to dynamically change to another ROS-Version, i.e. Kinetic. This has not been tested yet.
-    private final String ROSversion = "indigo";
+    // Use this to dynamically change to another ROS-Version, i.e. Kinetic.
+    private final String ROSversion = "kinetic";
 
     // Replace this with whatever username is valid for the current System.
-    private final String username = "eric";
+    private final String username = "pi";
 
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
     private final int startUpSeconds = 20;
@@ -125,7 +125,7 @@ public class Control implements IControl {
      * 3) rotate counterclockwise with speed 1 (see below) for 3 seconds
      * 4) stop.
      *
-     * @throws InterruptedException because there is a Thread.sleep() between the commands.
+     * @throws *InterruptedException because there is a Thread.sleep() between the commands.
      */
     public void testCommands() throws InterruptedException {
         this.moveStraight(1);
