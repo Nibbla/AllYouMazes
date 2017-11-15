@@ -15,4 +15,6 @@ public interface IControl extends Cloneable {
     void startConnection();
     void resetConnection();
     void closeConnection();
+
+    void testCommands();
 }

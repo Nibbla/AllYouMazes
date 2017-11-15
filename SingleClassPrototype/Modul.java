@@ -1,4 +1,5 @@
 
+import Control.RobotControl;
 import Interfaces.*;
 import Model.Model;
 import SpecialSettingsEtc.Archivar;
@@ -33,7 +34,7 @@ public class Modul {
 
     private static View factoryView = new View();
     private static Model factoryModel = new Model(rnd);
-//    private static Control.RobotControl factoryControl = new Cont();
+    private static RobotControl factoryControl = new RobotControl();
 
 
     private Thread processingThread;
@@ -56,7 +57,7 @@ public class Modul {
     public static void main(String[] args){
 
         try {
-            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),null);
+            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl.getInstance());
 
             modul.setWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE, true);
             modul.setWorkmode(Workmode.JODISPECIALSAUCEANDNOTSIMPLECLASSIFICATOR, false);
@@ -109,7 +110,6 @@ public class Modul {
             long loopEnd = System.currentTimeMillis();
             double timeHappend = (loopEnd - loopStart)/1000.;
             Archivar.shout("Loop: "+ loop + " took " + timeHappend + " seconds to complete");
-
         }
 
     }
