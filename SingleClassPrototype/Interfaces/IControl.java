@@ -1,6 +1,7 @@
 package Interfaces;
 
 import Model.Path;
+import Model.RoboPos;
 import SpecialSettingsEtc.Tangential;
 
 /**
@@ -11,6 +12,7 @@ public interface IControl extends Cloneable {
     boolean move(Path pathway);
     boolean move(double[] moveDouble);
     boolean move(Tangential.Direction Direction);
+    boolean sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, Path pathway);
 
     void startConnection();
     void resetConnection();

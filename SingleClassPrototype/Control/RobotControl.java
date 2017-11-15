@@ -2,6 +2,7 @@ package Control;
 
 import Interfaces.IControl;
 import Model.Path;
+import Model.RoboPos;
 import SpecialSettingsEtc.Tangential;
 
 import java.util.Map;
@@ -154,6 +155,11 @@ public class RobotControl implements IControl {
         }*/
 
         System.out.println("test");
+    }
+
+    @Override
+    public boolean sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, Path pathway){
+        return true;
     }
 
     /**
