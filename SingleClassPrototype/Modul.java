@@ -1,14 +1,17 @@
-import control.Control;
+import Control.RobotControl;
 import Interfaces.*;
 import Model.Model;
 import SpecialSettingsEtc.Archivar;
+import view.PixelObjectType;
 import Model.Path;
 import Model.SpecialGraph;
 import view.View;
+import javafx.util.Pair;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Random;
-
+import java.util.Stack;
 import Model.RoboPos;
 
 
@@ -17,7 +20,7 @@ import Model.RoboPos;
  * view is responsible for processing the image stream and showing it on screen
  * model is responsible for converting the visual to the internal data model
  * and it creates pathways
- * control then converts the path order in orders fors the robot.
+ * RobotControl then converts the path order in orders fors the robot.
  */
 public class Modul {
     private static Random rnd = new RandomCount();
@@ -26,7 +29,7 @@ public class Modul {
 
     private static View factoryView = new View();
     private static Model factoryModel = new Model(rnd);
-    private static Control factoryControl = new Control();
+    private static Control.RobotControl factoryControl = new RobotControl();
 
 
     private Thread processingThread;
@@ -37,7 +40,7 @@ public class Modul {
     private boolean running;
 
 
-    public Modul(View view , Model model, Control control) {
+    public Modul(View view , Model model, IControl control) {
         this.view = view;
         this.model = model;
         this.control = control;
@@ -47,7 +50,7 @@ public class Modul {
     public static void main(String[] args){
 
         try {
-            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl.getInstance());
+            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl);
 
             modul.setWorkmode(Workmode.CAMERAON,true);
             modul.setWorkmode(Workmode.KEYBOARDON, true);
@@ -87,12 +90,12 @@ public class Modul {
 
             //Get robot pos
 
-           RoboPos rp = view.getRobotCenter(m2, 1);
-           // System.out.println("Robot position is " + robotPos.getKey() + ":" + robotPos.getValue());
+            RoboPos robotPos = view.getRobotCenter(m2, 50);
+            System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
 
-            SpecialGraph g = view.getGraph(m2,bi.getType(),rp);
-            g.calculatePathway(rp, 0,0);
-
+            SpecialGraph g = view.getGraph(m2,bi.getType(),robotPos);
+            g.calculatePathway(robotPos,0,0);
+           // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();
            // translateIntoCommands(p);
@@ -208,7 +211,6 @@ public class Modul {
             return super.nextInt(bound);
         }
     }
-
 
 
 }
