@@ -1,12 +1,8 @@
 package Interfaces;
 
 
-import Model.Model;
-import Model.SpecialGraph;
-import Model.RoboPos;
-import javafx.util.Pair;
-import view.View;
-import view.PixelObjectType;
+import Model.*;
+
 
 import java.awt.image.BufferedImage;
 
@@ -20,11 +16,11 @@ public interface IView extends Cloneable {
 
     Model getClassifiedModel();
 
-    public SpecialGraph getGraph(ObjectType[][] g, int imageType, RoboPos roboPos);
+    public SpecialGraph getGraph(ObjectType[][] g, int imageType, RoboPos roboPos, int graphSkip, boolean workmode);
 
-    ObjectType[][] classify(BufferedImage bi);
 
-    ObjectType[][] classify();
+
+    ObjectType[][] classify(BufferedImage bi, boolean showClassification);
 
     RoboPos getRobotCenter(ObjectType[][] m2, int i);
 }

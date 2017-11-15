@@ -75,16 +75,16 @@ public class View implements IView {
     }
 
     @Override
-    public SpecialGraph getGraph(ObjectType[][] g, int imageType, RoboPos roboPos) {
+    public SpecialGraph getGraph(ObjectType[][] g, int imageType, RoboPos roboPos, int graphSkip, boolean showPathway) {
 
 
 
 
-        return new SpecialGraph(g,imageType,roboPos);
+        return new SpecialGraph(g,imageType,roboPos,graphSkip,showPathway);
     }
 
     @Override
-    public ObjectType[][] classify(BufferedImage bi) {
+    public ObjectType[][] classify(BufferedImage bi, boolean showKlassification) {
         long tick1 = System.currentTimeMillis();
         int width = bi.getWidth();
         int heigth = bi.getHeight();
@@ -256,6 +256,8 @@ public class View implements IView {
         ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
         ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
         ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
 
          ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
          ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
@@ -268,8 +270,16 @@ public class View implements IView {
         ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
         ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
 
+        long tick2 = System.currentTimeMillis();
+        Archivar.shout("Classifying image took " + (tick2 - tick1)/1000. + " seconds to complete");
 
+        if (showKlassification)
+        showClassification(b2, ot4);
 
+        return ot4;
+    }
+
+    private void showClassification(BufferedImage b2, ObjectType[][] ot4) {
         BufferedImage b3 = new BufferedImage(b2.getWidth(),b2.getHeight(),b2.getType());
         for (int x = 0; x < b3.getWidth(); x++) {
             for (int y = 0; y < b3.getHeight(); y++) {
@@ -281,19 +291,17 @@ public class View implements IView {
 
         }
 
-        long tick2 = System.currentTimeMillis();
-        Archivar.shout("Classifying image took " + (tick2 - tick1)/1000. + " seconds to complete");
+
         if (frame!=null) frame.setVisible(false);
         frame = new JFrame();
         frame.getContentPane().setLayout(new FlowLayout());
         frame.getContentPane().add(new JLabel(new ImageIcon(b3)));
-       // frame.getContentPane().add(new JLabel(new ImageIcon(b2)));
+        // frame.getContentPane().add(new JLabel(new ImageIcon(b2)));
 
         frame.pack();
         frame.setVisible(true);
-
-        return ot4;
     }
+
 
     private ObjectType[][] extractObjectType(PixelObjectType[][] ot) {
         ObjectType[][] ot3 = new ObjectType[ot.length][ot[0].length];
@@ -468,10 +476,7 @@ public class View implements IView {
         return new RoboPos(x, y,Math.sqrt(largestCluster.size())*1.1284*0.5);
     }
 
-    @Override
-    public ObjectType[][] classify() {
-        return classify(this.getCurrentShot());
-    }
+
 
     public class Pixel{
 

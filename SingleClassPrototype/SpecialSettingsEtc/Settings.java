@@ -14,7 +14,7 @@ public class Settings {
     private static int medianFilterSize = 3;
     private static int maximumFilterSize = 3;
     public static double[] wallClassifier = {0.3,0.3,0.3,0.9,0.1,0.2,0.2,0.65,0.15};  //inplement store save (numblock and wsd. 0 means save)
-
+    private static int graphCreationPixelSkip = 4;
 
 
     public static String getInputPath() {
@@ -63,5 +63,9 @@ public class Settings {
 
     public static void setMaximumfilterSize(int maximumfilterSize) {
         Settings.maximumFilterSize = maximumfilterSize;
+    }
+
+    public static int getGraphCreationPixelSkip() {
+        return graphCreationPixelSkip;
     }
 }

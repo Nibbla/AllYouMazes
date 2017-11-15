@@ -1,18 +1,22 @@
-import Control.RobotControl;
+
 import Interfaces.*;
 import Model.Model;
 import SpecialSettingsEtc.Archivar;
+import SpecialSettingsEtc.Settings;
 import view.PixelObjectType;
 import Model.Path;
 import Model.SpecialGraph;
 import view.View;
 import javafx.util.Pair;
 
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Stack;
 import Model.RoboPos;
+
+import javax.swing.*;
 
 
 /** This class defines the basic structure of our program
@@ -29,7 +33,7 @@ public class Modul {
 
     private static View factoryView = new View();
     private static Model factoryModel = new Model(rnd);
-    private static Control.RobotControl factoryControl = new RobotControl();
+//    private static Control.RobotControl factoryControl = new Cont();
 
 
     private Thread processingThread;
@@ -38,6 +42,8 @@ public class Modul {
     public IControl control;
     private boolean[] workmodes = new boolean[Workmode.values().length]; //which workmodes are turned on.
     private boolean running;
+    private int graphSkip = Settings.getGraphCreationPixelSkip();
+    private SpecialGraph g;
 
 
     public Modul(View view , Model model, IControl control) {
@@ -50,15 +56,15 @@ public class Modul {
     public static void main(String[] args){
 
         try {
-            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl);
+            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),null);
 
-            modul.setWorkmode(Workmode.CAMERAON,true);
-            modul.setWorkmode(Workmode.KEYBOARDON, true);
+            modul.setWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE, true);
+            modul.setWorkmode(Workmode.JODISPECIALSAUCEANDNOTSIMPLECLASSIFICATOR, false);
             modul.setWorkmode(Workmode.SYSTEMOUT, true);
             modul.setWorkmode(Workmode.SYSTEMOUTARCHIVE, false);
-            modul.setWorkmode(Workmode.SHOWSENSOR,true);
-            //modul.setWorkmode(Workmode.SHOWKLASSIFIED, true);
-            //modul.setWorkmode(Workmode.SHOWTESSELATED, true);
+            modul.setWorkmode(Workmode.SHOWKLASSIFIED,true);
+            modul.setWorkmode(Workmode.SHOWASTAR, true);
+            modul.setWorkmode(Workmode.SHOWTESSELATED, true);
             modul.start(true);
 
 
@@ -86,27 +92,28 @@ public class Modul {
 
             BufferedImage bi = view.getCurrentShot();
 
-            ObjectType[][] m2 = view.classify(bi);
+            ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED));
 
             //Get robot pos
 
-            RoboPos robotPos = view.getRobotCenter(m2, 50);
+            RoboPos robotPos = view.getRobotCenter(m2, 1);
             System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
-
-            SpecialGraph g = view.getGraph(m2,bi.getType(),robotPos);
-            g.calculatePathway(robotPos,0,0);
+            if (g != null) g.setVisible(false);
+             g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
+            g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
            // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();
            // translateIntoCommands(p);
-            
+
             long loopEnd = System.currentTimeMillis();
             double timeHappend = (loopEnd - loopStart)/1000.;
             Archivar.shout("Loop: "+ loop + " took " + timeHappend + " seconds to complete");
-            break;
+
         }
 
     }
+
 
 
 
@@ -142,12 +149,10 @@ public class Modul {
 
     private void show(Workmode tesselated, boolean b) {
         switch (tesselated) {
-            case KEYBOARDON:
-                break;
+
             case SYSTEMOUT:
                 break;
-            case CAMERAON:
-                break;
+
             case SHOWKLASSIFIED:
                 break;
             case SHOWTESSELATED:

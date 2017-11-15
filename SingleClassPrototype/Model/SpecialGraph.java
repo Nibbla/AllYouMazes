@@ -14,24 +14,30 @@ import java.util.*;
  */
 public class SpecialGraph{
     private final int left;
-    private final int right;
+    private final int smallRight;
     private final int top;
-    private final int botom;
+    private final int smallBotom;
     private final BufferedImage astarGridRepresentation;
+    private final int graphSkip;
     private JFrame frame = null;
     private Point start;
     Node[][] Grid;
     private Point end;
+    private boolean visible;
 
 
-    public SpecialGraph(ObjectType[][] source, int imageType, RoboPos roboPos){
+    public SpecialGraph(ObjectType[][] source, int imageType, RoboPos roboPos, int graphSkip, boolean showPathway){
 
          left = 0;
-         right = source.length;
+         int right = source.length;
          top = 0;
-         botom = source[0].length;
+         int botom = source[0].length;
+        this.graphSkip = graphSkip;
 
-        Grid = new Node[right][botom];
+         smallRight = right/graphSkip;
+        smallBotom = botom/graphSkip;
+
+        Grid = new Node[smallRight][smallBotom];
 
         double radious = roboPos.getRadious();
 
@@ -42,11 +48,11 @@ public class SpecialGraph{
         }
 
        // nodes = new ArrayList<>(source.length*source[0].length);
-        for (int x = 0; x < source.length; x++) {
-            for (int y = 0; y < source[0].length; y++) {
+        for (int x = 0; x < smallRight; x++) {
+            for (int y = 0; y < smallBotom; y++) {
 
-                if (source[x][y]!= ObjectType.wall){
-                    Node current = new Node(x,y);
+                if (source[x*graphSkip][y*graphSkip]!= ObjectType.wall){
+                    Node current = new Node(x*graphSkip,y*graphSkip);
                    //nodes.add(current);
                     Grid[x][y] = current;
                 }
@@ -58,15 +64,15 @@ public class SpecialGraph{
             }
         }
 
-        for (int x = 0; x < source.length; x++) {
-            for (int y = 0; y < source[0].length; y++) {
+        for (int x = 0; x < smallRight; x+=1) {
+            for (int y = 0; y < smallBotom; y+=1) {
                 if (Grid[x][y] == null) continue;
 
 
 
-                for (int dx = x - 1; dx <= x + 1; dx++) {
-                    for (int dy = y - 1; dy <= y + 1; dy++) {
-                        if (dx < 0 || dx >= right || dy < 0 || dy >= botom) {
+                for (int dx = x - 1; dx <= x + 1; dx+=1) {
+                    for (int dy = y - 1; dy <= y + 1; dy+=1) {
+                        if (dx < 0 || dx >= smallRight || dy < 0 || dy >= smallBotom) {
                             continue;
 
                         }
@@ -74,8 +80,8 @@ public class SpecialGraph{
 
                         if (dx == x && dy == y) continue;
                         if (Grid[dx][dy] == null) continue;
-                        double dist = 1.;
-                        if (dx != x && dy != y) dist = Math.sqrt(2);
+                        double dist = graphSkip;
+                        if (dx != x && dy != y) dist = Math.sqrt(2*graphSkip*graphSkip);
 
                         Grid[x][y].addNeighbour(Grid[dx][dy],dist);
 
@@ -84,43 +90,58 @@ public class SpecialGraph{
             }
         }
 
+        astarGridRepresentation = new BufferedImage(smallRight,smallBotom,imageType);
+       if (showPathway) showPathway(source, imageType, roboPos, graphSkip);
 
-        astarGridRepresentation = new BufferedImage(right,botom,imageType);
-        for (int x = 0; x < right; x++) {
-            for (int y = 0; y < botom; y++) {
+
+    }
+
+    private void showPathway(ObjectType[][] source, int imageType, RoboPos roboPos, int graphSkip) {
+
+        for (int x = 0; x < smallRight; x++) {
+            for (int y = 0; y < smallBotom; y++) {
                 //if (ot[x][y]!=ObjectType.floor)astarGridRepresentation.setRGB(x,y,ot4[x][y].getColor());
                 //else {
 
-                    astarGridRepresentation.setRGB(x, y, source[x][y].getColor());
+                    astarGridRepresentation.setRGB(x, y, source[x*graphSkip][y*graphSkip].getColor());
                 //}
             }
 
         }
 
-        for (int x = 0; x < Grid.length; x++) {
-            for (int y = 0; y < Grid[0].length; y++) {
+        for (int x = 0; x < Grid.length; x+=1) {
+            for (int y = 0; y < Grid[0].length; y+=1) {
                 //if (ot[x][y]!=ObjectType.floor)astarGridRepresentation.setRGB(x,y,ot4[x][y].getColor());
                 //else {
                 Node n = Grid[x][y];
-                if (n != null) astarGridRepresentation.setRGB(n.x, n.y, Color.cyan.getRGB());
+                try {
+                    if (n != null) astarGridRepresentation.setRGB(n.x/graphSkip, n.y/graphSkip, Color.cyan.getRGB());
+                }catch (ArrayIndexOutOfBoundsException a){
+                    System.out.println("baa");
+                }
+
                 //}
             }
 
         }
 
-        int x = (int)roboPos.getX();
-        int y = (int)roboPos.getY();
-        double r = (int) roboPos.getRadious();
+        int x = (int)roboPos.getX()/graphSkip;
+        int y = (int)roboPos.getY()/graphSkip;
+        double r = (int) roboPos.getRadious()/graphSkip;
 
         for (int i = (int) (x-r); i <= x+r; i++) {
             for (int j = (int) (y-r); j < y+r; j++) {
+                if (i < 0 || i >= smallRight || j < 0 || j >= smallBotom) {
+                    continue;
+                }
+
                 if (Math.sqrt((i-x)*(i-x)+(j-y)*(j-y))<r)
                 astarGridRepresentation.setRGB(i, j, Color.BLACK.getRGB());
 
             }
         }
 
-        if (frame!=null) frame.setVisible(false);
+
         frame = new JFrame();
         frame.getContentPane().setLayout(new FlowLayout());
         frame.getContentPane().add(new JLabel(new ImageIcon(astarGridRepresentation)));
@@ -128,12 +149,10 @@ public class SpecialGraph{
 
         frame.pack();
         frame.setVisible(true);
-        
     }
-   
 
 
-    public  ArrayList<Node>  calculatePathway(RoboPos roboPos, int goalX, int goalY) {
+    public ArrayList<Node> calculatePathway(RoboPos roboPos, int goalX, int goalY, boolean showAstar) {
         ArrayList<Node> path = new ArrayList<>(30000);
 
         ArrayList<Node> unvisitedSet = new ArrayList<>(400000);
@@ -141,8 +160,8 @@ public class SpecialGraph{
         Set<Node> settledNodes = new HashSet<>();
         Set<Node> unsettledNodes = new HashSet<>();
 
-        int sX = (int) roboPos.getX();
-        int sY = (int) roboPos.getY();
+        int sX = (int) roboPos.getX()/graphSkip;
+        int sY = (int) roboPos.getY()/graphSkip;
 
 
 
@@ -150,8 +169,8 @@ public class SpecialGraph{
             return path;
         }
 
-        for (int x = 0; x <right; x++) {
-            for (int y = 0; y < botom; y++) {
+        for (int x = 0; x <smallRight; x++) {
+            for (int y = 0; y < smallBotom; y++) {
                 if (Grid[x][y] == null) continue;
                 if (x == sX && y == sY) Grid[x][y].setDistance(0);
                 else {
@@ -194,7 +213,7 @@ public class SpecialGraph{
                     }
                 }
 
-                astarGridRepresentation.setRGB(n.x, n.y, Color.RED.getRGB());
+               if(showAstar)  astarGridRepresentation.setRGB(n.x/graphSkip, n.y/graphSkip, Color.RED.getRGB());
                 settledNodes.add(n);
 
                 count++;
@@ -204,11 +223,13 @@ public class SpecialGraph{
 
 
         for (Node n : Grid[goalX][goalY].shortestPath){
-            astarGridRepresentation.setRGB(n.x, n.y, Color.GREEN.getRGB());
-            for (int dx = n.x - 2; dx <= n.x + 2; dx++) {
-                for (int dy = n.y - 2; dy <= n.y + 2; dy++) {
+            int nx = n.x / graphSkip;
+            int ny = n.y / graphSkip;
+            if(showAstar) astarGridRepresentation.setRGB(nx, ny, Color.GREEN.getRGB());
+            for (int dx = nx - 2; dx <= nx + 2; dx++) {
+                for (int dy = ny - 2; dy <= ny + 2; dy++) {
                     try {
-                        astarGridRepresentation.setRGB(dx, dy, Color.GREEN.getRGB());
+                        if(showAstar) astarGridRepresentation.setRGB(dx, dy, Color.GREEN.getRGB());
                     }catch (java.lang.ArrayIndexOutOfBoundsException f){
 
                     }
@@ -232,7 +253,7 @@ public class SpecialGraph{
         for (int i = (int) (x-r); i <= x+r; i++) {
             for (int j = (int) (y-r); j < y+r; j++) {
                 if (Math.sqrt((i-x)*(i-x)+(j-y)*(j-y))<r)
-                    astarGridRepresentation.setRGB(i, j, Color.BLACK.getRGB());
+                    astarGridRepresentation.setRGB(i/graphSkip, j/graphSkip, Color.BLACK.getRGB());
 
             }
         }
@@ -274,4 +295,11 @@ public class SpecialGraph{
             }
             return lowestDistanceNode;
         }
+
+    public void setVisible(boolean visible) {
+        if (frame!=null){
+            frame.setVisible(false);
+            frame=null;
+        }
+    }
 }
