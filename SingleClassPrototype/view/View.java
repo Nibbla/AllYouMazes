@@ -6,7 +6,9 @@ import SpecialSettingsEtc.Archivar;
 import SpecialSettingsEtc.Settings;
 import Model.Model;
 import Model.SpecialGraph;
+import Model.RoboPos;
 import javafx.util.Pair;
+
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -73,16 +75,16 @@ public class View implements IView {
     }
 
     @Override
-    public SpecialGraph getGraph(PixelObjectType[][] g) {
+    public SpecialGraph getGraph(ObjectType[][] g, int imageType, RoboPos roboPos) {
 
 
 
 
-        return new SpecialGraph(g);
+        return new SpecialGraph(g,imageType,roboPos);
     }
 
     @Override
-    public PixelObjectType[][] classify(BufferedImage bi) {
+    public ObjectType[][] classify(BufferedImage bi) {
         long tick1 = System.currentTimeMillis();
         int width = bi.getWidth();
         int heigth = bi.getHeight();
@@ -239,38 +241,39 @@ public class View implements IView {
         }
 
         //errode
-        //PixelObjectType[][] ot2 = new PixelObjectType[width2][heigth2];
+        ObjectType[][] ot4 = new ObjectType[width2][heigth2];
+        ot4 = extractObjectType(ot);
       // ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
        // ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
        // ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
 
 
-        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
-        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
-        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
-        ot = erode(ot,ObjectType.wall,ObjectType.floor,width2,heigth2);
-        ot = dialate(ot,ObjectType.wall,width2,heigth2);
-        ot = dialate(ot,ObjectType.wall,width2,heigth2);
-        ot = dialate(ot,ObjectType.wall,width2,heigth2);
-        ot = dialate(ot,ObjectType.wall,width2,heigth2);
+        ot4 = erode(ot4,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot4 = erode(ot4,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot4 = erode(ot4,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot4 = erode(ot4,ObjectType.wall,ObjectType.floor,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.wall,width2,heigth2);
 
-         ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
-         ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
-         ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
-        ot = dialate(ot,ObjectType.robot,width2,heigth2);
-        ot = dialate(ot,ObjectType.robot,width2,heigth2);
-        ot = dialate(ot,ObjectType.robot,width2,heigth2);
-        ot = dialate(ot,ObjectType.robot,width2,heigth2);
-        ot = dialate(ot,ObjectType.robot,width2,heigth2);
-        ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
-        ot = erode(ot,ObjectType.robot,ObjectType.floor,width2,heigth2);
+         ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
+         ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
+         ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.robot,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.robot,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.robot,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.robot,width2,heigth2);
+        ot4 = dialate(ot4,ObjectType.robot,width2,heigth2);
+        ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
+        ot4 = erode(ot4,ObjectType.robot,ObjectType.floor,width2,heigth2);
 
 
 
         BufferedImage b3 = new BufferedImage(b2.getWidth(),b2.getHeight(),b2.getType());
         for (int x = 0; x < b3.getWidth(); x++) {
             for (int y = 0; y < b3.getHeight(); y++) {
-                if (ot[x][y].getSelectedClass()!=ObjectType.floor)b3.setRGB(x,y,ot[x][y].getSelectedClass().getColor());
+                if (ot4[x][y]!=ObjectType.floor)b3.setRGB(x,y,ot4[x][y].getColor());
                 else {
                     b3.setRGB(x,y,b2.getRGB(x,y));
                 }
@@ -289,22 +292,35 @@ public class View implements IView {
         frame.pack();
         frame.setVisible(true);
 
-        return ot;
+        return ot4;
     }
 
-    private PixelObjectType[][] erode(PixelObjectType[][] ot2, ObjectType typeToErrode, ObjectType typeToReplace, int width2, int heigth2) {
-        PixelObjectType[][] ot3 = new PixelObjectType[ot2.length][ot2[0].length];
+    private ObjectType[][] extractObjectType(PixelObjectType[][] ot) {
+        ObjectType[][] ot3 = new ObjectType[ot.length][ot[0].length];
+
+        for (int i = 0; i < ot.length; i++) {
+            for (int j = 0; j < ot[0].length; j++) {
+                ot3[i][j] = ot[i][j].getSelectedClass();
+            }
+        }
+
+
+        return ot3;
+    }
+
+    private ObjectType[][] erode(ObjectType[][] ot2, ObjectType typeToErrode, ObjectType typeToReplace, int width2, int heigth2) {
+        ObjectType[][] ot3 = new ObjectType[ot2.length][ot2[0].length];
 
         for (int x = 0; x < width2; x+=1) {
             for (int y = 0; y < heigth2; y += 1) {
-                ot3[x][y] = ot2[x][y].copy();
-                if (ot2[x][y].getSelectedClass() != typeToErrode){
+                ot3[x][y] = ot2[x][y];
+                if (ot2[x][y] != typeToErrode){
                     continue;
                 }
                 ArrayList<Integer[]> l = getNeighbours(x,y,width2,heigth2);
                 for (Integer[] c : l){
-                    if (typeToErrode != ot2[c[0]][c[1]].getSelectedClass()){
-                        ot3[x][y].classifiedAs(typeToReplace);
+                    if (typeToErrode != ot2[c[0]][c[1]]){
+                        ot3[x][y] = typeToReplace;
                         break;
                     };
                 }
@@ -314,19 +330,19 @@ public class View implements IView {
         return  ot3;
     }
 
-    private PixelObjectType[][] dialate(PixelObjectType[][] ot2, ObjectType typeToFill, int width2, int heigth2) {
-        PixelObjectType[][] ot3 = new PixelObjectType[ot2.length][ot2[0].length];
+    public static ObjectType[][] dialate(ObjectType[][] ot2, ObjectType typeToFill, int width2, int heigth2) {
+        ObjectType[][] ot3 = new ObjectType[ot2.length][ot2[0].length];
 
         for (int x = 0; x < width2; x+=1) {
             for (int y = 0; y < heigth2; y += 1) {
-                ot3[x][y] = ot2[x][y].copy();
-                if (ot2[x][y].getSelectedClass() == typeToFill){
+                ot3[x][y] = ot2[x][y];
+                if (ot2[x][y] == typeToFill){
                     continue;
                 }
                 ArrayList<Integer[]> l = getNeighbours(x,y,width2,heigth2);
                 for (Integer[] c : l){
-                    if (typeToFill == ot2[c[0]][c[1]].getSelectedClass()){
-                        ot3[x][y].classifiedAs(typeToFill);
+                    if (typeToFill == ot2[c[0]][c[1]]){
+                        ot3[x][y]=typeToFill;
                         break;
                     };
                 }
@@ -336,7 +352,7 @@ public class View implements IView {
         return  ot3;
     }
 
-    private ArrayList<Integer[]> getNeighbours(int x, int y, int width2, int heigth2) {
+    private static ArrayList<Integer[]> getNeighbours(int x, int y, int width2, int heigth2) {
         ArrayList<Integer[]> neighbours = new ArrayList<>(8);
         if (x-1>=0&&y-1>=0) neighbours.add(new Integer[]{x-1,y-1});
         if (x-1>=0&&y>=0) neighbours.add(new Integer[]{x-1,y});
@@ -384,13 +400,13 @@ public class View implements IView {
         Archivar.shout("Value at " + x + "  " + y + " is R:" + valueR + " G:" + valueG + " B:" + valueB);
     }
 
-    public Pair<Double, Double> getRobotCenter(PixelObjectType[][] m2, int numberOfPixelsToSkip) {
+    public RoboPos getRobotCenter(ObjectType[][] m2, int numberOfPixelsToSkip) {
         ArrayList<ArrayList<Pair<Integer, Integer>>> clusters = new ArrayList<>();
 
         //Checking every pixel takes way too much computation time, I tested with skipping 50, works fine.
         for (int i = 0; i < m2.length; i+=numberOfPixelsToSkip) {
             for (int j = 0; j < m2[i].length; j+=numberOfPixelsToSkip) {
-                if (m2[i][j].getSelectedClass().name().equals("robot")) {
+                if (m2[i][j]== ObjectType.robot) {
 
                     for (int k = 0; k < clusters.size(); k++) {
                         ArrayList<Pair<Integer, Integer>> curCluster = clusters.get(k);
@@ -406,7 +422,7 @@ public class View implements IView {
                     //Flood fill, also making sure we don't get into loops
                     while (!s.isEmpty()) {
                         Pair<Integer, Integer> pair = s.pop();
-                        if (m2[pair.getKey()][pair.getValue()].getSelectedClass().name().equals("robot") && !cluster.contains(pair)) {
+                        if (m2[pair.getKey()][pair.getValue()]== ObjectType.robot && !cluster.contains(pair)) {
                             //System.out.println(i + ":" + j + " " + s.size());
                             cluster.add(pair);
 
@@ -449,11 +465,11 @@ public class View implements IView {
 
         double x = xSum / largestCluster.size();
         double y = ySum / largestCluster.size();
-        return new Pair(x, y);
+        return new RoboPos(x, y,Math.sqrt(largestCluster.size())*1.1284*0.5);
     }
 
     @Override
-    public PixelObjectType[][] classify() {
+    public ObjectType[][] classify() {
         return classify(this.getCurrentShot());
     }
 

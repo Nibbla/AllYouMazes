@@ -32,15 +32,29 @@ public class PixelObjectType {
         if (red/green>1.1) wallility+=1;
         if (red/blue>1.3) wallility+=1;
         if (red>165) wallility+=1;
+        if (red>200) wallility+=2;
+        if (green>200) wallility+=2;
+        if (blue>200) wallility+=2;
+
 
         if (red/green<1.2&&red/green>0.8) floorility+=1;
         if (green/blue<1.2&&green/blue>0.8) floorility+=1;
         if (blue/green<1.2&&blue/green>0.8) floorility+=1;
+        if (red/green<1.1&&red/green>0.9) floorility+=1;
+        if (green/blue<1.1&&green/blue>0.9) floorility+=1;
+        if (blue/green<1.1&&blue/green>0.9) floorility+=1;
 
 
-        if (green/red>1.2) robotility+=2;
-        if (green/blue>1.1) robotility+=1;
+        //if (green/blue<1.1&&green/blue>0.9) floorility+=1;
+        //if (blue/green<1.1&&blue/green>0.9) floorility+=1;
 
+
+        if (green/red>1.15) robotility+=2;
+        if (green/blue>1.15) robotility+=2;
+        //if (green/red>1.25) robotility+=1;
+        //if (green/blue>1.25) robotility+=1;
+        if (green>100&&green<200) robotility+=2;
+        if (green<70) robotility-=1;
 
         // wallility = wc[0] * red + wc[1] * green + wc[2] * blue;
         // floorility = wc[3] * red + wc[4] * green + wc[5] * blue;

@@ -2,13 +2,17 @@ import Control.RobotControl;
 import Interfaces.*;
 import Model.Model;
 import SpecialSettingsEtc.Archivar;
+import view.PixelObjectType;
 import Model.Path;
 import Model.SpecialGraph;
 import view.View;
 import javafx.util.Pair;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.Random;
+import java.util.Stack;
+import Model.RoboPos;
 
 
 /** This class defines the basic structure of our program
@@ -82,23 +86,24 @@ public class Modul {
 
             BufferedImage bi = view.getCurrentShot();
 
-            view.PixelObjectType[][] m2 = view.classify(bi);
+            ObjectType[][] m2 = view.classify(bi);
 
             //Get robot pos
 
-            Pair<Double, Double> robotPos = view.getRobotCenter(m2, 50);
-            System.out.println("Robot position is " + robotPos.getKey() + ":" + robotPos.getValue());
+            RoboPos robotPos = view.getRobotCenter(m2, 50);
+            System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
 
-            SpecialGraph g = view.getGraph(m2);
-            g.calculatePathway(robotPos);
+            SpecialGraph g = view.getGraph(m2,bi.getType(),robotPos);
+            g.calculatePathway(robotPos,0,0);
            // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();
-           //translateIntoCommands(p);
+           // translateIntoCommands(p);
             
             long loopEnd = System.currentTimeMillis();
             double timeHappend = (loopEnd - loopStart)/1000.;
             Archivar.shout("Loop: "+ loop + " took " + timeHappend + " seconds to complete");
+            break;
         }
 
     }

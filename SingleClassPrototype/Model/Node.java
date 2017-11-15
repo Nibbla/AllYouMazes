@@ -43,6 +43,7 @@ public class Node{
     }
 
     public void setShortestPath(LinkedList<Node> shortestPath) {
+        this.shortestPath = shortestPath;
     }
 
     public Map<Node, Double> getAdjacentNodes() {
