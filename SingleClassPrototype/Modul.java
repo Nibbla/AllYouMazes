@@ -5,7 +5,7 @@ import Model.Model;
 import SpecialSettingsEtc.Archivar;
 import SpecialSettingsEtc.Settings;
 import view.PixelObjectType;
-import Model.Path;
+import Model.*;
 import Model.SpecialGraph;
 import view.View;
 import javafx.util.Pair;
@@ -81,6 +81,8 @@ public class Modul {
     private void mainLoop() {
         running = true;
         int loop = -1;
+        RoboPos lastPos = null;
+
         while (running){
             loop++;
             long loopStart = System.currentTimeMillis();
@@ -100,8 +102,18 @@ public class Modul {
             RoboPos robotPos = view.getRobotCenter(m2, 1);
             System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
             if (g != null) g.setVisible(false);
-             g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
-            g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
+            g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
+            ArrayList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
+
+
+            if (lastPos == null){
+                control.moveRelative(0);
+
+            }else {
+                double direction = Math.atan2(robotPos.getY()-lastPos.getY(),robotPos.getX()-lastPos.getX());
+                control.sendCommand(m2.length,m2[0].length,robotPos,direction,path);
+            }
+            lastPos = robotPos;
            // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();
