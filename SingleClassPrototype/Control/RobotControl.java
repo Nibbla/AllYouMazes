@@ -31,6 +31,9 @@ public class RobotControl implements IControl {
     private Process initRosProcess;
     private Process motorSpeedProcess;
 
+    // Implementation of factory pattern
+    public static RobotControl factoryControl = new RobotControl();
+
     /**
      * Initialize an Object of type RobotControl.
      * <p>
@@ -38,6 +41,15 @@ public class RobotControl implements IControl {
      */
     public RobotControl() {
         this.initProcessBuilder();
+    }
+
+    /**
+     * Implementation of factory pattern
+     * @return instance of RobotControl to be reused
+     * @throws CloneNotSupportedException
+     */
+    public RobotControl getInstance() throws CloneNotSupportedException {
+        return (RobotControl) factoryControl.clone();
     }
 
     /**
@@ -127,14 +139,21 @@ public class RobotControl implements IControl {
      *
      * @throws *InterruptedException because there is a Thread.sleep() between the commands.
      */
-    public void testCommands() throws InterruptedException {
-        this.moveStraight(1);
-        Thread.sleep(3000);
-        this.stop();
-        Thread.sleep(3000);
-        this.rotate(1);
-        Thread.sleep(3000);
-        this.stop();
+    @Override
+    public void testCommands(){
+        /*try {
+            this.moveStraight(1);
+            Thread.sleep(3000);
+            this.stop();
+            Thread.sleep(3000);
+            this.rotate(1);
+            Thread.sleep(3000);
+            this.stop();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }*/
+
+        System.out.println("test");
     }
 
     /**
