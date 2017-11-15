@@ -11,11 +11,11 @@ import java.util.Map;
  */
 public class RobotControl implements IControl {
 
-    // Use this to dynamically change to another ROS-Version, i.e. Kinetic. This has not been tested yet.
-    private final String ROSversion = "indigo";
+    // Use this to dynamically change to another ROS-Version, i.e. Kinetic.
+    private final String ROSversion = "kinetic";
 
     // Replace this with whatever username is valid for the current System.
-    private final String username = "eric";
+    private final String username = "pi";
 
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
     private final int startUpSeconds = 20;
@@ -125,7 +125,7 @@ public class RobotControl implements IControl {
      * 3) rotate counterclockwise with speed 1 (see below) for 3 seconds
      * 4) stop.
      *
-     * @throws InterruptedException because there is a Thread.sleep() between the commands.
+     * @throws *InterruptedException because there is a Thread.sleep() between the commands.
      */
     public void testCommands() throws InterruptedException {
         this.moveStraight(1);
@@ -194,7 +194,6 @@ public class RobotControl implements IControl {
     /**
      * This is used to prepare the rostopic process with a linear and angular speed.
      * <p>
-     * TODO: Figure out what 1 means in terms of m/s or cm/s. According to the manual a linear speed of 1 refers to 1m/s when using a turtlebot. Since we are not using a turtlebot these values need to be estimated by performing small tests like issuing a certain speed X for Y seconds and measuring the distance that to robot covered. Same for the angular speed in terms of degree/s.
      *
      * @param linear  a linear speed. a positive value is for forward, a negative value is for backward.
      * @param angular an anguar speed. a positive value is for counterclockwise, a negative value for clockwise.
