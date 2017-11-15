@@ -12,7 +12,7 @@ public class Tangential {
         return coss[phi];
     }
 
-    public enum Direction {forward(1.,1.),backward(-1.,-1.),turnLeftForward(0.75,1.),turnRightForward(1.,0.75),turnLeftBackward(-0.75,-1),TurnRightBackward(-1.,-0.75),RotateLeft(-1.,1.),RotateRight(1.,-1.);
+    public enum Direction {forward(1.,0),backward(-1.,0),turnLeftForward(1.,1.),turnRightForward(1.,-1.),turnLeftBackward(-1,1),TurnRightBackward(-1.,-1),RotateLeft(0,1.),RotateRight(0,-1.);
 
 
         public final double[] powerLevel;

@@ -4,6 +4,7 @@ import Interfaces.*;
 import Model.Model;
 import SpecialSettingsEtc.Archivar;
 import SpecialSettingsEtc.Settings;
+import SpecialSettingsEtc.Tangential;
 import view.PixelObjectType;
 import Model.*;
 import Model.SpecialGraph;
@@ -107,7 +108,7 @@ public class Modul {
 
 
             if (lastPos == null){
-                control.moveRelative(0);
+                control.move(Tangential.Direction.forward);
 
             }else {
                 double direction = Math.atan2(robotPos.getY()-lastPos.getY(),robotPos.getX()-lastPos.getX());

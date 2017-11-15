@@ -1,10 +1,12 @@
 package Control;
 
 import Interfaces.IControl;
+import Model.Node;
 import Model.Path;
 import Model.RoboPos;
 import SpecialSettingsEtc.Tangential;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 /**
@@ -82,42 +84,6 @@ public class RobotControl implements IControl {
     }
 
     /**
-     * TODO: make use of paths.
-     *
-     * @param pathway
-     * @return
-     */
-    @Override
-    public boolean setPath(Path pathway) {
-
-        return false;
-    }
-
-    /**
-     * TODO: figure out a way to translate a path into moves while still using a closed-loop approach.
-     *
-     * @param pathway
-     * @return
-     */
-    @Override
-    public boolean move(Path pathway) {
-
-        return false;
-    }
-
-    /**
-     * TODO: what was this designed for? moving to a coordinate or directly setting the speed? In case of the later respective methods are already implemented.
-     *
-     * @param moveDouble
-     * @return
-     */
-    @Override
-    public boolean move(double[] moveDouble) {
-
-        return false;
-    }
-
-    /**
      * TODO: translate a direction to a linear and angular speed so it can use the implemented methods.
      *
      * @param Direction
@@ -158,7 +124,7 @@ public class RobotControl implements IControl {
     }
 
     @Override
-    public boolean sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, Path pathway){
+    public boolean sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, ArrayList<Node> pathway){
         return true;
     }
 
