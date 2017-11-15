@@ -1,17 +1,14 @@
-import Control.Control;
+import Control.RobotControl;
 import Interfaces.*;
 import Model.Model;
 import SpecialSettingsEtc.Archivar;
-import view.PixelObjectType;
 import Model.Path;
 import Model.SpecialGraph;
 import view.View;
 import javafx.util.Pair;
 
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.Stack;
 
 
 /** This class defines the basic structure of our program
@@ -19,7 +16,7 @@ import java.util.Stack;
  * view is responsible for processing the image stream and showing it on screen
  * model is responsible for converting the visual to the internal data model
  * and it creates pathways
- * Control then converts the path order in orders fors the robot.
+ * RobotControl then converts the path order in orders fors the robot.
  */
 public class Modul {
     private static Random rnd = new RandomCount();
@@ -28,7 +25,7 @@ public class Modul {
 
     private static View factoryView = new View();
     private static Model factoryModel = new Model(rnd);
-    private static Control factoryControl = new Control();
+    private static Control.RobotControl factoryControl = new RobotControl();
 
 
     private Thread processingThread;
@@ -39,7 +36,7 @@ public class Modul {
     private boolean running;
 
 
-    public Modul(View view , Model model, Control control) {
+    public Modul(View view , Model model, IControl control) {
         this.view = view;
         this.model = model;
         this.control = control;
@@ -49,7 +46,7 @@ public class Modul {
     public static void main(String[] args){
 
         try {
-            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl.getInstance());
+            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl);
 
             modul.setWorkmode(Workmode.CAMERAON,true);
             modul.setWorkmode(Workmode.KEYBOARDON, true);
@@ -97,7 +94,7 @@ public class Modul {
            // g.setStart(m.getRobotPosition());
            // g.setGoal(4f,200f);
            // Path p = g.calculatePathway();
-           // translateIntoCommands(p);
+           //translateIntoCommands(p);
             
             long loopEnd = System.currentTimeMillis();
             double timeHappend = (loopEnd - loopStart)/1000.;

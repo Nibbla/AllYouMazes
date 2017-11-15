@@ -7,9 +7,9 @@ import SpecialSettingsEtc.Tangential;
 import java.util.Map;
 
 /**
- * This class is used to control the epuck robot
+ * This class is used to Control the epuck robot
  */
-public class Control implements IControl {
+public class RobotControl implements IControl {
 
     // Use this to dynamically change to another ROS-Version, i.e. Kinetic. This has not been tested yet.
     private final String ROSversion = "indigo";
@@ -26,17 +26,17 @@ public class Control implements IControl {
     // The basic structure of a movement command. For more information check the ROS documentation.
     private final String[] movementCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/rostopic pub --once /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: 0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: 0.0}}\'"};
 
-    // These are used to spawn the processes that control the epuck.
+    // These are used to spawn the processes that Control the epuck.
     private ProcessBuilder processGenerator;
     private Process initRosProcess;
     private Process motorSpeedProcess;
 
     /**
-     * Initialize an Object of type Control.
+     * Initialize an Object of type RobotControl.
      * <p>
      * This will automatically set up the ProcessBuilder connected to it.
      */
-    public Control() {
+    public RobotControl() {
         this.initProcessBuilder();
     }
 

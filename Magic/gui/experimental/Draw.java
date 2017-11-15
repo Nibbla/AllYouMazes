@@ -1287,7 +1287,7 @@ public final class Draw implements ActionListener, MouseListener, MouseMotionLis
      * <p>
      * This method takes as an argument the keycode (corresponding to a physical key).
      * It can handle action keys (such as F1 and arrow keys) and modifier keys
-     * (such as shift and control).
+     * (such as shift and Control).
      * See {@link KeyEvent} for a description of key codes.
      *
      * @param  keycode the keycode to check

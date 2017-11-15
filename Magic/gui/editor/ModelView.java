@@ -422,7 +422,7 @@ public class ModelView extends JPanel {
         Action undoAction = new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("control c pressed");
+                System.out.println("Control c pressed");
                 if(selectedObject != null){
                     Polygon p = selectedObject.getPolygon();
                     p.npoints -= 1;
