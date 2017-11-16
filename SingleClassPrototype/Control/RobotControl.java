@@ -133,7 +133,7 @@ public class RobotControl implements IControl {
      * @param width represents the width of the observable area in px, currently unnused
      * @param height represents the height of the observable area in px, currently unused
      * @param currentPosition current position of the robot in the above specified grid
-     * @param currentRotation current rotation in degree, with 0° facing 'north'
+     * @param currentRotation current rotation in radians, with 0 facing 'north'
      * @param pathway next coordinates along the way to the goal
      */
     @Override
@@ -141,8 +141,8 @@ public class RobotControl implements IControl {
         Node nextGoal = pathway.get(0); // add check for next node in case we are close enough to the current one
 
         // probably the next few lines can be placed in another module
-        double desiredRotation = Math.toDegrees(Math.atan2(nextGoal.getY()-currentPosition.getY(),nextGoal.getX()-currentPosition.getX()));
-        double distance = (desiredRotation - currentRotation) % 360;
+        double desiredRotation = Math.atan2(nextGoal.getX()-currentPosition.getX(), -1 * (nextGoal.getY()-currentPosition.getY()));
+        double distance = (Math.toDegrees(desiredRotation) - Math.toDegrees(currentRotation)) % 360;
         if (distance < -180) {
             distance += 360;
         } else if (distance > 179) {

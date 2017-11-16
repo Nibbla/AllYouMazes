@@ -111,7 +111,7 @@ public class Modul {
                 control.move(Tangential.Direction.forward);
 
             }else {
-                double direction = Math.toDegrees(Math.atan2(robotPos.getY()-lastPos.getY(),robotPos.getX()-lastPos.getX()));
+                double direction = Math.atan2(robotPos.getX()-lastPos.getX(), -1 * (robotPos.getY()-lastPos.getY()));
                 control.sendCommand(m2.length,m2[0].length,robotPos,direction,path);
             }
             lastPos = robotPos;
