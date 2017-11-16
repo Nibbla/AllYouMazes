@@ -152,8 +152,8 @@ public class SpecialGraph{
     }
 
 
-    public ArrayList<Node> calculatePathway(RoboPos roboPos, int goalX, int goalY, boolean showAstar) {
-        ArrayList<Node> path = new ArrayList<>(30000);
+    public LinkedList<Node> calculatePathway(RoboPos roboPos, int goalX, int goalY, boolean showAstar) {
+
 
         ArrayList<Node> unvisitedSet = new ArrayList<>(400000);
 
@@ -166,7 +166,7 @@ public class SpecialGraph{
 
 
         if (Grid[sX][sY] == null || Grid[sX][sY] == null){
-            return path;
+            return null;
         }
 
         for (int x = 0; x <smallRight; x++) {
@@ -243,7 +243,7 @@ public class SpecialGraph{
         repaint(roboPos);
 
 
-        return path;
+        return Grid[goalX][goalY].shortestPath;
     }
 
     private void repaint(RoboPos roboPos) {

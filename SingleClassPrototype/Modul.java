@@ -14,6 +14,7 @@ import javafx.util.Pair;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Random;
 import java.util.Stack;
 import Model.RoboPos;
@@ -104,7 +105,7 @@ public class Modul {
             System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
             if (g != null) g.setVisible(false);
             g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
-            ArrayList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
+            LinkedList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
 
 
             if (lastPos == null){

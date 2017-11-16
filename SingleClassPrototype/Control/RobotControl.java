@@ -2,11 +2,10 @@ package Control;
 
 import Interfaces.IControl;
 import Model.Node;
-import Model.Path;
 import Model.RoboPos;
 import SpecialSettingsEtc.Tangential;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -129,15 +128,14 @@ public class RobotControl implements IControl {
 
     /**
      * Takes as input raw data from the Modul and processes it into a command for the epuck
-     *
-     * @param width represents the width of the observable area in px, currently unnused
+     *  @param width represents the width of the observable area in px, currently unnused
      * @param height represents the height of the observable area in px, currently unused
      * @param currentPosition current position of the robot in the above specified grid
      * @param currentRotation current rotation in radians, with 0 facing 'north'
      * @param pathway next coordinates along the way to the goal
      */
     @Override
-    public void sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, ArrayList<Node> pathway){
+    public void sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, LinkedList<Node> pathway){
         Node nextGoal = pathway.get(0); // add check for next node in case we are close enough to the current one
 
         // probably the next few lines can be placed in another module
