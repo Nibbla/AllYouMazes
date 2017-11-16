@@ -39,6 +39,9 @@ public class RobotControl implements IControl {
     // Values used for moving slowly either forward or angular
     private final double SLOWFORWARDSPEED = 0.5;
     private final double SLOWANGULARSPEED = 0.3;
+    private final double POSITIONERROR = 3;
+    private final double ROTATIONERROR = 3;
+
 
     /**
      * Initialize an Object of type RobotControl.
@@ -128,7 +131,7 @@ public class RobotControl implements IControl {
 
     /**
      * Takes as input raw data from the Modul and processes it into a command for the epuck
-     *  @param width represents the width of the observable area in px, currently unnused
+     * @param width represents the width of the observable area in px, currently unnused
      * @param height represents the height of the observable area in px, currently unused
      * @param currentPosition current position of the robot in the above specified grid
      * @param currentRotation current rotation in radians, with 0 facing 'north'
@@ -136,37 +139,64 @@ public class RobotControl implements IControl {
      */
     @Override
     public void sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, LinkedList<Node> pathway){
-        Node nextGoal = pathway.get(0); // add check for next node in case we are close enough to the current one
-
-        // probably the next few lines can be placed in another module
-        double desiredRotation = Math.atan2(nextGoal.getX()-currentPosition.getX(), -1 * (nextGoal.getY()-currentPosition.getY()));
-        double distance = (Math.toDegrees(desiredRotation) - Math.toDegrees(currentRotation)) % 360;
-        if (distance < -180) {
-            distance += 360;
-        } else if (distance > 179) {
-            distance -= 360;
-        }
-
-        try {
-            motorSpeedProcess.destroy(); // no need to check for ==null since the epuck was already previously moving
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        /**
+         * Initialization of some of the variables used in this method. They can probably be transferred as private fields for efficiency
+         */
+        double positionDistance = 0;
+        Node nextGoal = new Node(0,0);
+        boolean goalReached = false;
 
         double rotationCoefficient = 0;
         double linearCoefficient = 0;
 
-
-        if(Math.abs(distance) > 5){
-            if (distance > 0){
-                rotationCoefficient = -1;
+        /**
+         * get next node along the path. in case it's close enough (POSITIONERROR) take the next possible node.
+         */
+        do{
+            if(pathway.isEmpty()){
+                goalReached = true;
             } else {
-                rotationCoefficient = 1;
+                nextGoal = pathway.removeFirst();
+                positionDistance = Math.sqrt((Math.pow((currentPosition.getX() - nextGoal.getX()),2) + Math.pow((currentPosition.getY() - nextGoal.getY()),2)));
             }
-        } else {
-            linearCoefficient = 1;
+        }while(positionDistance < POSITIONERROR && !goalReached);
+
+        /**
+         * In case there are still nodes in the path determine if a rotation is necessary to face towards it, otherwise move straight.
+         */
+        if(!goalReached){
+            double desiredRotation = Math.atan2(nextGoal.getX()-currentPosition.getX(), -1 * (nextGoal.getY()-currentPosition.getY()));
+            double distance = (Math.toDegrees(desiredRotation) - Math.toDegrees(currentRotation)) % 360;
+
+            if (distance < -180) {
+                distance += 360;
+            } else if (distance > 179) {
+                distance -= 360;
+            }
+
+            if(Math.abs(distance) > ROTATIONERROR){
+                if (distance > 0){
+                    rotationCoefficient = -1;
+                } else {
+                    rotationCoefficient = 1;
+                }
+            } else {
+                linearCoefficient = 1;
+            }
         }
 
+        /**
+         * cancel the current movementcommand
+         */
+        try {
+            motorSpeedProcess.destroy();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        /**
+         * set and issue the new speed depending on the above findings, i.e. issue rotation or issue forward-movement
+         */
         setMotorSpeed(linearCoefficient * SLOWFORWARDSPEED, rotationCoefficient * SLOWANGULARSPEED);
         issueMotorSpeed();
     }
