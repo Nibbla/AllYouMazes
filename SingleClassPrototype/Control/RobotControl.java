@@ -21,7 +21,7 @@ public class RobotControl implements IControl {
     private final String username = "pi";
 
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
-    private final int startUpSeconds = 20;
+    private final int startUpSeconds = 10;
 
     // The basic structure of the startup command. The respective port and launchfile are specified here.
     private final String[] startCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/roslaunch -p 11311 -v --screen epuck_driver multi_epuck.launch"};
@@ -36,6 +36,10 @@ public class RobotControl implements IControl {
 
     // Implementation of factory pattern
     public static RobotControl factoryControl = new RobotControl();
+
+    // Values used for moving slowly either forward or angular
+    private final double SLOWFORWARDSPEED = 0.5;
+    private final double SLOWANGULARSPEED = 0.3;
 
     /**
      * Initialize an Object of type RobotControl.
@@ -84,15 +88,15 @@ public class RobotControl implements IControl {
     }
 
     /**
-     * TODO: translate a direction to a linear and angular speed so it can use the implemented methods.
+     * Takes as input a Tangential direction enum and makes the epuck move slowly into that direction
      *
      * @param Direction
      * @return
      */
     @Override
-    public boolean move(Tangential.Direction Direction) {
-
-        return false;
+    public void move(Tangential.Direction Direction) {
+        setMotorSpeed(Direction.linearSpeed * SLOWFORWARDSPEED, Direction.angularSpeed * SLOWANGULARSPEED);
+        issueMotorSpeed();
     }
 
     /**
@@ -123,9 +127,45 @@ public class RobotControl implements IControl {
         System.out.println("test");
     }
 
+    /**
+     * Takes as input raw data from the Modul and processes it into a command for the epuck
+     *
+     * @param width represents the width of the observable area in px, currently unnused
+     * @param height represents the height of the observable area in px, currently unused
+     * @param currentPosition current position of the robot in the above specified grid
+     * @param currentRotation current rotation in degree, with 0° facing 'north'
+     * @param pathway next coordinates along the way to the goal
+     */
     @Override
-    public boolean sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, ArrayList<Node> pathway){
-        return true;
+    public void sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, ArrayList<Node> pathway){
+        Node nextGoal = pathway.get(0); // add check for next node in case we are close enough to the current one
+
+        // probably the next few lines can be placed in another module
+        double desiredRotation = Math.toDegrees(Math.atan2(nextGoal.getY()-currentPosition.getY(),nextGoal.getX()-currentPosition.getX()));
+        double distance = (desiredRotation - currentRotation) % 360;
+        if (distance < -180) {
+            distance += 360;
+        } else if (distance > 179) {
+            distance -= 360;
+        }
+
+        motorSpeedProcess.destroy(); // no need to check for ==null since the epuck was already previously moving
+        double rotationCoefficient = 0;
+        double linearCoefficient = 0;
+
+
+        if(Math.abs(distance) > 5){
+            if (distance > 0){
+                rotationCoefficient = 1;
+            } else {
+                rotationCoefficient = -1;
+            }
+        } else {
+            linearCoefficient = 1;
+        }
+
+        setMotorSpeed(linearCoefficient * SLOWFORWARDSPEED, rotationCoefficient * SLOWANGULARSPEED);
+        issueMotorSpeed();
     }
 
     /**

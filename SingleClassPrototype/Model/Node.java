@@ -49,4 +49,12 @@ public class Node{
     public Map<Node, Double> getAdjacentNodes() {
         return neighbours;
     }
+
+    public int getX() {
+        return this.x;
+    }
+
+    public int getY() {
+        return this.y;
+    }
 }

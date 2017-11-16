@@ -111,7 +111,7 @@ public class Modul {
                 control.move(Tangential.Direction.forward);
 
             }else {
-                double direction = Math.atan2(robotPos.getY()-lastPos.getY(),robotPos.getX()-lastPos.getX());
+                double direction = Math.toDegrees(Math.atan2(robotPos.getY()-lastPos.getY(),robotPos.getX()-lastPos.getX()));
                 control.sendCommand(m2.length,m2[0].length,robotPos,direction,path);
             }
             lastPos = robotPos;
@@ -140,6 +140,8 @@ public class Modul {
 
 
     private void start(boolean b) {
+        control.startConnection();
+
         stopProcessingThread();
         if (!b) return;
 
