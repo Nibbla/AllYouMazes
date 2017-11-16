@@ -34,7 +34,7 @@ public class RobotControl implements IControl {
     private Process motorSpeedProcess;
 
     // Implementation of factory pattern
-    public static RobotControl factoryControl = new RobotControl();
+    private static RobotControl factoryControl = new RobotControl();
 
     // Values used for moving slowly either forward or angular
     private final double SLOWFORWARDSPEED = 0.5;
@@ -147,7 +147,12 @@ public class RobotControl implements IControl {
             distance -= 360;
         }
 
-        motorSpeedProcess.destroy(); // no need to check for ==null since the epuck was already previously moving
+        try {
+            motorSpeedProcess.destroy(); // no need to check for ==null since the epuck was already previously moving
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         double rotationCoefficient = 0;
         double linearCoefficient = 0;
 
