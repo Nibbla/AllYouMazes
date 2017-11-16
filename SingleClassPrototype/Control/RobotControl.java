@@ -156,9 +156,9 @@ public class RobotControl implements IControl {
 
         if(Math.abs(distance) > 5){
             if (distance > 0){
-                rotationCoefficient = 1;
-            } else {
                 rotationCoefficient = -1;
+            } else {
+                rotationCoefficient = 1;
             }
         } else {
             linearCoefficient = 1;
