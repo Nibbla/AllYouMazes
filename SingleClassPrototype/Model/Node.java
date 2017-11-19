@@ -60,6 +60,6 @@ public class Node{
     }
 
     public String toString() {
-        return "[x: " + x + ", y: " + y + "]";
+        return "[x: " + y + ", y: " + x + "]";
     }
 }
