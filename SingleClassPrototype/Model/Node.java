@@ -1,8 +1,9 @@
 package Model;
 
-import Interfaces.ObjectType;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * Created by Nibbla on 26.09.2017.
@@ -56,5 +57,9 @@ public class Node{
 
     public int getY() {
         return this.y;
+    }
+
+    public String toString() {
+        return "[x: " + x + ", y: " + y + "]";
     }
 }
