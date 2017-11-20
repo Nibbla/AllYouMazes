@@ -36,6 +36,18 @@ public class TraversalHandler {
         firstE = true;
     }
 
+    public void step() {
+        i++;
+    }
+
+    public int getIndex() {
+        return i;
+    }
+
+    public Node getNode(int index) {
+        return path.get(index);
+    }
+
     public String getState() {
         return state.name();
     }
@@ -44,42 +56,6 @@ public class TraversalHandler {
         this.state = state;
     }
 
-    //update agent and retrieve next location
-    public Node getNext(Node agent) {
-        this.agent = agent;
-
-        if (path.isEmpty()) {
-            System.out.println("PATH IS EMPTY!");
-            return null;
-        }
-        
-        if (i >= path.size()) {
-            System.out.println("I OUT OF BOUNDS");
-        }
-
-        //Edit with actual agents
-        if (!checkCollission(null)) {
-            if (firstT) {
-                setState(TraversalStatus.TRAVERSING);
-            } else if (state == TraversalStatus.EVADING) {
-                //Shit hit the fan, this means we don't need to evade anymore, but we need to construct the shortest path anew
-                //need SpecialGraph for this? To be implemented
-
-                setState(TraversalStatus.TRAVERSING);
-            }
-
-            Node n = path.get(i);
-            i++;
-            return n;
-        } else {
-            return collissionAvoidance(null);
-        }
-
-        //Another option if we don't care about the path we already travelled:
-        //Node n = path.get(0);
-        //path.remove(0);
-        //return n;
-    }
     
     //IMPLEMENT EQUALS METHOD FOR NODE CLASS IF WE USE THIS FOR AGENT
     public boolean checkCollission(LinkedList<Node> agents) {
