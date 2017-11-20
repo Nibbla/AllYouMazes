@@ -5,6 +5,9 @@ import Model.Model;
 import SpecialSettingsEtc.Archivar;
 import SpecialSettingsEtc.Settings;
 import SpecialSettingsEtc.Tangential;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
 import view.PixelObjectType;
 import Model.*;
 import Model.SpecialGraph;
@@ -93,27 +96,51 @@ public class Modul {
 
             //https://www.youtube.com/watch?v=bjSpO2B6G4s
 
-            //getImage
+            //update the image
+
+            try {
+                ProcessBuilder pb = new ProcessBuilder("raspistill","-w", "1100", "-h", "1800","-vf","-hf", "-q", "50","-t", "3" ,"-n","-o", Settings.getInputPath());
+                pb.start();
+                Thread.sleep(3000);
+            }catch (Exception e){
+                System.out.println("error taking picture: " + e);
+            }
+
+
+            /*
+
+            //previous classifier approach below
 
             BufferedImage bi = view.getCurrentShot();
-
             ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED));
-
-            //Get robot pos
-
             RoboPos robotPos = view.getRobotCenter(m2, 1);
             System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
             if (g != null) g.setVisible(false);
             g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
             LinkedList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
 
+            //previous classifier approach above
+
+            */
+
+
+
+            //openCV approach below
+
+            Mat test = ComputerVision.preprocess(Settings.getInputPath());
+            ArrayList<Integer> positions= ComputerVision.retrieveRobot(test);
+            RoboPos robotPos = new RoboPos(positions.get(0), positions.get(1), positions.get(2));
+            MatOfPoint contour = ComputerVision.retrieveContour(test, positions);
+            LinkedList<Node> path = ComputerVision.retrievePath(test, new MatOfPoint2f(contour.toArray()), positions.get(0), positions.get(1), 10);
+
+            //openCV approach above
+
 
             if (lastPos == null){
                 control.move(Tangential.Direction.forward);
-
             }else {
                 double direction = Math.atan2(robotPos.getX()-lastPos.getX(), -1 * (robotPos.getY()-lastPos.getY()));
-                control.sendCommand(m2.length,m2[0].length,robotPos,direction,path);
+                control.sendCommand(1100,1800,robotPos,direction,path);
             }
             lastPos = robotPos;
            // g.setStart(m.getRobotPosition());
@@ -141,11 +168,11 @@ public class Modul {
 
 
     private void start(boolean b) {
-        control.startConnection();
 
         stopProcessingThread();
         if (!b) return;
 
+        control.startConnection();
 
         processingThread = new Thread() {
 

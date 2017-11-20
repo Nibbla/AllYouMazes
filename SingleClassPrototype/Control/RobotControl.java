@@ -177,22 +177,16 @@ public class RobotControl implements IControl {
             if(Math.abs(distance) > ROTATIONERROR){
                 if (distance > 0){
                     rotationCoefficient = -1;
+                    linearCoefficient = 1;
                 } else {
                     rotationCoefficient = 1;
+                    linearCoefficient = 1;
                 }
             } else {
                 linearCoefficient = 1;
             }
         }
 
-        /**
-         * cancel the current movementcommand
-         */
-        try {
-            motorSpeedProcess.destroy();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
         /**
          * set and issue the new speed depending on the above findings, i.e. issue rotation or issue forward-movement
