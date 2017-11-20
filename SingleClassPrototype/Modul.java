@@ -128,10 +128,10 @@ public class Modul {
             //openCV approach below
 
             Mat test = ComputerVision.preprocess(Settings.getInputPath());
-            ArrayList<Integer> positions= ComputerVision.retrieveRobot(test);
+            ArrayList<Integer> positions= ComputerVision.retrieveRobot(test, 0, 0);
             RoboPos robotPos = new RoboPos(positions.get(0), positions.get(1), positions.get(2));
             MatOfPoint contour = ComputerVision.retrieveContour(test, positions);
-            LinkedList<Node> path = ComputerVision.retrievePath(test, new MatOfPoint2f(contour.toArray()), positions.get(0), positions.get(1), 10);
+            LinkedList<Node> path = ComputerVision.retrievePath(test, new MatOfPoint2f(contour.toArray()), positions, 10);
 
             //openCV approach above
 
@@ -140,7 +140,7 @@ public class Modul {
                 control.move(Tangential.Direction.forward);
             }else {
                 double direction = Math.atan2(robotPos.getX()-lastPos.getX(), -1 * (robotPos.getY()-lastPos.getY()));
-                control.sendCommand(1100,1800,robotPos,direction,path);
+                //control.sendCommand(1100,1800,robotPos,direction,path);
             }
             lastPos = robotPos;
            // g.setStart(m.getRobotPosition());

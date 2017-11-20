@@ -7,11 +7,14 @@ package Model;
 import SpecialSettingsEtc.Settings;
 import Util.ImgWindow;
 import org.opencv.core.*;
+import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 //Everything in the Util package is copied from
 //https://github.com/badlogic/opencv-fun/tree/master/src/pool/utils
@@ -42,6 +45,7 @@ public class ComputerVision {
 
     //Perhaps do scaling and grayscaling in separate method
 
+    public final static boolean DEBUG = true;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
@@ -66,9 +70,34 @@ public class ComputerVision {
     }
 
     /*
+    Returns x, y and r(adius) of the robot based on previous location
+    need to translate to correct x,y,r
+    */
+    public static ArrayList<Integer> retrieveRobot(Mat gray, ArrayList<Integer> previousLoc) {
+        //Consider corner cases!
+
+        int previousX = previousLoc.get(0);
+        int previousY = previousLoc.get(1);
+        int previousR = previousLoc.get(2);
+
+        int searchSpace = previousR*2;
+
+        Rect rect = new Rect(new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace));
+        Mat cropped = gray.submat(rect);
+
+        if (ComputerVision.DEBUG) {
+            Imgproc.rectangle(gray, new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace), new Scalar(255), 1);
+            Imgproc.rectangle(gray, new Point(0, 0), new Point(searchSpace*2, searchSpace*2), new Scalar(255), 1);
+            ImgWindow.newWindow(gray);
+        }
+
+        return retrieveRobot(cropped, previousX-searchSpace, previousY-searchSpace);
+    }
+
+    /*
     Returns x, y and r(adius) of the robot
      */
-    public static ArrayList<Integer> retrieveRobot(Mat gray) {
+    public static ArrayList<Integer> retrieveRobot(Mat gray, int addX, int addY) {
         Mat circles = null;
 
         //dp can give some problems, might need to cycle through (did this for now)
@@ -104,23 +133,32 @@ public class ComputerVision {
         }
 
         ArrayList<Integer> result = new ArrayList<Integer>();
-        result.add((int) circles.get(0, 0)[0] + 1);
-        result.add((int) circles.get(0, 0)[1] + 1);
-        result.add((int) circles.get(0, 0)[2] + 1);
 
-//        ImgWindow wnd = ImgWindow.newWindow(gray);
-//
-//        while(!wnd.closed) {
-//            wnd.setImage(gray);
-//            Graphics2D g = wnd.begin();
-//            g.setColor(Color.MAGENTA);
-//            g.setStroke(new BasicStroke(3));
-//            for(int i = 0; i < circles.cols(); i++) {
-//                double[] circle = circles.get(0, i);
-//                g.drawOval((int)circle[0] - (int)circle[2], (int)circle[1] - (int)circle[2], (int)circle[2] * 2, (int)circle[2] * 2);
-//            }
-//            wnd.end();
-//        }
+        if (addX == 0 && addY == 0) {
+            result.add((int) circles.get(0, 0)[0] + 1);
+            result.add((int) circles.get(0, 0)[1] + 1);
+            result.add((int) circles.get(0, 0)[2] + 1);
+        } else {
+            result.add((int) circles.get(0, 0)[0] + addX + 2);
+            result.add((int) circles.get(0, 0)[1] + addY + 2);
+            result.add((int) circles.get(0, 0)[2] + 1);
+        }
+
+        if (ComputerVision.DEBUG) {
+            ImgWindow wnd = ImgWindow.newWindow(gray);
+
+            while (!wnd.closed) {
+                wnd.setImage(gray);
+                Graphics2D g = wnd.begin();
+                g.setColor(Color.MAGENTA);
+                g.setStroke(new BasicStroke(3));
+                for (int i = 0; i < circles.cols(); i++) {
+                    double[] circle = circles.get(0, i);
+                    g.drawOval((int) circle[0] - (int) circle[2], (int) circle[1] - (int) circle[2], (int) circle[2] * 2, (int) circle[2] * 2);
+                }
+                wnd.end();
+            }
+        }
 
         return result;
     }
@@ -161,7 +199,9 @@ public class ComputerVision {
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierarchy = new Mat();
         Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        Imgproc.drawContours(gray, contours, -1, new Scalar(0, 255, 0), 2);
+        if (ComputerVision.DEBUG) {
+            Imgproc.drawContours(gray, contours, -1, new Scalar(0, 255, 0), 2);
+        }
 
         double size = -1;
         MatOfPoint contour = null;
@@ -177,7 +217,9 @@ public class ComputerVision {
             return null;
         }
 
-        //ImgWindow.newWindow(gray);
+        if (ComputerVision.DEBUG) {
+            ImgWindow.newWindow(gray);
+        }
 
         return contour;
     }
@@ -348,11 +390,13 @@ public class ComputerVision {
 
         long start = System.currentTimeMillis();
         Mat gray = preprocess(Settings.getInputPath());
-        ArrayList<Integer> robotLoc = retrieveRobot(gray);
-        MatOfPoint contour = retrieveContour(gray, robotLoc);
-        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
+        ArrayList<Integer> robotLoc = retrieveRobot(gray, 0, 0);
+        System.out.println(robotLoc);
+        System.out.println(retrieveRobot(gray, robotLoc));
+        //MatOfPoint contour = retrieveContour(gray, robotLoc);
+        //retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
         long end = System.currentTimeMillis();
-        System.out.println("CV took " + (end - start) + "ms");
+        //System.out.println("CV took " + (end - start) + "ms");
     }
 
     //Robot radius

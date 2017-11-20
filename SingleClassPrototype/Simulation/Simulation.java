@@ -38,7 +38,7 @@ public class Simulation {
     public Simulation(String picture) {
         this.pathToPicture = picture;
         Mat gray = ComputerVision.preprocess(picture);
-        this.robotCurrentDetails = ComputerVision.retrieveRobot(gray);
+        this.robotCurrentDetails = ComputerVision.retrieveRobot(gray, 0, 0);
         this.contour = ComputerVision.retrieveContour(gray, robotCurrentDetails);
         LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotCurrentDetails, ComputerVision.STEP_SIZE);
         this.traversalHandler = new TraversalHandler(shortestPath, new Node(robotCurrentDetails.get(0), robotCurrentDetails.get(1)));
@@ -70,7 +70,7 @@ public class Simulation {
             @Override
             public void run() {
                 ArrayList<Integer> oldLocation = robotCurrentDetails;
-                robotCurrentDetails = ComputerVision.retrieveRobot(ComputerVision.preprocess("C:\\Users\\Jyr\\IdeaProjects\\Mazes1\\SingleClassPrototype\\Input\\latestScreen.jpg"));
+                robotCurrentDetails = ComputerVision.retrieveRobot(ComputerVision.preprocess(Settings.getInputPath()), 0, 0);
                 if (oldLocation.equals(robotCurrentDetails)) System.out.println("No change / can't detect");
 
                 int x = robotCurrentDetails.get(0);
