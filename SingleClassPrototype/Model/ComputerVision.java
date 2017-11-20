@@ -4,6 +4,8 @@ package Model;
  * Created by Jordy on 19-11-2017.
  */
 
+import SpecialSettingsEtc.Settings;
+import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.CLAHE;
@@ -47,7 +49,7 @@ public class ComputerVision {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    private static Mat preprocess(String picture) {
+    public static Mat preprocess(String picture) {
         Mat img = Imgcodecs.imread(picture);
 
         int w = img.width();
@@ -285,11 +287,11 @@ public class ComputerVision {
         }
 
         LinkedList<Node> path = grid[0][0].shortestPath;
-//        for (Node no: path) {
-//            Imgproc.circle(gray, new Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
-//        }
-//
-//        ImgWindow.newWindow(gray);
+        for (Node no: path) {
+            Imgproc.circle(gray, new Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
+        }
+
+        ImgWindow.newWindow(gray);
 
         return path;
     }
@@ -333,10 +335,11 @@ public class ComputerVision {
         //Current only works (and is optimized) for latestScreen.jpg
 
         long start = System.currentTimeMillis();
-        Mat gray = preprocess("path\\to\\img");
+        Mat gray = preprocess(Settings.getInputPath());
         ArrayList<Integer> robotLoc = retrieveRobot(gray);
+        System.out.println(robotLoc);
         MatOfPoint contour = retrieveContour(gray, robotLoc);
-        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc.get(0), robotLoc.get(1), 4);
+        System.out.println(retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc.get(0), robotLoc.get(1), 10));
         long end = System.currentTimeMillis();
         System.out.println("CV took " + (end - start) + "ms");
     }
