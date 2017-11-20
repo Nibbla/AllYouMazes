@@ -4,6 +4,7 @@ import Control.RobotControl;
 import Model.ComputerVision;
 import Model.Node;
 import Model.TraversalHandler;
+import SpecialSettingsEtc.Settings;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -98,7 +99,7 @@ public class Simulation {
     }
 
     public static void main(String[] args) {
-        Simulation sim = new Simulation("C:\\Users\\Jyr\\IdeaProjects\\Mazes1\\SingleClassPrototype\\Input\\latestScreen.jpg");
+        Simulation sim = new Simulation(Settings.getInputPath());
     }
 
 }

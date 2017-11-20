@@ -5,6 +5,7 @@ package Model;
  */
 
 import SpecialSettingsEtc.Settings;
+import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.CLAHE;
@@ -42,13 +43,14 @@ public class ComputerVision {
     //Perhaps do scaling and grayscaling in separate method
 
     public final static double SCALE_FACTOR = 0.5;
-    public final static double ROBOT_RADIUS = 50 * SCALE_FACTOR;
+    public final static int STEP_SIZE = 4;
+    public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
 
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    private static Mat preprocess(String picture) {
+    public static Mat preprocess(String picture) {
         Mat img = Imgcodecs.imread(picture);
 
         int w = img.width();
@@ -87,9 +89,12 @@ public class ComputerVision {
 
             if (s == 1) {
                 int r = (int) circles.get(0, 0)[2] + 1;
-                if (!((r - 4) <= ROBOT_RADIUS && (r + 4) >= ROBOT_RADIUS)) {
-                    s = -1;
-                }
+
+                //TO FIX when we have correct setup
+
+//                if (!((r - 4) <= ROBOT_RADIUS && (r + 4) >= ROBOT_RADIUS)) {
+//                    s = -1;
+//                }
             }
         }
 
@@ -147,11 +152,11 @@ public class ComputerVision {
 
         //Remove robot from picture (paint black)
         if (robotPos != null)
-        Imgproc.rectangle(thresh, new Point(robotPos.get(0) - robotPos.get(2) - offset, robotPos.get(1) - robotPos.get(2) - offset), new Point(robotPos.get(0) + robotPos.get(2) + offset, robotPos.get(1) + robotPos.get(2) + offset), new Scalar(0), -1);
+            Imgproc.rectangle(thresh, new Point(robotPos.get(0) - robotPos.get(2) - offset, robotPos.get(1) - robotPos.get(2) - offset), new Point(robotPos.get(0) + robotPos.get(2) + offset, robotPos.get(1) + robotPos.get(2) + offset), new Scalar(0), -1);
 
         Mat dilateElement = new Mat();
         org.opencv.core.Point p = new org.opencv.core.Point(-1, -1);
-        Imgproc.dilate(thresh, thresh, dilateElement, p, (int) Math.ceil(ROBOT_RADIUS));
+        Imgproc.dilate(thresh, thresh, dilateElement, p, (int) Math.ceil(robotPos.get(2)));
 
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierarchy = new Mat();
@@ -190,7 +195,7 @@ public class ComputerVision {
     }
 
     //This method is a total mess and will be cleaned up soon
-    public static LinkedList<Node> retrievePath(Mat gray, MatOfPoint2f contour, int rX, int rY, int stepSize) {
+    public static LinkedList<Node> retrievePath(Mat gray, MatOfPoint2f contour, ArrayList<Integer> robotPos, int stepSize) {
         int sRows = gray.rows()/stepSize;
         int sCols = gray.cols()/stepSize;
         Node[][] grid = new Node[sRows][sCols];
@@ -228,8 +233,8 @@ public class ComputerVision {
         Set<Node> settledNodes = new HashSet<>();
         Set<Node> unsettledNodes = new HashSet<>();
 
-        int sX = (int)(rX / stepSize);
-        int sY = (int)(rY / stepSize);
+        int sX = (int)(robotPos.get(0) / stepSize);
+        int sY = (int)(robotPos.get(1) / stepSize);
 
         while (sX % stepSize != 0) {
             sX++;
@@ -252,9 +257,13 @@ public class ComputerVision {
             }
         }
 
+        boolean stop = false;
+
         while (!unvisitedSet.isEmpty()) {
             Node n = getLowestDistanceNode(unvisitedSet);
             unvisitedSet.remove(n);
+
+            if (n.getX() == 0 && n.getY() == 0) stop = true;
 
             if (n == null) {
                 settledNodes.add(n);
@@ -283,14 +292,18 @@ public class ComputerVision {
             }
 
             settledNodes.add(n);
+
+            if (stop) break;
         }
 
-        LinkedList<Node> path = grid[0][0].shortestPath;
-//        for (Node no: path) {
-//            Imgproc.circle(gray, new Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
-//        }
+//        System.out.println(unvisitedSet.size());
 //
-//        ImgWindow.newWindow(gray);
+        LinkedList<Node> path = grid[0][0].shortestPath;
+        for (Node no: path) {
+            Imgproc.circle(gray, new Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
+        }
+
+        ImgWindow.newWindow(gray);
 
         return path;
     }
@@ -337,10 +350,15 @@ public class ComputerVision {
         Mat gray = preprocess(Settings.getInputPath());
         ArrayList<Integer> robotLoc = retrieveRobot(gray);
         MatOfPoint contour = retrieveContour(gray, robotLoc);
-        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc.get(0), robotLoc.get(1), 4);
+        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
         long end = System.currentTimeMillis();
         System.out.println("CV took " + (end - start) + "ms");
     }
 
-}
+    //Robot radius
+    //Can stop shortest path earlier (should be done now)
+    //Possible to improve on houghcircles? Preset variables?
+    //Don't expect robot detection at EVERY image!
+    //Centralize shortest path (redundancy)
 
+}
