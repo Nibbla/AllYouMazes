@@ -83,62 +83,22 @@ public class ComputerVision {
     public static ArrayList<Integer> retrieveRobot(Mat gray, ArrayList<Integer> previousLoc) {
         //TODO Consider corner cases!
 
-        int maxX=gray.cols();
-        int maxY=gray.rows();
-        int addX = 0;
-        int addY = 0;
-
         int previousX = previousLoc.get(0);
         int previousY = previousLoc.get(1);
         int previousR = previousLoc.get(2);
 
         int searchSpace = previousR*2;
-        Rect rect = null;
-        if((previousX-searchSpace)<0 && (previousY-searchSpace)<0){ //top left
-            rect = new Rect(new Point(0, 0), new Point(searchSpace, searchSpace));
-            addX=0;
-            addY=0;
-        } else if((previousX+searchSpace)>maxX && (previousY-searchSpace)<0){ //top right
-             rect = new Rect(new Point(maxX-searchSpace*2, 0), new Point(maxX, searchSpace*2));
-            addX=maxX-searchSpace*2;
-            addY=0;
-        } else if((previousX-searchSpace)<0 && (previousY+searchSpace)>maxY){ //bottom left
-             rect = new Rect(new Point(0, maxY-searchSpace*2), new Point(searchSpace*2, maxY));
-            addX=0;
-            addY=maxY-searchSpace*2;
-        } else if((previousX+searchSpace)>maxX && (previousY+searchSpace)>maxY){ //bottom right
-             rect = new Rect(new Point(maxX-searchSpace*2, maxY-searchSpace*2), new Point(maxX, maxY));
-            addX=maxX-searchSpace*2;
-            addY=maxY-searchSpace*2;
-        } else if((previousX-searchSpace)<0){ //left
-             rect = new Rect(new Point(0, previousY-searchSpace), new Point(searchSpace*2, previousY+searchSpace));
-            addX=0;
-            addY=previousY-searchSpace;
-        } else if((previousY-searchSpace)<0){ //top
-             rect = new Rect(new Point(previousX-searchSpace, 0), new Point(previousX+searchSpace, searchSpace*2));
-            addX=previousX-searchSpace;
-            addY=maxY-searchSpace*2;
-        } else if((previousX+searchSpace)>maxX){ //right
-             rect = new Rect(new Point(maxX-searchSpace*2, previousY-searchSpace), new Point(maxX, previousY+searchSpace));
-            addX=previousX-searchSpace*2;
-            addY=maxY-searchSpace;
-        } else if((previousY+searchSpace)>maxY){ //bottom
-            addX=previousX-searchSpace;
-            addY=maxY-searchSpace*2;
-        } else {
-             rect = new Rect(new Point(previousX - searchSpace, previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace));
-            addX=previousX-searchSpace;
-            addY=previousY-searchSpace;
-        }
+
+        Rect rect = new Rect(new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace));
         Mat cropped = gray.submat(rect);
 
         if (ComputerVision.DEBUG) {
-            Imgproc.rectangle(gray, new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace), new Scalar(255), 1);
-            Imgproc.rectangle(gray, new Point(0, 0), new Point(searchSpace*2, searchSpace*2), new Scalar(255), 1);
+            //Imgproc.rectangle(gray, new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace), new Scalar(255), 1);
+            //Imgproc.rectangle(gray, new Point(0, 0), new Point(searchSpace*2, searchSpace*2), new Scalar(255), 1);
             ImgWindow.newWindow(gray);
         }
 
-        return retrieveRobot(cropped,addX, addY);
+        return retrieveRobot(cropped, previousX-searchSpace, previousY-searchSpace);
     }
 
     /*
