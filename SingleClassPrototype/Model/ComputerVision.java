@@ -23,7 +23,7 @@ import java.util.List;
 Installation instruction for (Windows) OpenCV (we are using 3.1.0)!
 
 Download OpenCV 3.1.0 for Windows here and extract from the .exe to a folder
-http://sourceforge.net/projects/opencvlibrary/pictures/opencv-win/3.1.0/opencv-3.1.0.exe/download
+https://sourceforge.net/projects/opencvlibrary/files/opencv-win/3.1.0/opencv-3.1.0.exe/download
 
 For eclipse, simply follow these steps:
 http://opencv-java-tutorials.readthedocs.io/en/latest/01-installing-opencv-for-java.html#set-up-opencv-for-java-in-eclipse
@@ -39,11 +39,8 @@ Double click on the jar you just added (in IntelliJ), click on the green plus ic
 
 public class ComputerVision {
 
-    //To do
-    //Method argument for robot location: last location
-    //So we only check in a certain distance around it -> reduces computing time
-
     //Perhaps do scaling and grayscaling in separate method
+    //TODO detect robot by color (put something on it)
 
     public final static boolean DEBUG = true;
     public final static double SCALE_FACTOR = 0.5;
@@ -74,7 +71,7 @@ public class ComputerVision {
     need to translate to correct x,y,r
     */
     public static ArrayList<Integer> retrieveRobot(Mat gray, ArrayList<Integer> previousLoc) {
-        //Consider corner cases!
+        //TODO Consider corner cases!
 
         int previousX = previousLoc.get(0);
         int previousY = previousLoc.get(1);
@@ -86,8 +83,8 @@ public class ComputerVision {
         Mat cropped = gray.submat(rect);
 
         if (ComputerVision.DEBUG) {
-            Imgproc.rectangle(gray, new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace), new Scalar(255), 1);
-            Imgproc.rectangle(gray, new Point(0, 0), new Point(searchSpace*2, searchSpace*2), new Scalar(255), 1);
+            //Imgproc.rectangle(gray, new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace), new Scalar(255), 1);
+            //Imgproc.rectangle(gray, new Point(0, 0), new Point(searchSpace*2, searchSpace*2), new Scalar(255), 1);
             ImgWindow.newWindow(gray);
         }
 
@@ -119,8 +116,7 @@ public class ComputerVision {
             if (s == 1) {
                 int r = (int) circles.get(0, 0)[2] + 1;
 
-                //TO FIX when we have correct setup
-
+                //TODO FIX when we have correct setup
 //                if (!((r - 4) <= ROBOT_RADIUS && (r + 4) >= ROBOT_RADIUS)) {
 //                    s = -1;
 //                }
@@ -393,14 +389,13 @@ public class ComputerVision {
         ArrayList<Integer> robotLoc = retrieveRobot(gray, 0, 0);
         System.out.println(robotLoc);
         System.out.println(retrieveRobot(gray, robotLoc));
-        //MatOfPoint contour = retrieveContour(gray, robotLoc);
-        //retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
+        MatOfPoint contour = retrieveContour(gray, robotLoc);
+        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
         long end = System.currentTimeMillis();
-        //System.out.println("CV took " + (end - start) + "ms");
+        System.out.println("CV took " + (end - start) + "ms");
     }
 
     //Robot radius
-    //Can stop shortest path earlier (should be done now)
     //Possible to improve on houghcircles? Preset variables?
     //Don't expect robot detection at EVERY image!
     //Centralize shortest path (redundancy)
