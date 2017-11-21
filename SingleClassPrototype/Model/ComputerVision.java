@@ -41,6 +41,9 @@ public class ComputerVision {
 
     //Perhaps do scaling and grayscaling in separate method
     //TODO detect robot by color (put something on it)
+    //TODO delete all other contours before repeating findContours
+    //TODO what if maze is not connected?
+    //TODO maybe cut out part if image isnt entirely on the black paper
 
     public final static boolean DEBUG = false;
     public final static double SCALE_FACTOR = 0.5;
@@ -135,6 +138,24 @@ public class ComputerVision {
     Returns x, y and r(adius) of the robot
      */
     public static ArrayList<Integer> retrieveRobot(Mat gray, int addX, int addY) {
+        Mat blur = new Mat();
+        gray.copyTo(blur);
+
+        int w = (int) (18*SCALE_FACTOR);
+        int h = (int) (18*SCALE_FACTOR);
+
+        if (w % 2 != 1) {
+            w++;
+        }
+
+        if (h % 2 != 1) {
+            h++;
+        }
+
+        Imgproc.GaussianBlur(blur, blur, new Size(w, h), 2, 2);
+
+        ImgWindow.newWindow(blur);
+
         Mat circles = null;
 
         //dp can give some problems, might need to cycle through (did this for now)
@@ -227,6 +248,14 @@ public class ComputerVision {
         //Remove robot from picture (paint black)
         if (robotPos != null)
             Imgproc.rectangle(thresh, new Point(robotPos.get(0) - robotPos.get(2) - offset, robotPos.get(1) - robotPos.get(2) - offset), new Point(robotPos.get(0) + robotPos.get(2) + offset, robotPos.get(1) + robotPos.get(2) + offset), new Scalar(0), -1);
+
+        /*findContours
+        Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        Vind grootste contour
+        Verwijder alle andere
+
+        Hierboven wordt de robot verwijderd! Maar de contour van de robot verwijderen zou beter zijn.
+        */
 
         Mat dilateElement = new Mat();
         org.opencv.core.Point p = new org.opencv.core.Point(-1, -1);
