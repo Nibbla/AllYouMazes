@@ -8,11 +8,14 @@ import SpecialSettingsEtc.Settings;
 import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.core.Point;
+import org.opencv.features2d.FeatureDetector;
+import org.opencv.features2d.Features2d;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 
 import java.awt.*;
+import java.io.File;
 import java.util.*;
 import java.util.List;
 
@@ -44,11 +47,15 @@ public class ComputerVision {
     //TODO delete all other contours before repeating findContours
     //TODO what if maze is not connected?
     //TODO maybe cut out part if image isnt entirely on the black paper
+    //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = false;
+    public final static boolean DEBUG = true;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
+
+    public final static int RADIUS_EST = (int) (50*SCALE_FACTOR);
+    public final static int RADIUS_ESTOFFSET = (int) (20*SCALE_FACTOR);
 
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -138,11 +145,14 @@ public class ComputerVision {
     Returns x, y and r(adius) of the robot
      */
     public static ArrayList<Integer> retrieveRobot(Mat gray, int addX, int addY) {
+        FeatureDetector detector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+
+
         Mat blur = new Mat();
         gray.copyTo(blur);
 
-        int w = (int) (18*SCALE_FACTOR);
-        int h = (int) (18*SCALE_FACTOR);
+        int w = (int) (21*SCALE_FACTOR);
+        int h = (int) (21*SCALE_FACTOR);
 
         if (w % 2 != 1) {
             w++;
@@ -170,7 +180,7 @@ public class ComputerVision {
 
         while (s != 1 && c < 10) {
             circles = new Mat();
-            Imgproc.HoughCircles(gray, circles, Imgproc.CV_HOUGH_GRADIENT, dp + (c * step), 100);
+            Imgproc.HoughCircles(blur, circles, Imgproc.CV_HOUGH_GRADIENT, dp + (c * step), 100);
             c++;
             s = circles.cols();
 
@@ -207,7 +217,7 @@ public class ComputerVision {
             while (!wnd.closed) {
                 wnd.setImage(gray);
                 Graphics2D g = wnd.begin();
-                g.setColor(Color.MAGENTA);
+                g.setColor(Color.WHITE);
                 g.setStroke(new BasicStroke(3));
                 for (int i = 0; i < circles.cols(); i++) {
                     double[] circle = circles.get(0, i);
@@ -259,7 +269,7 @@ public class ComputerVision {
 
         Mat dilateElement = new Mat();
         org.opencv.core.Point p = new org.opencv.core.Point(-1, -1);
-        Imgproc.dilate(thresh, thresh, dilateElement, p, (int) Math.ceil(robotPos.get(2)));
+        //Imgproc.dilate(thresh, thresh, dilateElement, p, (int) Math.ceil(robotPos.get(2)));
 
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierarchy = new Mat();
@@ -450,18 +460,72 @@ public class ComputerVision {
         return lowestDistanceNode;
     }
 
+    public static void robotv2(Mat gray) {
+        //Blob detection
+        //TODO
+        //Lets start with only gray channel
+        FeatureDetector angleDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+        angleDetector.read(System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator + "blobrobotangle.xml");
+        MatOfKeyPoint angleKeyPoints = new MatOfKeyPoint();
+        angleDetector.detect(gray, angleKeyPoints);
+        List<KeyPoint> angleKeyPointList = angleKeyPoints.toList();
+        for (KeyPoint kp: angleKeyPointList) {
+            System.out.println("point: " + kp.pt.x + ":" + kp.pt.y);
+            System.out.println("size: " + kp.size);
+        }
+
+        Scalar core = new Scalar(255);
+        Features2d.drawKeypoints(gray, angleKeyPoints, gray, core, 2);
+
+
+        FeatureDetector robotDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+        robotDetector.read(System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator + "blobrobot.xml");
+        MatOfKeyPoint robotKeyPoints = new MatOfKeyPoint();
+        robotDetector.detect(gray, robotKeyPoints);
+        List<KeyPoint> robotKeyPointList = robotKeyPoints.toList();
+        for (KeyPoint kp: robotKeyPointList) {
+            System.out.println("point: " + kp.pt.x + ":" + kp.pt.y);
+            System.out.println("size: " + kp.size);
+        }
+
+        double angle = Math.toDegrees(Math.atan2(robotKeyPointList.get(0).pt.y - angleKeyPointList.get(0).pt.y, robotKeyPointList.get(0).pt.x - angleKeyPointList.get(0).pt.x));
+        System.out.println("angle: " + angle);
+
+        Imgproc.line(gray, angleKeyPointList.get(0).pt, robotKeyPointList.get(0).pt, new Scalar(255, 255 ,0), 2);
+        Imgproc.putText(gray, "angle: " + angle, new Point(50, 100), 0, 1, new Scalar(100), 2);
+
+        Features2d.drawKeypoints(gray, robotKeyPoints, gray, core, 2);
+        ImgWindow.newWindow(gray);
+
+        //Note: kp.size is diameter, /2 gives ROUGHLY the radius
+
+        /*Test cases
+        testmaze2.jpg (no angle identifier)
+        Hough: 100:140:26
+        Blob: 100:140:24
+
+        testmaze3.jpg (angle identifier)
+        Hough: 108:154:30
+        Blob: 108:155:28
+
+        increase radius by 2?
+         */
+    }
+
     public static void main(String[] args) {
         //Current only works (and is optimized) for latestScreen.jpg
 
-        long start = System.currentTimeMillis();
-        Mat gray = preprocess(Settings.getInputPath());
-        ArrayList<Integer> robotLoc = retrieveRobot(gray, 0, 0);
-        System.out.println(robotLoc);
-        System.out.println(retrieveRobot(gray, robotLoc));
-        MatOfPoint contour = retrieveContour(gray, robotLoc);
-        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
-        long end = System.currentTimeMillis();
-        System.out.println("CV took " + (end - start) + "ms");
+//        long start = System.currentTimeMillis();
+          Mat gray = preprocess(Settings.getInputPath());
+//        ArrayList<Integer> robotLoc = retrieveRobot(gray, 0, 0);
+//        System.out.println(robotLoc);
+//        System.out.println(retrieveRobot(gray, robotLoc));
+          MatOfPoint contour = retrieveContour(gray, null);
+//        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
+//        long end = System.currentTimeMillis();
+//        System.out.println("CV took " + (end - start) + "ms");
+
+          robotv2(gray);
     }
 
     //Robot radius
