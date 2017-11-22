@@ -573,7 +573,7 @@ public class ComputerVision {
     public static void main(String[] args) {
         String folder = System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator;
 
-//        long start = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         for (int i = 1; i < 14; i++) {
             String pic = folder + "testpi" + i + ".jpg";
             Mat img = resize(pic);
