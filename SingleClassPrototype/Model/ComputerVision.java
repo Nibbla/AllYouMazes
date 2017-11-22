@@ -48,7 +48,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = true;
+    public final static boolean DEBUG = false;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
@@ -455,7 +455,7 @@ public class ComputerVision {
         return lowestDistanceNode;
     }
 
-    private static KeyPoint[][] processChannel(Mat m) {
+    private static Mat featureProcessing(Mat m) {
         Mat equ = new Mat();
         m.copyTo(equ);
         CLAHE clahe = Imgproc.createCLAHE(4.0 * SCALE_FACTOR, new Size(16.0 * SCALE_FACTOR, 16.0 * SCALE_FACTOR));
@@ -473,71 +473,75 @@ public class ComputerVision {
         }
 
         Imgproc.GaussianBlur(equ, equ, new Size(w, h), 2, 2);
+        return equ;
+    }
 
+    private static KeyPoint[] processAngle(Mat m) {
         FeatureDetector angleDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
         angleDetector.read(System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobotangle.xml");
         MatOfKeyPoint angleKeyPoints = new MatOfKeyPoint();
-        angleDetector.detect(equ, angleKeyPoints);
+        angleDetector.detect(m, angleKeyPoints);
         KeyPoint[] angleKeyPointArray = angleKeyPoints.toArray();
 
-        Scalar core = new Scalar(255);
-
         if (ComputerVision.DEBUG) {
-            Features2d.drawKeypoints(m, angleKeyPoints, m, core, 2);
-        }
-
-        FeatureDetector robotDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
-        robotDetector.read(System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobot.xml");
-        MatOfKeyPoint robotKeyPoints = new MatOfKeyPoint();
-        robotDetector.detect(equ, robotKeyPoints);
-        KeyPoint[] robotKeyPointArray = robotKeyPoints.toArray();
-
-        if (ComputerVision.DEBUG) {
-            Features2d.drawKeypoints(m, robotKeyPoints, m, core, 2);
+            Features2d.drawKeypoints(m, angleKeyPoints, m, new Scalar(255), 2);
             ImgWindow.newWindow(m);
         }
 
-        KeyPoint[][] keyPointArray = new KeyPoint[2][1];
-        keyPointArray[0] = angleKeyPointArray;
-        keyPointArray[1] = robotKeyPointArray;
-
-        return keyPointArray;
+        return angleKeyPointArray;
     }
 
-    public static KeyPoint[] robotv2(Mat img, boolean checkAllChannels, int prevRobotX, int prevRobotY, int i) {
+    private static KeyPoint[] processRobot(Mat m) {
+        FeatureDetector robotDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+        robotDetector.read(System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobot.xml");
+        MatOfKeyPoint robotKeyPoints = new MatOfKeyPoint();
+        robotDetector.detect(m, robotKeyPoints);
+        KeyPoint[] robotKeyPointArray = robotKeyPoints.toArray();
+
+        if (ComputerVision.DEBUG) {
+            Features2d.drawKeypoints(m, robotKeyPoints, m, new Scalar(255), 2);
+            ImgWindow.newWindow(m);
+        }
+
+        return robotKeyPointArray;
+    }
+
+    private static Mat getRChannel(Mat img) {
         List<Mat> channels = new ArrayList<Mat>();
-        KeyPoint[][] angleKeyPoints = new KeyPoint[3][1];
-        KeyPoint[][] robotKeyPoints = new KeyPoint[3][1];
+        Core.split(img, channels);
+        return channels.get(0);
+    }
 
-        KeyPoint angleKeyPoint = null;
-        KeyPoint robotKeyPoint = null;
+    private static Mat getGChannel(Mat img) {
+        List<Mat> channels = new ArrayList<Mat>();
+        Core.split(img, channels);
+        return channels.get(1);
+    }
 
-        int c = 0;
+    private static Mat getBChannel(Mat img) {
+        List<Mat> channels = new ArrayList<Mat>();
+        Core.split(img, channels);
+        return channels.get(2);
+    }
 
-        if (checkAllChannels) {
-            Core.split(img, channels);
+    public static KeyPoint[] robotv2(Mat img) {
+        Mat b = getBChannel(img);
+        Mat gr = grayScale(img);
 
-            for (Mat m : channels) {
-                KeyPoint[][] kP = processChannel(m);
+        Mat pb = featureProcessing(b);
+        Mat pgr = featureProcessing(gr);
 
-                angleKeyPoints[c] = kP[0];
-                robotKeyPoints[c] = kP[1];
-                c++;
-            }
+        KeyPoint[] robotKeyPoint = processRobot(pb);
+        KeyPoint[] angleKeyPoint = processAngle(pgr);
 
-        } else {
-            KeyPoint[][] kP = processChannel(grayScale(img));
-            angleKeyPoints[0] = kP[0];
-            robotKeyPoints[0] = kP[1];
+        if (robotKeyPoint.length == 1 && angleKeyPoint.length == 1) {
+            Imgproc.circle(img, robotKeyPoint[0].pt, 1, new Scalar(255,0,0), 5);
+            Imgproc.circle(img, angleKeyPoint[0].pt, 1, new Scalar(0,0,255), 5);
+            Imgproc.line(img, robotKeyPoint[0].pt, angleKeyPoint[0].pt, new Scalar(0, 255, 0), 2);
+            ImgWindow.newWindow(img);
         }
 
-        if (checkAllChannels) {
-
-        } else {
-
-        }
-
-        return new KeyPoint[]{angleKeyPoint, robotKeyPoint};
+        return null;
     }
 
     //TODO maybe dont return null if we have at least one value, return null for other
@@ -573,7 +577,7 @@ public class ComputerVision {
         for (int i = 1; i < 14; i++) {
             String pic = folder + "testpi" + i + ".jpg";
             Mat img = resize(pic);
-            KeyPoint[] kps = robotv2(img, false, -1, -1, i);
+            robotv2(img);
 
 //            if (kps != null && kps[0] != null && kps[1] != null)
 //                Imgproc.line(img, kps[0].pt, kps[1].pt, new Scalar(255, 0, 0), 1);

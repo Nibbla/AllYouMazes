@@ -37,7 +37,7 @@ public class Simulation {
 
     public Simulation(String picture) {
         this.pathToPicture = picture;
-        Mat gray = ComputerVision.preprocess(picture);
+        Mat gray = ComputerVision.grayScale(ComputerVision.resize(picture));
         this.robotCurrentDetails = ComputerVision.retrieveRobot(gray, 0, 0);
         this.contour = ComputerVision.retrieveContour(gray, robotCurrentDetails);
         LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotCurrentDetails, ComputerVision.STEP_SIZE);
@@ -70,7 +70,7 @@ public class Simulation {
             @Override
             public void run() {
                 ArrayList<Integer> oldLocation = robotCurrentDetails;
-                robotCurrentDetails = ComputerVision.retrieveRobot(ComputerVision.preprocess(Settings.getInputPath()), 0, 0);
+                robotCurrentDetails = ComputerVision.retrieveRobot(ComputerVision.grayScale(ComputerVision.resize(Settings.getInputPath())), 0, 0);
                 if (oldLocation.equals(robotCurrentDetails)) System.out.println("No change / can't detect");
 
                 int x = robotCurrentDetails.get(0);
