@@ -1,6 +1,7 @@
 package view;
 
 import Interfaces.ObjectType;
+import SpecialSettingsEtc.Classifier;
 import SpecialSettingsEtc.Settings;
 
 import java.awt.*;
@@ -16,11 +17,13 @@ public class PixelObjectType {
     public double wallility;
     public double floorility;
     public double robotility;
+    public double goalility1;
+    public double goalility2;
 
     double[] wc = Settings.wallClassifier;
     private ObjectType classifiedas;
 
-    public PixelObjectType(int x, int y, BufferedImage rgb) {
+    public PixelObjectType(int x, int y, BufferedImage rgb, Classifier cl) {
         Integer value = rgb.getRGB(x, y);
         this.x = x;
         this.y = y;
@@ -29,32 +32,33 @@ public class PixelObjectType {
         green = c.getGreen();
         blue = c.getBlue();
 
-        if (red/green>1.1) wallility+=1;
-        if (red/blue>1.3) wallility+=1;
-        if (red>165) wallility+=1;
-        if (red>200) wallility+=2;
-        if (green>200) wallility+=2;
-        if (blue>200) wallility+=2;
+        if (red/green>cl.wRedOgreenLowBound) wallility= wallility + cl.wRedOgreenLowBoundP;
+        if (red/blue>cl.wRedOblueLowBound) wallility= wallility + cl.wRedOblueLowBoundP;
+        if (red>cl.wRed1LowBound) wallility= wallility +cl.wRed1LowBoundP;
+        if (red>cl.wRed2LowBound) wallility= wallility +cl.wRed2LowBoundP;
+        if (green>cl.wGreenLowBound) wallility= wallility +cl.wGreenLowBoundP;
+        if (blue>cl.wBlueLowBound) wallility= wallility +cl.wBlueLowBoundP;
 
 
-        if (red/green<1.2&&red/green>0.8) floorility+=1;
-        if (green/blue<1.2&&green/blue>0.8) floorility+=1;
-        if (blue/green<1.2&&blue/green>0.8) floorility+=1;
-        if (red/green<1.1&&red/green>0.9) floorility+=1;
-        if (green/blue<1.1&&green/blue>0.9) floorility+=1;
-        if (blue/green<1.1&&blue/green>0.9) floorility+=1;
+
+        if (red/green<cl.fRedOgreenUpBound1&&red/green>cl.fRedOgreenLowBound1) floorility= floorility +cl.wRedOGreenP1;
+        if (green/blue<cl.fGreenOblueUpBound&&green/blue>cl.fgreenOblueLowBound) floorility=floorility +cl.wGreenOBlueP;
+        if (blue/green<cl.fBlueOGreenUpBound&&blue/green>cl.fBlueOGreenLowBound) floorility=floorility +cl.wBlueOGreen;
+        if (red/green<cl.fRedOGreenUpBound2&&red/green>cl.fRedOGreenLowBound2) floorility=floorility +cl.wRedOGreenP2;
+        if (green/blue<cl.fGreenOBlueUpBound&&green/blue>cl.fGreenOBlueLowBound) floorility= floorility +cl.fGreenOBlue;
+        if (blue/green<cl.fBlueOGreenUpBound2&&blue/green>cl.fblueOGreenLowBound2) floorility= floorility +cl.fblueOgreenP2;
 
 
         //if (green/blue<1.1&&green/blue>0.9) floorility+=1;
         //if (blue/green<1.1&&blue/green>0.9) floorility+=1;
 
 
-        if (green/red>1.15) robotility+=2;
-        if (green/blue>1.15) robotility+=2;
+        if (green/red>cl.rGreenOredLowBound) robotility= robotility+cl.rGreenOredLowBoundP;
+        if (green/blue>cl.rGreenOblueLowBound) robotility= robotility+ cl.rGreenOblueLowBoundP;
         //if (green/red>1.25) robotility+=1;
         //if (green/blue>1.25) robotility+=1;
-        if (green>100&&green<200) robotility+=2;
-        if (green<70) robotility-=1;
+        if (green>cl.rGreenLowBound&&green<cl.rGreenUpBound) robotility = robotility + cl.rGreenP;
+        if (green<cl.rGreenUpBound2) robotility= robotility + cl.rGreenUpBoundP2;
 
         // wallility = wc[0] * red + wc[1] * green + wc[2] * blue;
         // floorility = wc[3] * red + wc[4] * green + wc[5] * blue;

@@ -2,12 +2,10 @@
 import Control.RobotControl;
 import Interfaces.*;
 import Model.Model;
-import SpecialSettingsEtc.Archivar;
-import SpecialSettingsEtc.Settings;
-import SpecialSettingsEtc.Tangential;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
+import SpecialSettingsEtc.*;
+//import org.opencv.core.Mat;
+//import org.opencv.core.MatOfPoint;
+//import org.opencv.core.MatOfPoint2f;
 import view.PixelObjectType;
 import Model.*;
 import Model.SpecialGraph;
@@ -87,7 +85,8 @@ public class Modul {
         running = true;
         int loop = -1;
         RoboPos lastPos = null;
-
+        Classifier cl = new Classifier();
+        cl.edit();
         while (running){
             loop++;
             long loopStart = System.currentTimeMillis();
@@ -107,12 +106,13 @@ public class Modul {
             }
 
 
-            /*
+
 
             //previous classifier approach below
 
             BufferedImage bi = view.getCurrentShot();
-            ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED));
+
+            ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED),cl);
             RoboPos robotPos = view.getRobotCenter(m2, 1);
             System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
             if (g != null) g.setVisible(false);
@@ -121,10 +121,10 @@ public class Modul {
 
             //previous classifier approach above
 
-            */
 
 
 
+/*
             //openCV approach below
 
             Mat test = ComputerVision.preprocess(Settings.getInputPath());
@@ -132,7 +132,7 @@ public class Modul {
             RoboPos robotPos = new RoboPos(positions.get(0), positions.get(1), positions.get(2));
             MatOfPoint contour = ComputerVision.retrieveContour(test, positions);
             LinkedList<Node> path = ComputerVision.retrievePath(test, new MatOfPoint2f(contour.toArray()), positions, 10);
-
+*/
             //openCV approach above
 
 

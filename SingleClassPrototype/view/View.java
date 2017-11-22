@@ -3,6 +3,7 @@ package view;
 import Interfaces.IView;
 import Interfaces.ObjectType;
 import SpecialSettingsEtc.Archivar;
+import SpecialSettingsEtc.Classifier;
 import SpecialSettingsEtc.Settings;
 import Model.Model;
 import Model.SpecialGraph;
@@ -84,7 +85,7 @@ public class View implements IView {
     }
 
     @Override
-    public ObjectType[][] classify(BufferedImage bi, boolean showKlassification) {
+    public ObjectType[][] classify(BufferedImage bi, boolean showKlassification, Classifier classifier) {
         long tick1 = System.currentTimeMillis();
         int width = bi.getWidth();
         int heigth = bi.getHeight();
@@ -202,7 +203,7 @@ public class View implements IView {
         PixelObjectType[][] ot = new PixelObjectType[width2][heigth2];
         for (int x = 0; x < width2; x+=1) {
             for (int y = 0; y < heigth2; y+=1) {
-                ot[x][y] = new PixelObjectType(x, y, b2);
+                ot[x][y] = new PixelObjectType(x, y, b2,classifier);
 
             }
 
