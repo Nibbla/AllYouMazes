@@ -490,7 +490,7 @@ public class ComputerVision {
             System.out.println("size: " + kp.size);
         }
 
-        double angle = Math.toDegrees(Math.atan2(robotKeyPointList.get(0).pt.y - angleKeyPointList.get(0).pt.y, robotKeyPointList.get(0).pt.x - angleKeyPointList.get(0).pt.x));
+         double angle = Math.toDegrees(Math.atan2(robotKeyPointList.get(0).pt.y - angleKeyPointList.get(0).pt.y, robotKeyPointList.get(0).pt.x - angleKeyPointList.get(0).pt.x));
         System.out.println("angle: " + angle);
 
         Imgproc.line(gray, angleKeyPointList.get(0).pt, robotKeyPointList.get(0).pt, new Scalar(255, 255 ,0), 2);

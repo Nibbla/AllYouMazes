@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <opencv_storage>
-<thresholdStep>10.</thresholdStep>
-<minThreshold>50.</minThreshold>
-<maxThreshold>220.</maxThreshold>
-<minRepeatability>2</minRepeatability>
+<thresholdStep>5.</thresholdStep>
+<minThreshold>0.</minThreshold>
+<maxThreshold>250.</maxThreshold>
+<minRepeatability>1</minRepeatability>
 <minDistBetweenBlobs>10.</minDistBetweenBlobs>
 <filterByColor>1</filterByColor>
 <blobColor>255</blobColor>
