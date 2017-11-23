@@ -39,6 +39,8 @@ Double click on the jar you just added (in IntelliJ), click on the green plus ic
 //Java OpenCV docs are here!
 //https://docs.opencv.org/java/3.1.0/
 
+//Don't use retrieveRobot anymore.
+
 public class ComputerVision {
 
     //Perhaps do scaling and grayscaling in separate method
@@ -53,7 +55,7 @@ public class ComputerVision {
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
 
-    public final static int RADIUS_EST = (int) (50 * SCALE_FACTOR);
+    public final static int RADIUS_EST = (int) (100 * SCALE_FACTOR);
     public final static int RADIUS_ESTOFFSET = (int) (20 * SCALE_FACTOR);
 
     static {
@@ -84,6 +86,8 @@ public class ComputerVision {
     Returns x, y and r(adius) of the robot based on previous location
     need to translate to correct x,y,r
     */
+
+    @Deprecated
     public static RoboPos retrieveRobot(Mat gray, RoboPos previousLoc) {
         //TODO Consider corner cases!
 
@@ -142,6 +146,8 @@ public class ComputerVision {
     /*
     Returns x, y and r(adius) of the robot
      */
+
+    @Deprecated
     public static RoboPos retrieveRobot(Mat gray, int addX, int addY) {
         Mat blur = new Mat();
         gray.copyTo(blur);
@@ -522,11 +528,60 @@ public class ComputerVision {
         return channels.get(2);
     }
 
-    public static KeyPoint[] robotv2(Mat img, int prevX, int prevY) {
-        return null;
+    public static KeyPoint[] robotv2(Mat img, KeyPoint robot) {
+        int x = (int)robot.pt.x;
+        int y = (int)robot.pt.y;
+        int searchSpace = ((int)robot.size/2) * 2;
+
+        int maxX = img.cols();
+        int maxY = img.rows();
+        int ax = 0;
+        int ay = 0;
+        
+        Rect rect = null;
+
+        if ((x - searchSpace) < 0 && (y - searchSpace) < 0) { //top left
+            rect = new Rect(new Point(0, 0), new Point(searchSpace, searchSpace));
+            ax = 0;
+            ay = 0;
+        } else if ((x + searchSpace) > maxX && (y - searchSpace) < 0) { //top right
+            rect = new Rect(new Point(maxX - searchSpace * 2, 0), new Point(maxX, searchSpace * 2));
+            ax = maxX - searchSpace * 2;
+            ay = 0;
+        } else if ((x - searchSpace) < 0 && (y + searchSpace) > maxY) { //bottom left
+            rect = new Rect(new Point(0, maxY - searchSpace * 2), new Point(searchSpace * 2, maxY));
+            ax = 0;
+            ay = maxY - searchSpace * 2;
+        } else if ((x + searchSpace) > maxX && (y + searchSpace) > maxY) { //bottom right
+            rect = new Rect(new Point(maxX - searchSpace * 2, maxY - searchSpace * 2), new Point(maxX, maxY));
+            ax = maxX - searchSpace * 2;
+            ay = maxY - searchSpace * 2;
+        } else if ((x - searchSpace) < 0) { //left
+            rect = new Rect(new Point(0, y - searchSpace), new Point(searchSpace * 2, y + searchSpace));
+            ax = 0;
+            ay = y - searchSpace;
+        } else if ((y - searchSpace) < 0) { //top
+            rect = new Rect(new Point(x - searchSpace, 0), new Point(x + searchSpace, searchSpace * 2));
+            ax = x - searchSpace;
+            ay = maxY - searchSpace * 2;
+        } else if ((x + searchSpace) > maxX) { //right
+            rect = new Rect(new Point(maxX - searchSpace * 2, y - searchSpace), new Point(maxX, y + searchSpace));
+            ax = x - searchSpace * 2;
+            ay = maxY - searchSpace;
+        } else if ((y + searchSpace) > maxY) { //bottom
+            ax = x - searchSpace;
+            ay = maxY - searchSpace * 2;
+        } else {
+            rect = new Rect(new Point(x - searchSpace, y - searchSpace), new Point(x + searchSpace, y + searchSpace));
+            ax = x - searchSpace;
+            ay = y - searchSpace;
+        }
+
+        Mat cropped = img.submat(rect);
+        return robotv2(cropped, ax, ay);
     }
 
-    public static KeyPoint[] robotv2(Mat img) {
+    public static KeyPoint[] robotv2(Mat img, int ax, int ay) {
         Mat b = getBChannel(img);
         Mat gr = grayScale(img);
 
@@ -555,11 +610,6 @@ public class ComputerVision {
             if (getBestKeyPoint(robotKeyPoint, true, img) == null) {
                 System.out.println("Found one robot, but seems to be flawed (not passing color test)");
             } else {
-                Imgproc.circle(img, robotKeyPoint[0].pt, 1, new Scalar(255, 0, 0), 5);
-                ImgWindow.newWindow(img);
-                // Drawing the line would interfere with colors atm
-                // /Imgproc.line(img, robotKeyPoint[0].pt, angleKeyPoint[0].pt, new Scalar(0, 255, 0), 2);
-
                 realRobotKeyPoint = robotKeyPoint[0];
             }
         }
@@ -569,23 +619,32 @@ public class ComputerVision {
             if (getBestKeyPoint(angleKeyPoint, false, img) == null) {
                 System.out.println("Found one angle, but seems to be flawed (not passing color test)");
             } else {
-                Imgproc.circle(img, angleKeyPoint[0].pt, 1, new Scalar(0, 0, 255), 5);
-                ImgWindow.newWindow(img);
-
                 realAngleKeyPoint = angleKeyPoint[0];
             }
         }
 
         if (robotKeyPoint.length > 1) {
             realRobotKeyPoint = getBestKeyPoint(robotKeyPoint, true, img);
-            Imgproc.circle(img, realRobotKeyPoint.pt, 1, new Scalar(255, 0, 0), 5);
-            ImgWindow.newWindow(img);
         }
 
         if (angleKeyPoint.length > 1) {
             realAngleKeyPoint = getBestKeyPoint(angleKeyPoint, false, img);
-            Imgproc.circle(img, realAngleKeyPoint.pt, 1, new Scalar(255, 0, 0), 5);
-            ImgWindow.newWindow(img);
+        }
+
+        if (ax != 0 && realRobotKeyPoint != null) {
+            realRobotKeyPoint.pt.x += ax;
+        }
+
+        if (ax != 0 && realAngleKeyPoint != null) {
+            realAngleKeyPoint.pt.x += ax;
+        }
+
+        if (ay != 0 && realRobotKeyPoint != null) {
+            realRobotKeyPoint.pt.y += ay;
+        }
+
+        if (ay != 0 && realAngleKeyPoint != null) {
+            realAngleKeyPoint.pt.y += ay;
         }
 
         return new KeyPoint[]{realRobotKeyPoint, realAngleKeyPoint};
@@ -645,11 +704,10 @@ public class ComputerVision {
     public static void main(String[] args) {
         String folder = System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Input" + File.separator;
 
-        for (int i = 1; i < 14; i++) {
-            String pic = folder + "testpi" + i + ".jpg";
-            Mat img = resize(pic);
-            robotv2(img);
-        }
+        String pic = folder + "testpi2.jpg";
+        Mat img = resize(pic);
+        KeyPoint[] kps = robotv2(img, 0, 0);
+        robotv2(img, kps[0]);
 
 //        Mat gray = grayScale(resize("img"));
 //        MatOfPoint contour = retrieveContour(gray, null);
