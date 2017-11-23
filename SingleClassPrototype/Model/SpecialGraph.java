@@ -39,7 +39,7 @@ public class SpecialGraph{
 
         Grid = new Node[smallRight][smallBotom];
 
-        double radious = roboPos.getRadious();
+        double radious = roboPos.getRadius();
 
         int dialate = (int) Math.ceil(radious);
 
@@ -127,7 +127,7 @@ public class SpecialGraph{
 
         int x = (int)roboPos.getX()/graphSkip;
         int y = (int)roboPos.getY()/graphSkip;
-        double r = (int) roboPos.getRadious()/graphSkip;
+        double r = (int) roboPos.getRadius()/graphSkip;
 
         for (int i = (int) (x-r); i <= x+r; i++) {
             for (int j = (int) (y-r); j < y+r; j++) {
@@ -249,7 +249,7 @@ public class SpecialGraph{
     private void repaint(RoboPos roboPos) {
         int x = (int)roboPos.getX();
         int y = (int)roboPos.getY();
-        double r = (int) roboPos.getRadious();
+        double r = (int) roboPos.getRadius();
         for (int i = (int) (x-r); i <= x+r; i++) {
             for (int j = (int) (y-r); j < y+r; j++) {
                 if (Math.sqrt((i-x)*(i-x)+(j-y)*(j-y))<r)
