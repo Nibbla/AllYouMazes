@@ -32,6 +32,7 @@ public class RobotControl implements IControl {
     private ProcessBuilder processGenerator;
     private Process initRosProcess;
     private Process motorSpeedProcess;
+    private boolean isRunning;
 
     // Implementation of factory pattern
     private static RobotControl factoryControl = new RobotControl();
@@ -85,8 +86,10 @@ public class RobotControl implements IControl {
      */
     @Override
     public void closeConnection() {
-
-        this.initRosProcess.destroy();
+        if (isRunning){
+            this.initRosProcess.destroy();
+            isRunning = false;
+        }
     }
 
     /**
@@ -232,6 +235,8 @@ public class RobotControl implements IControl {
             initRosProcess = processGenerator.start();
 
             Thread.sleep(startUpSeconds * 1000);
+
+            isRunning = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
