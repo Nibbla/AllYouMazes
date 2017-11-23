@@ -82,9 +82,9 @@ public class Camera implements ICamera {
     public void stopCamera() {
         if (isRunning){
             cameraProcess.destroy();
+            isRunning = false;
         }
 
-        isRunning = false;
     }
 
     /**
