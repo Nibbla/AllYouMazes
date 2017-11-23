@@ -68,4 +68,9 @@ public class RoboPos{
     public double getDistanceTo(double targetX, double targetY){
         return Math.sqrt((Math.pow((this.x - targetX),2) + Math.pow((this.y - targetY),2)));
     }
+
+    @Override
+    public boolean equals(Object other){
+        return (((RoboPos) other).x == this.x && ((RoboPos) other).y == this.y && ((RoboPos) other).direction == this.direction && ((RoboPos) other).radius == this.radius);
+    }
 }
