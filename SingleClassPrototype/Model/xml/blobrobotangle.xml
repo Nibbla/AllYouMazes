@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<thresholdStep>10.</thresholdStep>
+<minThreshold>0.</minThreshold>
+<maxThreshold>255.</maxThreshold>
+<minRepeatability>2</minRepeatability>
+<minDistBetweenBlobs>10.</minDistBetweenBlobs>
+<filterByColor>1</filterByColor>
+<blobColor>255</blobColor>
+<filterByArea>1</filterByArea>
+<minArea>20.</minArea>
+<maxArea>160.</maxArea>
+<filterByCircularity>1</filterByCircularity>
+<minCircularity>8.0000001192092896e-01</minCircularity>
+<maxCircularity>3.4028234663852886e+38</maxCircularity>
+<filterByInertia>0</filterByInertia>
+<minInertiaRatio>0.1</minInertiaRatio>
+<maxInertiaRatio>1</maxInertiaRatio>
+<filterByConvexity>1</filterByConvexity>
+<minConvexity>0.85</minConvexity>
+<maxConvexity>1</maxConvexity>
+</opencv_storage>
