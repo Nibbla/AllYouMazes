@@ -84,7 +84,7 @@ public class ComputerVision {
     Returns x, y and r(adius) of the robot based on previous location
     need to translate to correct x,y,r
     */
-    public static ArrayList<Integer> retrieveRobot(Mat gray, ArrayList<Integer> previousLoc) {
+    public static RoboPos retrieveRobot(Mat gray, RoboPos previousLoc) {
         //TODO Consider corner cases!
 
         int maxX=gray.cols();
@@ -92,9 +92,9 @@ public class ComputerVision {
         int addX = 0;
         int addY = 0;
 
-        int previousX = previousLoc.get(0);
-        int previousY = previousLoc.get(1);
-        int previousR = previousLoc.get(2);
+        int previousX = (int) previousLoc.getX();
+        int previousY = (int) previousLoc.getY();
+        int previousR = (int) previousLoc.getRadius();
 
         int searchSpace = previousR*2;
         Rect rect = null;
@@ -142,7 +142,7 @@ public class ComputerVision {
     /*
     Returns x, y and r(adius) of the robot
      */
-    public static ArrayList<Integer> retrieveRobot(Mat gray, int addX, int addY) {
+    public static RoboPos retrieveRobot(Mat gray, int addX, int addY) {
         Mat blur = new Mat();
         gray.copyTo(blur);
 
@@ -194,16 +194,14 @@ public class ComputerVision {
             return null;
         }
 
-        ArrayList<Integer> result = new ArrayList<Integer>();
+        RoboPos result = new RoboPos(0,0,0);
 
         if (addX == 0 && addY == 0) {
-            result.add((int) circles.get(0, 0)[0] + 1);
-            result.add((int) circles.get(0, 0)[1] + 1);
-            result.add((int) circles.get(0, 0)[2] + 1);
+            result.setPosition((int) circles.get(0, 0)[0] + 1, (int) circles.get(0, 0)[1] + 1);
+            result.setRadius((int) circles.get(0, 0)[2] + 1);
         } else {
-            result.add((int) circles.get(0, 0)[0] + addX + 2);
-            result.add((int) circles.get(0, 0)[1] + addY + 2);
-            result.add((int) circles.get(0, 0)[2] + 1);
+            result.setPosition((int) circles.get(0, 0)[0] + addX + 2, (int) circles.get(0, 0)[1] + addY + 2);
+            result.setRadius((int) circles.get(0, 0)[2] + 1);
         }
 
         if (ComputerVision.DEBUG) {
@@ -229,7 +227,7 @@ public class ComputerVision {
     Returns points that together make up the contour polygon (aka maze polygon)
     Returned in [x1, y1, x2, y2, x3, y3, ... , xn, yn] format
      */
-    public static MatOfPoint retrieveContour(Mat gray, ArrayList<Integer> robotPos) {
+    public static MatOfPoint retrieveContour(Mat gray, RoboPos robotPos) {
         Mat equ = new Mat();
         gray.copyTo(equ);
         CLAHE clahe = Imgproc.createCLAHE(4.0 * SCALE_FACTOR, new Size(16.0 * SCALE_FACTOR, 16.0 * SCALE_FACTOR));
@@ -252,7 +250,7 @@ public class ComputerVision {
 
         //Remove robot from picture (paint black)
         if (robotPos != null)
-            Imgproc.rectangle(thresh, new Point(robotPos.get(0) - robotPos.get(2) - offset, robotPos.get(1) - robotPos.get(2) - offset), new Point(robotPos.get(0) + robotPos.get(2) + offset, robotPos.get(1) + robotPos.get(2) + offset), new Scalar(0), -1);
+            Imgproc.rectangle(thresh, new Point(robotPos.getX() - robotPos.getRadius() - offset, robotPos.getY() - robotPos.getRadius() - offset), new Point(robotPos.getX() + robotPos.getRadius() + offset, robotPos.getY() + robotPos.getRadius() + offset), new Scalar(0), -1);
 
         /*findContours
         Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
@@ -307,7 +305,7 @@ public class ComputerVision {
     }
 
     //This method is a total mess and will be cleaned up soon
-    public static LinkedList<Node> retrievePath(Mat gray, MatOfPoint2f contour, ArrayList<Integer> robotPos, int stepSize) {
+    public static LinkedList<Node> retrievePath(Mat gray, MatOfPoint2f contour, RoboPos robotPos, int stepSize) {
         int sRows = gray.rows()/stepSize;
         int sCols = gray.cols()/stepSize;
         Node[][] grid = new Node[sRows][sCols];
@@ -345,8 +343,8 @@ public class ComputerVision {
         Set<Node> settledNodes = new HashSet<>();
         Set<Node> unsettledNodes = new HashSet<>();
 
-        int sX = (int)(robotPos.get(0) / stepSize);
-        int sY = (int)(robotPos.get(1) / stepSize);
+        int sX = (int)(robotPos.getX() / stepSize);
+        int sY = (int)(robotPos.getY() / stepSize);
 
         while (sX % stepSize != 0) {
             sX++;
