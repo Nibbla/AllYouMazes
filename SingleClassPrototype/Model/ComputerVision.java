@@ -531,7 +531,7 @@ public class ComputerVision {
     public static KeyPoint[] robotv2(Mat img, KeyPoint robot) {
         int x = (int)robot.pt.x;
         int y = (int)robot.pt.y;
-        int searchSpace = ((int)robot.size/2) * 2;
+        int searchSpace = (int)((robot.size/2) * 2.5);
 
         int maxX = img.cols();
         int maxY = img.rows();
@@ -673,9 +673,6 @@ public class ComputerVision {
             int robotY = (int) kp.pt.y;
 
             double[] bgr = img.get(robotY, robotX);
-
-            System.out.println(bgr[0] + "|" + bgr[1] + "|" + bgr[2]);
-
             if (bgr[0] >= bThreshold && bgr[1] >= gThreshold && bgr[2] >= rThreshold) {
                 keyPoint = kp;
                 num++;
@@ -704,10 +701,12 @@ public class ComputerVision {
     public static void main(String[] args) {
         String folder = System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Input" + File.separator;
 
-        String pic = folder + "testpi2.jpg";
-        Mat img = resize(pic);
-        KeyPoint[] kps = robotv2(img, 0, 0);
-        robotv2(img, kps[0]);
+        for (int i = 1; i < 14; i ++) {
+            String pic = folder + "testpi" + i + ".jpg";
+            Mat img = resize(pic);
+            KeyPoint[] kps = robotv2(img, 0, 0);
+            robotv2(img, kps[0]);
+        }
 
 //        Mat gray = grayScale(resize("img"));
 //        MatOfPoint contour = retrieveContour(gray, null);
