@@ -32,6 +32,7 @@ public class RobotControl implements IControl {
     private ProcessBuilder processGenerator;
     private Process initRosProcess;
     private Process motorSpeedProcess;
+    private boolean isRunning;
 
     // Implementation of factory pattern
     private static RobotControl factoryControl = new RobotControl();
@@ -85,8 +86,10 @@ public class RobotControl implements IControl {
      */
     @Override
     public void closeConnection() {
-
-        this.initRosProcess.destroy();
+        if (isRunning){
+            this.initRosProcess.destroy();
+            isRunning = false;
+        }
     }
 
     /**
@@ -165,7 +168,7 @@ public class RobotControl implements IControl {
          * In case there are still nodes in the path determine if a rotation is necessary to face towards it, otherwise move straight.
          */
         if(!goalReached){
-            double desiredRotation = Math.atan2(nextGoal.getX()-currentPosition.getX(), -1 * (nextGoal.getY()-currentPosition.getY()));
+            double desiredRotation = currentPosition.getAngleTo(nextGoal);
             double distance = (Math.toDegrees(desiredRotation) - Math.toDegrees(currentRotation)) % 360;
 
             if (distance < -180) {
@@ -232,6 +235,8 @@ public class RobotControl implements IControl {
             initRosProcess = processGenerator.start();
 
             Thread.sleep(startUpSeconds * 1000);
+
+            isRunning = true;
         } catch (Exception e) {
             e.printStackTrace();
         }
