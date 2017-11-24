@@ -105,16 +105,16 @@ public class Modul {
             BufferedImage bi = view.getCurrentShot();
 
             ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED),cl);
-            RoboPos robotPos = view.getRobotCenter(m2, 1);
-            System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
+            //RoboPos robotPos = view.getRobotCenter(m2, 1);
+            //System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
             if (g != null) g.setVisible(false);
-            g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
-            LinkedList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
+            //g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
+            //LinkedList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
 
             //previous classifier approach above
 
 
-
+            RoboPos robotPos = new RoboPos(0,0,0);
 
 /*
             //openCV approach below

@@ -1,6 +1,7 @@
 package Simulation;
 
 import Control.RobotControl;
+import Interfaces.IControl;
 import Model.*;
 import SpecialSettingsEtc.Settings;
 import org.opencv.core.KeyPoint;
@@ -30,11 +31,14 @@ public class Simulation {
     private String pathToPicture;
     private MatOfPoint contour;
     private ScheduledExecutorService scheduler;
-    private RobotControl robotControl;
     private Node n;
     private boolean turning;
     private boolean moving;
     private boolean detected;
+
+    public IControl control;
+    private static RobotControl factoryControl = new RobotControl();
+
 
     public Simulation(String picture) {
         this.pathToPicture = picture;
@@ -71,7 +75,12 @@ public class Simulation {
         TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) rp.getX(), (int) rp.getY()));
         this.agent = new Agent(0,rp, traversalHandler);
         System.out.println("test1");
-        this.robotControl = new RobotControl();
+
+        try{
+            this.control = factoryControl.getInstance();
+        } catch(Exception e){
+            e.printStackTrace();
+        }
 
         if (agent == null || contour == null || shortestPath == null) System.out.println("null pointer constructing simulation");
 
@@ -86,7 +95,7 @@ public class Simulation {
     }
 
     private void connect() {
-        robotControl.startConnection();
+        control.startConnection();
     }
 
     private void schedule() {
@@ -161,9 +170,9 @@ public class Simulation {
                     }
 
                     if (turning && !moving) {
-                        robotControl.sendCommand(linearCoefficient, rotationCoefficient);
+                        control.sendCommand(linearCoefficient, rotationCoefficient);
                     } else if (moving && !turning) {
-                        robotControl.sendCommand(linearCoefficient, rotationCoefficient);
+                        control.sendCommand(linearCoefficient, rotationCoefficient);
                     }
                 }
             }

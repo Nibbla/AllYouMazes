@@ -14,10 +14,10 @@ import java.util.Map;
 public class RobotControl implements IControl {
 
     // Use this to dynamically change to another ROS-Version, i.e. Kinetic.
-    private final String ROSversion = "kinetic";
+    private final String ROSversion = "indigo";
 
     // Replace this with whatever username is valid for the current System.
-    private final String username = "pi";
+    private final String username = "eric";
 
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
     private final int startUpSeconds = 10;
@@ -239,9 +239,9 @@ public class RobotControl implements IControl {
             processGenerator.command(startCommand);
 
             initRosProcess = processGenerator.start();
-
+            System.out.println("Starting ROS");
             Thread.sleep(startUpSeconds * 1000);
-
+            System.out.println("Connection established");
             isRunning = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -254,7 +254,9 @@ public class RobotControl implements IControl {
     private void issueMotorSpeed() {
         try {
             processGenerator.command(movementCommand);
+            System.out.println("Trying to send");
             motorSpeedProcess = processGenerator.start();
+            System.out.println("Sending command: " + movementCommand);
         } catch (Exception e) {
             e.printStackTrace();
         }
