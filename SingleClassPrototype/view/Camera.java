@@ -18,7 +18,7 @@ public class Camera implements ICamera {
     // Default placeholder command
     private final int defaultDuration = Integer.MAX_VALUE;
     private final int defaultPictursPerSecond = 1;
-    private final String[] cameraCommand = {"raspistill","-w", "1100", "-h", "1800","-vf","-hf", "-q", "50","-t", Integer.toString(defaultDuration),"-tl", Integer.toString(defaultPictursPerSecond * 1000) ,"-n","-o", ""};
+    private final String[] cameraCommand = {"raspistill","-w", "1300", "-h", "2000","-vf","-hf", "-q", "50","-t", Integer.toString(defaultDuration),"-tl", Integer.toString(defaultPictursPerSecond * 1000) ,"-n", "-roi", "0.075,0.1,0.8,0.8" ,"-o", ""};
 
     /**
      * Constructor for creating an empty Camera-handler
@@ -43,7 +43,7 @@ public class Camera implements ICamera {
      * @param path path to the input picture
      */
     @Override
-    public void startCamera(int durationInMinutes, double picturesPerSecond, int width, int height, int quality, boolean verticalFlip, boolean horizontalFlip, String path) {
+    public void startCamera(int durationInMinutes, double picturesPerSecond, int width, int height, int quality, boolean verticalFlip, boolean horizontalFlip, String path, double roiX, double roiY, double roiW, double roiH) {
         this.stopCamera();
 
         cameraCommand[2] = Integer.toString(width);
@@ -63,7 +63,8 @@ public class Camera implements ICamera {
         cameraCommand[8] = Integer.toString(quality);
         cameraCommand[10] = Integer.toString(durationInMinutes * 60 * 1000);
         cameraCommand[12] = Integer.toString((int)(1000 / picturesPerSecond));
-        cameraCommand[15] = path;
+        cameraCommand[15] = Double.toString(roiX)+","+Double.toString(roiY)+","+Double.toString(roiW)+","+Double.toString(roiH);
+        cameraCommand[17] = path;
 
         try {
             processGenerator.command(cameraCommand);
