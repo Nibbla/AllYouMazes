@@ -2,6 +2,7 @@ package Interfaces;
 
 
 import Model.*;
+import SpecialSettingsEtc.Classifier;
 
 
 import java.awt.image.BufferedImage;
@@ -20,7 +21,7 @@ public interface IView extends Cloneable {
 
 
 
-    ObjectType[][] classify(BufferedImage bi, boolean showClassification);
+    ObjectType[][] classify(BufferedImage bi, boolean showClassification, Classifier classifier);
 
     RoboPos getRobotCenter(ObjectType[][] m2, int i);
 }

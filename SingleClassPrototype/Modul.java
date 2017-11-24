@@ -2,12 +2,11 @@
 import Control.RobotControl;
 import Interfaces.*;
 import Model.Model;
-import SpecialSettingsEtc.Archivar;
-import SpecialSettingsEtc.Settings;
-import SpecialSettingsEtc.Tangential;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
+import SpecialSettingsEtc.*;
+//import org.opencv.core.Mat;
+//import org.opencv.core.MatOfPoint;
+//import org.opencv.core.MatOfPoint2f;
+import view.Camera;
 import view.PixelObjectType;
 import Model.*;
 import Model.SpecialGraph;
@@ -40,29 +39,32 @@ public class Modul {
     private static View factoryView = new View();
     private static Model factoryModel = new Model(rnd);
     private static RobotControl factoryControl = new RobotControl();
+    private static Camera factoryCamera = new Camera();
 
 
     private Thread processingThread;
     public IView view;
     public IModel model;
     public IControl control;
+    public ICamera camera;
     private boolean[] workmodes = new boolean[Workmode.values().length]; //which workmodes are turned on.
     private boolean running;
     private int graphSkip = Settings.getGraphCreationPixelSkip();
     private SpecialGraph g;
 
 
-    public Modul(View view , Model model, IControl control) {
+    public Modul(View view , Model model, IControl control, ICamera camera) {
         this.view = view;
         this.model = model;
         this.control = control;
+        this.camera = camera;
     }
 
 
     public static void main(String[] args){
 
         try {
-            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl.getInstance());
+            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl.getInstance(), factoryCamera.getInstance());
 
             modul.setWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE, true);
             modul.setWorkmode(Workmode.JODISPECIALSAUCEANDNOTSIMPLECLASSIFICATOR, false);
@@ -87,7 +89,8 @@ public class Modul {
         running = true;
         int loop = -1;
         RoboPos lastPos = null;
-
+        Classifier cl = new Classifier();
+        cl.edit();
         while (running){
             loop++;
             long loopStart = System.currentTimeMillis();
@@ -96,23 +99,11 @@ public class Modul {
 
             //https://www.youtube.com/watch?v=bjSpO2B6G4s
 
-            //update the image
-
-            try {
-                ProcessBuilder pb = new ProcessBuilder("raspistill","-w", "1100", "-h", "1800","-vf","-hf", "-q", "50","-t", "3" ,"-n","-o", Settings.getInputPath());
-                pb.start();
-                Thread.sleep(3000);
-            }catch (Exception e){
-                System.out.println("error taking picture: " + e);
-            }
-
-
-            /*
-
             //previous classifier approach below
 
             BufferedImage bi = view.getCurrentShot();
-            ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED));
+
+            ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED),cl);
             RoboPos robotPos = view.getRobotCenter(m2, 1);
             System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
             if (g != null) g.setVisible(false);
@@ -121,10 +112,10 @@ public class Modul {
 
             //previous classifier approach above
 
-            */
 
 
 
+/*
             //openCV approach below
 
             Mat test = ComputerVision.preprocess(Settings.getInputPath());
@@ -132,7 +123,7 @@ public class Modul {
             RoboPos robotPos = new RoboPos(positions.get(0), positions.get(1), positions.get(2));
             MatOfPoint contour = ComputerVision.retrieveContour(test, positions);
             LinkedList<Node> path = ComputerVision.retrievePath(test, new MatOfPoint2f(contour.toArray()), positions, 10);
-
+*/
             //openCV approach above
 
 
@@ -172,6 +163,8 @@ public class Modul {
         stopProcessingThread();
         if (!b) return;
 
+        // TODO: find suitable values for the final camera-maze setup
+        camera.startCamera(60, 1, 1100, 1800, 75, true, true, Settings.getInputPath());
         control.startConnection();
 
         processingThread = new Thread() {
@@ -187,6 +180,9 @@ public class Modul {
 
     private void stopProcessingThread() {
         running = false;
+
+        camera.stopCamera();
+        control.closeConnection();
         processingThread = null;
     }
 

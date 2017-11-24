@@ -1,9 +1,7 @@
 package Simulation;
 
 import Control.RobotControl;
-import Model.ComputerVision;
-import Model.Node;
-import Model.TraversalHandler;
+import Model.*;
 import SpecialSettingsEtc.Settings;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
@@ -26,25 +24,25 @@ public class Simulation {
 
     public final static int TIME_STEP = 500;
 
+    private Agent agent;
     private String pathToPicture;
-    private ArrayList<Integer> robotCurrentDetails;
     private MatOfPoint contour;
     private ScheduledExecutorService scheduler;
-    private TraversalHandler traversalHandler;
     private RobotControl robotControl;
     private Node n;
     private double direction;
 
     public Simulation(String picture) {
         this.pathToPicture = picture;
-        Mat gray = ComputerVision.preprocess(picture);
-        this.robotCurrentDetails = ComputerVision.retrieveRobot(gray, 0, 0);
-        this.contour = ComputerVision.retrieveContour(gray, robotCurrentDetails);
-        LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotCurrentDetails, ComputerVision.STEP_SIZE);
-        this.traversalHandler = new TraversalHandler(shortestPath, new Node(robotCurrentDetails.get(0), robotCurrentDetails.get(1)));
+        Mat gray = ComputerVision.grayScale(ComputerVision.resize(picture));
+        RoboPos currentDetails = ComputerVision.retrieveRobot(gray, 0, 0);
+        this.contour = ComputerVision.retrieveContour(gray, currentDetails);
+        LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), currentDetails, ComputerVision.STEP_SIZE);
+        TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) currentDetails.getX(), (int) currentDetails.getY()));
+        this.agent = new Agent(0,currentDetails, traversalHandler);
         this.robotControl = new RobotControl();
 
-        if (robotCurrentDetails == null || contour == null || shortestPath == null) System.out.println("null pointer constructing simulation");
+        if (agent == null || contour == null || shortestPath == null) System.out.println("null pointer constructing simulation");
 
         connect();
         schedule();
@@ -69,20 +67,22 @@ public class Simulation {
         final Runnable robotDetector = new Runnable() {
             @Override
             public void run() {
-                ArrayList<Integer> oldLocation = robotCurrentDetails;
-                robotCurrentDetails = ComputerVision.retrieveRobot(ComputerVision.preprocess(Settings.getInputPath()), 0, 0);
-                if (oldLocation.equals(robotCurrentDetails)) System.out.println("No change / can't detect");
+                RoboPos oldLocation = new RoboPos(agent.getCurrentPosition().getX(), agent.getCurrentPosition().getY(), agent.getCurrentPosition().getRadius());
+                agent.setCurrentPosition(ComputerVision.retrieveRobot(ComputerVision.grayScale(ComputerVision.resize(Settings.getInputPath())), 0, 0));
+                if (oldLocation.equals(agent.getCurrentPosition())) System.out.println("No change / can't detect");
 
-                int x = robotCurrentDetails.get(0);
-                int y = robotCurrentDetails.get(1);
+                int x = (int) agent.getCurrentPosition().getX();
+                int y = (int) agent.getCurrentPosition().getY();
                 if (x - ComputerVision.PROXIMITY <= n.getX() && x + ComputerVision.PROXIMITY >= n.getX() && y - ComputerVision.PROXIMITY <= n.getY() && y + ComputerVision.PROXIMITY >= n.getY()) {
                     System.out.println("Close enough to move to next node");
-                    traversalHandler.step();
-                    int m = traversalHandler.getIndex();
+                    agent.getHandler().step();
+                    int m = agent.getHandler().getIndex();
                     if (m != 0) {
-                        Node prevNode = traversalHandler.getNode(m-1);
-                        Node newNode = traversalHandler.getNode(m);
-                        direction = Math.atan2(newNode.getY() - prevNode.getY(), newNode.getX() - prevNode.getX());
+                        Node prevNode = agent.getHandler().getNode(m-1);
+                        Node newNode = agent.getHandler().getNode(m);
+
+                        // changed direction calculation to be consistent with (hopefully correct) calculation in RoboPos
+                        direction = Math.atan2(newNode.getX() - prevNode.getX(), -1 *(newNode.getY() - prevNode.getY()));
                         //send robot command
                         //problem: determine correct angle..
                     }

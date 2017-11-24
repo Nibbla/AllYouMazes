@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <opencv_storage>
-<thresholdStep>5.</thresholdStep>
+<thresholdStep>10.</thresholdStep>
 <minThreshold>0.</minThreshold>
 <maxThreshold>255.</maxThreshold>
-<minRepeatability>1</minRepeatability>
+<minRepeatability>2</minRepeatability>
 <minDistBetweenBlobs>10.</minDistBetweenBlobs>
 <filterByColor>1</filterByColor>
 <blobColor>255</blobColor>
@@ -17,6 +17,6 @@
 <minInertiaRatio>0.1</minInertiaRatio>
 <maxInertiaRatio>1</maxInertiaRatio>
 <filterByConvexity>1</filterByConvexity>
-<minConvexity>0.75</minConvexity>
+<minConvexity>0.85</minConvexity>
 <maxConvexity>1</maxConvexity>
 </opencv_storage>

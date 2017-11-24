@@ -4,7 +4,6 @@ package Model;
  * Created by Jordy on 19-11-2017.
  */
 
-import SpecialSettingsEtc.Settings;
 import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.core.Point;
@@ -40,6 +39,8 @@ Double click on the jar you just added (in IntelliJ), click on the green plus ic
 //Java OpenCV docs are here!
 //https://docs.opencv.org/java/3.1.0/
 
+//Don't use retrieveRobot anymore.
+
 public class ComputerVision {
 
     //Perhaps do scaling and grayscaling in separate method
@@ -54,14 +55,14 @@ public class ComputerVision {
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
 
-    public final static int RADIUS_EST = (int) (50*SCALE_FACTOR);
-    public final static int RADIUS_ESTOFFSET = (int) (20*SCALE_FACTOR);
+    public final static int RADIUS_EST = (int) (100 * SCALE_FACTOR);
+    public final static int RADIUS_ESTOFFSET = (int) (20 * SCALE_FACTOR);
 
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    public static Mat preprocess(String picture) {
+    public static Mat resize(String picture) {
         Mat img = Imgcodecs.imread(picture);
 
         int w = img.width();
@@ -70,9 +71,14 @@ public class ComputerVision {
         Mat simg = new Mat();
         Imgproc.resize(img, simg, new Size(SCALE_FACTOR * w, SCALE_FACTOR * h));
 
+        return simg;
+    }
+
+    public static Mat grayScale(Mat img) {
         Mat gray = new Mat();
-        simg.copyTo(gray);
+        img.copyTo(gray);
         Imgproc.cvtColor(gray, gray, Imgproc.COLOR_BGR2GRAY);
+
         return gray;
     }
 
@@ -80,81 +86,74 @@ public class ComputerVision {
     Returns x, y and r(adius) of the robot based on previous location
     need to translate to correct x,y,r
     */
-    public static ArrayList<Integer> retrieveRobot(Mat gray, ArrayList<Integer> previousLoc) {
+
+    @Deprecated
+    public static RoboPos retrieveRobot(Mat gray, RoboPos previousLoc) {
         //TODO Consider corner cases!
 
-        int maxX=gray.cols();
-        int maxY=gray.rows();
+        int maxX = gray.cols();
+        int maxY = gray.rows();
         int addX = 0;
         int addY = 0;
 
-        int previousX = previousLoc.get(0);
-        int previousY = previousLoc.get(1);
-        int previousR = previousLoc.get(2);
+        int previousX = (int) previousLoc.getX();
+        int previousY = (int) previousLoc.getY();
+        int previousR = (int) previousLoc.getRadius();
 
-        int searchSpace = previousR*2;
-
+        int searchSpace = previousR * 2;
         Rect rect = null;
-        if((previousX-searchSpace)<0 && (previousY-searchSpace)<0){ //top left
+        if ((previousX - searchSpace) < 0 && (previousY - searchSpace) < 0) { //top left
             rect = new Rect(new Point(0, 0), new Point(searchSpace, searchSpace));
-            addX=0;
-            addY=0;
-        } else if((previousX+searchSpace)>maxX && (previousY-searchSpace)<0){ //top right
-            rect = new Rect(new Point(maxX-searchSpace*2, 0), new Point(maxX, searchSpace*2));
-            addX=maxX-searchSpace*2;
-            addY=0;
-        } else if((previousX-searchSpace)<0 && (previousY+searchSpace)>maxY){ //bottom left
-            rect = new Rect(new Point(0, maxY-searchSpace*2), new Point(searchSpace*2, maxY));
-            addX=0;
-            addY=maxY-searchSpace*2;
-        } else if((previousX+searchSpace)>maxX && (previousY+searchSpace)>maxY){ //bottom right
-            rect = new Rect(new Point(maxX-searchSpace*2, maxY-searchSpace*2), new Point(maxX, maxY));
-            addX=maxX-searchSpace*2;
-            addY=maxY-searchSpace*2;
-        } else if((previousX-searchSpace)<0){ //left
-            rect = new Rect(new Point(0, previousY-searchSpace), new Point(searchSpace*2, previousY+searchSpace));
-            addX=0;
-            addY=previousY-searchSpace;
-        } else if((previousY-searchSpace)<0){ //top
-            rect = new Rect(new Point(previousX-searchSpace, 0), new Point(previousX+searchSpace, searchSpace*2));
-            addX=previousX-searchSpace;
-            addY=maxY-searchSpace*2;
-        } else if((previousX+searchSpace)>maxX){ //right
-            rect = new Rect(new Point(maxX-searchSpace*2, previousY-searchSpace), new Point(maxX, previousY+searchSpace));
-            addX=previousX-searchSpace*2;
-            addY=maxY-searchSpace;
-        } else if((previousY+searchSpace)>maxY){ //bottom
-            addX=previousX-searchSpace;
-            addY=maxY-searchSpace*2;
+            addX = 0;
+            addY = 0;
+        } else if ((previousX + searchSpace) > maxX && (previousY - searchSpace) < 0) { //top right
+            rect = new Rect(new Point(maxX - searchSpace * 2, 0), new Point(maxX, searchSpace * 2));
+            addX = maxX - searchSpace * 2;
+            addY = 0;
+        } else if ((previousX - searchSpace) < 0 && (previousY + searchSpace) > maxY) { //bottom left
+            rect = new Rect(new Point(0, maxY - searchSpace * 2), new Point(searchSpace * 2, maxY));
+            addX = 0;
+            addY = maxY - searchSpace * 2;
+        } else if ((previousX + searchSpace) > maxX && (previousY + searchSpace) > maxY) { //bottom right
+            rect = new Rect(new Point(maxX - searchSpace * 2, maxY - searchSpace * 2), new Point(maxX, maxY));
+            addX = maxX - searchSpace * 2;
+            addY = maxY - searchSpace * 2;
+        } else if ((previousX - searchSpace) < 0) { //left
+            rect = new Rect(new Point(0, previousY - searchSpace), new Point(searchSpace * 2, previousY + searchSpace));
+            addX = 0;
+            addY = previousY - searchSpace;
+        } else if ((previousY - searchSpace) < 0) { //top
+            rect = new Rect(new Point(previousX - searchSpace, 0), new Point(previousX + searchSpace, searchSpace * 2));
+            addX = previousX - searchSpace;
+            addY = maxY - searchSpace * 2;
+        } else if ((previousX + searchSpace) > maxX) { //right
+            rect = new Rect(new Point(maxX - searchSpace * 2, previousY - searchSpace), new Point(maxX, previousY + searchSpace));
+            addX = previousX - searchSpace * 2;
+            addY = maxY - searchSpace;
+        } else if ((previousY + searchSpace) > maxY) { //bottom
+            addX = previousX - searchSpace;
+            addY = maxY - searchSpace * 2;
         } else {
             rect = new Rect(new Point(previousX - searchSpace, previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace));
-            addX=previousX-searchSpace;
-            addY=previousY-searchSpace;
+            addX = previousX - searchSpace;
+            addY = previousY - searchSpace;
         }
 
         Mat cropped = gray.submat(rect);
-
-        if (ComputerVision.DEBUG) {
-            Imgproc.rectangle(gray, new Point(previousX - searchSpace,previousY - searchSpace), new Point(previousX + searchSpace, previousY + searchSpace), new Scalar(255), 1);
-            Imgproc.rectangle(gray, new Point(0, 0), new Point(searchSpace*2, searchSpace*2), new Scalar(255), 1);
-            ImgWindow.newWindow(gray);
-        }
-
         return retrieveRobot(cropped, addX, addY);
     }
 
     /*
     Returns x, y and r(adius) of the robot
      */
-    public static ArrayList<Integer> retrieveRobot(Mat gray, int addX, int addY) {
-        FeatureDetector detector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
 
-
+    @Deprecated
+    public static RoboPos retrieveRobot(Mat gray, int addX, int addY) {
         Mat blur = new Mat();
         gray.copyTo(blur);
 
-        int w = (int) (21*SCALE_FACTOR);
-        int h = (int) (21*SCALE_FACTOR);
+        int w = (int) (21 * SCALE_FACTOR);
+        int h = (int) (21 * SCALE_FACTOR);
 
         if (w % 2 != 1) {
             w++;
@@ -201,16 +200,14 @@ public class ComputerVision {
             return null;
         }
 
-        ArrayList<Integer> result = new ArrayList<Integer>();
+        RoboPos result = new RoboPos(0, 0, 0);
 
         if (addX == 0 && addY == 0) {
-            result.add((int) circles.get(0, 0)[0] + 1);
-            result.add((int) circles.get(0, 0)[1] + 1);
-            result.add((int) circles.get(0, 0)[2] + 1);
+            result.setPosition((int) circles.get(0, 0)[0] + 1, (int) circles.get(0, 0)[1] + 1);
+            result.setRadius((int) circles.get(0, 0)[2] + 1);
         } else {
-            result.add((int) circles.get(0, 0)[0] + addX + 2);
-            result.add((int) circles.get(0, 0)[1] + addY + 2);
-            result.add((int) circles.get(0, 0)[2] + 1);
+            result.setPosition((int) circles.get(0, 0)[0] + addX + 2, (int) circles.get(0, 0)[1] + addY + 2);
+            result.setRadius((int) circles.get(0, 0)[2] + 1);
         }
 
         if (ComputerVision.DEBUG) {
@@ -236,7 +233,7 @@ public class ComputerVision {
     Returns points that together make up the contour polygon (aka maze polygon)
     Returned in [x1, y1, x2, y2, x3, y3, ... , xn, yn] format
      */
-    public static MatOfPoint retrieveContour(Mat gray, ArrayList<Integer> robotPos) {
+    public static MatOfPoint retrieveContour(Mat gray, RoboPos robotPos) {
         Mat equ = new Mat();
         gray.copyTo(equ);
         CLAHE clahe = Imgproc.createCLAHE(4.0 * SCALE_FACTOR, new Size(16.0 * SCALE_FACTOR, 16.0 * SCALE_FACTOR));
@@ -259,7 +256,7 @@ public class ComputerVision {
 
         //Remove robot from picture (paint black)
         if (robotPos != null)
-            Imgproc.rectangle(thresh, new Point(robotPos.get(0) - robotPos.get(2) - offset, robotPos.get(1) - robotPos.get(2) - offset), new Point(robotPos.get(0) + robotPos.get(2) + offset, robotPos.get(1) + robotPos.get(2) + offset), new Scalar(0), -1);
+            Imgproc.rectangle(thresh, new Point(robotPos.getX() - robotPos.getRadius() - offset, robotPos.getY() - robotPos.getRadius() - offset), new Point(robotPos.getX() + robotPos.getRadius() + offset, robotPos.getY() + robotPos.getRadius() + offset), new Scalar(0), -1);
 
         /*findContours
         Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
@@ -314,9 +311,9 @@ public class ComputerVision {
     }
 
     //This method is a total mess and will be cleaned up soon
-    public static LinkedList<Node> retrievePath(Mat gray, MatOfPoint2f contour, ArrayList<Integer> robotPos, int stepSize) {
-        int sRows = gray.rows()/stepSize;
-        int sCols = gray.cols()/stepSize;
+    public static LinkedList<Node> retrievePath(Mat gray, MatOfPoint2f contour, RoboPos robotPos, int stepSize) {
+        int sRows = gray.rows() / stepSize;
+        int sCols = gray.cols() / stepSize;
         Node[][] grid = new Node[sRows][sCols];
 
         for (int x = 0; x < sRows; x++) {
@@ -352,8 +349,8 @@ public class ComputerVision {
         Set<Node> settledNodes = new HashSet<>();
         Set<Node> unsettledNodes = new HashSet<>();
 
-        int sX = (int)(robotPos.get(0) / stepSize);
-        int sY = (int)(robotPos.get(1) / stepSize);
+        int sX = (int) (robotPos.getX() / stepSize);
+        int sY = (int) (robotPos.getY() / stepSize);
 
         while (sX % stepSize != 0) {
             sX++;
@@ -418,7 +415,7 @@ public class ComputerVision {
 //        System.out.println(unvisitedSet.size());
 //
         LinkedList<Node> path = grid[0][0].shortestPath;
-        for (Node no: path) {
+        for (Node no : path) {
             Imgproc.circle(gray, new Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
         }
 
@@ -462,77 +459,264 @@ public class ComputerVision {
         return lowestDistanceNode;
     }
 
-    public static void robotv2(Mat gray) {
-        //Blob detection
-        //TODO
-        //Lets start with only gray channel
-        FeatureDetector angleDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
-        angleDetector.read(System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator + "blobrobotangle.xml");
-        MatOfKeyPoint angleKeyPoints = new MatOfKeyPoint();
-        angleDetector.detect(gray, angleKeyPoints);
-        List<KeyPoint> angleKeyPointList = angleKeyPoints.toList();
-        for (KeyPoint kp: angleKeyPointList) {
-            System.out.println("point: " + kp.pt.x + ":" + kp.pt.y);
-            System.out.println("size: " + kp.size);
+    private static Mat featureProcessing(Mat m) {
+        Mat equ = new Mat();
+        m.copyTo(equ);
+        CLAHE clahe = Imgproc.createCLAHE(4.0 * SCALE_FACTOR, new Size(16.0 * SCALE_FACTOR, 16.0 * SCALE_FACTOR));
+        clahe.apply(m, equ);
+
+        int w = (int) (9 * SCALE_FACTOR);
+        int h = (int) (9 * SCALE_FACTOR);
+
+        if (w % 2 != 1) {
+            w++;
         }
 
-        Scalar core = new Scalar(255);
-        Features2d.drawKeypoints(gray, angleKeyPoints, gray, core, 2);
-
-
-        FeatureDetector robotDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
-        robotDetector.read(System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator + "blobrobot.xml");
-        MatOfKeyPoint robotKeyPoints = new MatOfKeyPoint();
-        robotDetector.detect(gray, robotKeyPoints);
-        List<KeyPoint> robotKeyPointList = robotKeyPoints.toList();
-        for (KeyPoint kp: robotKeyPointList) {
-            System.out.println("point: " + kp.pt.x + ":" + kp.pt.y);
-            System.out.println("size: " + kp.size);
+        if (h % 2 != 1) {
+            h++;
         }
 
-         double angle = Math.toDegrees(Math.atan2(robotKeyPointList.get(0).pt.y - angleKeyPointList.get(0).pt.y, robotKeyPointList.get(0).pt.x - angleKeyPointList.get(0).pt.x));
-        System.out.println("angle: " + angle);
-
-        Imgproc.line(gray, angleKeyPointList.get(0).pt, robotKeyPointList.get(0).pt, new Scalar(255, 255 ,0), 2);
-        Imgproc.putText(gray, "angle: " + angle, new Point(50, 100), 0, 1, new Scalar(100), 2);
-
-        Features2d.drawKeypoints(gray, robotKeyPoints, gray, core, 2);
-        ImgWindow.newWindow(gray);
-
-        //Note: kp.size is diameter, /2 gives ROUGHLY the radius
-
-        /*Test cases
-        testmaze2.jpg (no angle identifier)
-        Hough: 100:140:26
-        Blob: 100:140:24
-
-        testmaze3.jpg (angle identifier)
-        Hough: 108:154:30
-        Blob: 108:155:28
-
-        increase radius by 2?
-         */
+        Imgproc.GaussianBlur(equ, equ, new Size(w, h), 2, 2);
+        return equ;
     }
+
+    private static KeyPoint[] processAngle(Mat m) {
+        FeatureDetector angleDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+        angleDetector.read(System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobotangle.xml");
+        MatOfKeyPoint angleKeyPoints = new MatOfKeyPoint();
+        angleDetector.detect(m, angleKeyPoints);
+        KeyPoint[] angleKeyPointArray = angleKeyPoints.toArray();
+
+        if (ComputerVision.DEBUG) {
+            Features2d.drawKeypoints(m, angleKeyPoints, m, new Scalar(255), 2);
+            ImgWindow.newWindow(m);
+        }
+
+        return angleKeyPointArray;
+    }
+
+    private static KeyPoint[] processRobot(Mat m) {
+        FeatureDetector robotDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+        robotDetector.read(System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobot.xml");
+        MatOfKeyPoint robotKeyPoints = new MatOfKeyPoint();
+        robotDetector.detect(m, robotKeyPoints);
+        KeyPoint[] robotKeyPointArray = robotKeyPoints.toArray();
+
+        if (ComputerVision.DEBUG) {
+            Features2d.drawKeypoints(m, robotKeyPoints, m, new Scalar(255), 2);
+            ImgWindow.newWindow(m);
+        }
+
+        return robotKeyPointArray;
+    }
+
+    private static Mat getRChannel(Mat img) {
+        List<Mat> channels = new ArrayList<Mat>();
+        Core.split(img, channels);
+        return channels.get(0);
+    }
+
+    private static Mat getGChannel(Mat img) {
+        List<Mat> channels = new ArrayList<Mat>();
+        Core.split(img, channels);
+        return channels.get(1);
+    }
+
+    private static Mat getBChannel(Mat img) {
+        List<Mat> channels = new ArrayList<Mat>();
+        Core.split(img, channels);
+        return channels.get(2);
+    }
+
+    public static KeyPoint[] robotv2(Mat img, KeyPoint robot) {
+        int x = (int)robot.pt.x;
+        int y = (int)robot.pt.y;
+        int searchSpace = (int)((robot.size/2) * 2.5);
+
+        int maxX = img.cols();
+        int maxY = img.rows();
+        int ax = 0;
+        int ay = 0;
+        
+        Rect rect = null;
+
+        if ((x - searchSpace) < 0 && (y - searchSpace) < 0) { //top left
+            rect = new Rect(new Point(0, 0), new Point(searchSpace, searchSpace));
+            ax = 0;
+            ay = 0;
+        } else if ((x + searchSpace) > maxX && (y - searchSpace) < 0) { //top right
+            rect = new Rect(new Point(maxX - searchSpace * 2, 0), new Point(maxX, searchSpace * 2));
+            ax = maxX - searchSpace * 2;
+            ay = 0;
+        } else if ((x - searchSpace) < 0 && (y + searchSpace) > maxY) { //bottom left
+            rect = new Rect(new Point(0, maxY - searchSpace * 2), new Point(searchSpace * 2, maxY));
+            ax = 0;
+            ay = maxY - searchSpace * 2;
+        } else if ((x + searchSpace) > maxX && (y + searchSpace) > maxY) { //bottom right
+            rect = new Rect(new Point(maxX - searchSpace * 2, maxY - searchSpace * 2), new Point(maxX, maxY));
+            ax = maxX - searchSpace * 2;
+            ay = maxY - searchSpace * 2;
+        } else if ((x - searchSpace) < 0) { //left
+            rect = new Rect(new Point(0, y - searchSpace), new Point(searchSpace * 2, y + searchSpace));
+            ax = 0;
+            ay = y - searchSpace;
+        } else if ((y - searchSpace) < 0) { //top
+            rect = new Rect(new Point(x - searchSpace, 0), new Point(x + searchSpace, searchSpace * 2));
+            ax = x - searchSpace;
+            ay = maxY - searchSpace * 2;
+        } else if ((x + searchSpace) > maxX) { //right
+            rect = new Rect(new Point(maxX - searchSpace * 2, y - searchSpace), new Point(maxX, y + searchSpace));
+            ax = x - searchSpace * 2;
+            ay = maxY - searchSpace;
+        } else if ((y + searchSpace) > maxY) { //bottom
+            ax = x - searchSpace;
+            ay = maxY - searchSpace * 2;
+        } else {
+            rect = new Rect(new Point(x - searchSpace, y - searchSpace), new Point(x + searchSpace, y + searchSpace));
+            ax = x - searchSpace;
+            ay = y - searchSpace;
+        }
+
+        Mat cropped = img.submat(rect);
+        return robotv2(cropped, ax, ay);
+    }
+
+    public static KeyPoint[] robotv2(Mat img, int ax, int ay) {
+        Mat b = getBChannel(img);
+        Mat gr = grayScale(img);
+
+        Mat pb = featureProcessing(b);
+        Mat pgr = featureProcessing(gr);
+
+        KeyPoint[] robotKeyPoint = processRobot(pb);
+        KeyPoint[] angleKeyPoint = processAngle(pgr);
+
+        KeyPoint realRobotKeyPoint = null;
+        KeyPoint realAngleKeyPoint = null;
+
+        boolean robotSkip, angleSkip;
+
+        if (robotKeyPoint.length < 1) {
+            System.out.println("No robot detected");
+        }
+
+        if (angleKeyPoint.length < 1) {
+            System.out.println("No angle detected");
+        }
+
+        if (robotKeyPoint.length == 1) {
+            System.out.println("Standard detection- robot");
+
+            if (getBestKeyPoint(robotKeyPoint, true, img) == null) {
+                System.out.println("Found one robot, but seems to be flawed (not passing color test)");
+            } else {
+                realRobotKeyPoint = robotKeyPoint[0];
+            }
+        }
+
+        if (angleKeyPoint.length == 1) {
+            System.out.println("Standard detection- angle");
+            if (getBestKeyPoint(angleKeyPoint, false, img) == null) {
+                System.out.println("Found one angle, but seems to be flawed (not passing color test)");
+            } else {
+                realAngleKeyPoint = angleKeyPoint[0];
+            }
+        }
+
+        if (robotKeyPoint.length > 1) {
+            realRobotKeyPoint = getBestKeyPoint(robotKeyPoint, true, img);
+        }
+
+        if (angleKeyPoint.length > 1) {
+            realAngleKeyPoint = getBestKeyPoint(angleKeyPoint, false, img);
+        }
+
+        if (ax != 0 && realRobotKeyPoint != null) {
+            realRobotKeyPoint.pt.x += ax;
+        }
+
+        if (ax != 0 && realAngleKeyPoint != null) {
+            realAngleKeyPoint.pt.x += ax;
+        }
+
+        if (ay != 0 && realRobotKeyPoint != null) {
+            realRobotKeyPoint.pt.y += ay;
+        }
+
+        if (ay != 0 && realAngleKeyPoint != null) {
+            realAngleKeyPoint.pt.y += ay;
+        }
+
+        return new KeyPoint[]{realRobotKeyPoint, realAngleKeyPoint};
+    }
+
+    private static KeyPoint getBestKeyPoint(KeyPoint[] keypoints, boolean robot, Mat img) {
+        int rThreshold = 0;
+        int gThreshold = 0;
+        int bThreshold = 0;
+
+        if (robot) {
+            rThreshold = 230;
+            gThreshold = 100;
+            bThreshold = 100;
+        } else {
+            rThreshold = 210;
+            gThreshold = 230;
+            bThreshold = 230;
+        }
+
+        KeyPoint keyPoint = null;
+        int num = 0;
+
+        for (KeyPoint kp : keypoints) {
+            int robotX = (int) kp.pt.x;
+            int robotY = (int) kp.pt.y;
+
+            double[] bgr = img.get(robotY, robotX);
+            if (bgr[0] >= bThreshold && bgr[1] >= gThreshold && bgr[2] >= rThreshold) {
+                keyPoint = kp;
+                num++;
+            }
+        }
+
+        if (num == 0) {
+            System.out.println("No suitable robot found out of multiple.");
+        }
+
+        if (num == 1) {
+            System.out.println("Best KeyPoint found");
+        }
+
+        if (num == 2) {
+            System.out.println("Multiple suitable robots found.");
+            keyPoint = null;
+        }
+
+        return keyPoint;
+    }
+
+    //Note: kp.size is diameter, /2 gives ROUGHLY the radius
+    //TODO incorporate checking on prev position
 
     public static void main(String[] args) {
-        //Current only works (and is optimized) for latestScreen.jpg
+        String folder = System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Input" + File.separator;
 
-//        long start = System.currentTimeMillis();
-          Mat gray = preprocess(Settings.getInputPath());
-//        ArrayList<Integer> robotLoc = retrieveRobot(gray, 0, 0);
-//        System.out.println(robotLoc);
-//        System.out.println(retrieveRobot(gray, robotLoc));
-          MatOfPoint contour = retrieveContour(gray, null);
-//        retrievePath(gray, new MatOfPoint2f(contour.toArray()), robotLoc, ComputerVision.STEP_SIZE);
-//        long end = System.currentTimeMillis();
-//        System.out.println("CV took " + (end - start) + "ms");
+        for (int i = 1; i < 14; i ++) {
+            String pic = folder + "testpi" + i + ".jpg";
+            Mat img = resize(pic);
+            KeyPoint[] kps = robotv2(img, 0, 0);
+            robotv2(img, kps[0]);
+        }
 
-          robotv2(gray);
+//        Mat gray = grayScale(resize("img"));
+//        MatOfPoint contour = retrieveContour(gray, null);
+//        retrievePath(gray, new MatOfPoint2f();
     }
+}
 
     //Robot radius
     //Possible to improve on houghcircles? Preset variables?
     //Don't expect robot detection at EVERY image!
     //Centralize shortest path (redundancy)
-
-}
+    //TODO: cycle retrieve robot method to all possible methods we have
+    //TODO: multiple color channels?
