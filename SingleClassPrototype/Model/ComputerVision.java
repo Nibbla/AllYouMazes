@@ -4,6 +4,7 @@ package Model;
  * Created by Jordy on 19-11-2017.
  */
 
+import SpecialSettingsEtc.Settings;
 import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.core.Point;
@@ -140,6 +141,7 @@ public class ComputerVision {
         }
 
         Mat cropped = gray.submat(rect);
+        ImgWindow.newWindow(cropped);
         return retrieveRobot(cropped, addX, addY);
     }
 
@@ -268,7 +270,7 @@ public class ComputerVision {
 
         Mat dilateElement = new Mat();
         org.opencv.core.Point p = new org.opencv.core.Point(-1, -1);
-        //Imgproc.dilate(thresh, thresh, dilateElement, p, (int) Math.ceil(robotPos.get(2)));
+        //Imgproc.dilate(thresh, thresh, dilateElement, p, (int) robotPos.getRadius());
 
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierarchy = new Mat();
@@ -513,7 +515,7 @@ public class ComputerVision {
     private static Mat getRChannel(Mat img) {
         List<Mat> channels = new ArrayList<Mat>();
         Core.split(img, channels);
-        return channels.get(0);
+        return channels.get(2);
     }
 
     private static Mat getGChannel(Mat img) {
@@ -525,13 +527,11 @@ public class ComputerVision {
     private static Mat getBChannel(Mat img) {
         List<Mat> channels = new ArrayList<Mat>();
         Core.split(img, channels);
-        return channels.get(2);
+        return channels.get(0);
     }
 
-    public static KeyPoint[] robotv2(Mat img, KeyPoint robot) {
-        int x = (int)robot.pt.x;
-        int y = (int)robot.pt.y;
-        int searchSpace = (int)((robot.size/2) * 2.5);
+    public static KeyPoint[] robotv2(Mat img, int x, int y, int r) {
+        int searchSpace = (int)(r * 2.5);
 
         int maxX = img.cols();
         int maxY = img.rows();
@@ -582,14 +582,14 @@ public class ComputerVision {
     }
 
     public static KeyPoint[] robotv2(Mat img, int ax, int ay) {
-        Mat b = getBChannel(img);
-        Mat gr = grayScale(img);
+        Mat r = getRChannel(img);
+        Mat g = getGChannel(img);
 
-        Mat pb = featureProcessing(b);
-        Mat pgr = featureProcessing(gr);
+        Mat pr = featureProcessing(r);
+        Mat pg = featureProcessing(g);
 
-        KeyPoint[] robotKeyPoint = processRobot(pb);
-        KeyPoint[] angleKeyPoint = processAngle(pgr);
+        KeyPoint[] robotKeyPoint = processRobot(pr);
+        KeyPoint[] angleKeyPoint = processAngle(pg);
 
         KeyPoint realRobotKeyPoint = null;
         KeyPoint realAngleKeyPoint = null;
@@ -656,13 +656,13 @@ public class ComputerVision {
         int bThreshold = 0;
 
         if (robot) {
-            rThreshold = 200;
-            gThreshold = 120;
-            bThreshold = 120;
+            rThreshold = 140;
+            gThreshold = 140;
+            bThreshold = 140;
         } else {
-            rThreshold = 180;
-            gThreshold = 180;
-            bThreshold = 230;
+            rThreshold = 140;
+            gThreshold = 140;
+            bThreshold = 140;
         }
 
         KeyPoint keyPoint = null;
@@ -674,13 +674,21 @@ public class ComputerVision {
 
             double[] bgr = img.get(robotY, robotX);
 
+//            if (robot) {
+//                System.out.println("robot");
+//            } else {
+//                System.out.println("angle");
+//            }
+//
+//            System.out.println("b:" + bgr[0] + "/g:" + bgr[1] + "/r:" + bgr[2]);
+
             if (robot) {
                 if (bgr[0] <= bThreshold && bgr[1] <= gThreshold && bgr[2] >= rThreshold) {
                     keyPoint = kp;
                     num++;
                 }
             } else {
-                if (bgr[0] >= bThreshold && bgr[1] >= gThreshold && bgr[2] >= rThreshold) {
+                if (bgr[0] <= bThreshold && bgr[1] >= gThreshold && bgr[2] <= rThreshold) {
                     keyPoint = kp;
                     num++;
                 }
@@ -707,16 +715,15 @@ public class ComputerVision {
     //TODO incorporate checking on prev position
 
     public static void main(String[] args) {
-        String folder = System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Input" + File.separator;
-
-        String pic = folder + "test123.jpg";
-        Mat img = resize(pic);
+        Mat img = resize(Settings.getInputPath());
         KeyPoint[] kps = robotv2(img, 0, 0);
-        //robotv2(img, kps[0]);
+        Imgproc.circle(img, kps[0].pt, 1, new Scalar(255), 3);
+        Imgproc.circle(img, kps[1].pt, 1, new Scalar(255), 3);
+        ImgWindow.newWindow(img);
+//        KeyPoint[] kps = robotv2(img, 0, 0);
+//        robotv2(img, kps[0]);
 
-//        Mat gray = grayScale(resize("img"));
-//        MatOfPoint contour = retrieveContour(gray, null);
-//        retrievePath(gray, new MatOfPoint2f();
+        //retrievePath(gray, new MatOfPoint2f());
     }
 }
 

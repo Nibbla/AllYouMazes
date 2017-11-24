@@ -3,7 +3,7 @@
 <thresholdStep>10.</thresholdStep>
 <minThreshold>0.</minThreshold>
 <maxThreshold>255.</maxThreshold>
-<minRepeatability>2</minRepeatability>
+<minRepeatability>1</minRepeatability>
 <minDistBetweenBlobs>10.</minDistBetweenBlobs>
 <filterByColor>1</filterByColor>
 <blobColor>255</blobColor>
