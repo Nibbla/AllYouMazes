@@ -198,6 +198,12 @@ public class RobotControl implements IControl {
         issueMotorSpeed();
     }
 
+    @Override
+    public void sendCommand(double linearSpeed, double angularSpeed){
+        setMotorSpeed(linearSpeed*SLOWFORWARDSPEED, angularSpeed * SLOWFORWARDSPEED);
+        issueMotorSpeed();
+    }
+
     /**
      * This creates the environment variables for the ProcessBuilder which are needed.
      * <p>

@@ -18,4 +18,6 @@ public interface IControl extends Cloneable {
     void closeConnection();
 
     void testCommands();
+
+    void sendCommand(double linearSpeed, double angularSpeed);
 }

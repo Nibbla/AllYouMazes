@@ -3,6 +3,7 @@ package Simulation;
 import Control.RobotControl;
 import Model.*;
 import SpecialSettingsEtc.Settings;
+import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -31,26 +32,37 @@ public class Simulation {
     private ScheduledExecutorService scheduler;
     private RobotControl robotControl;
     private Node n;
-    private double direction;
+    private boolean turning;
+    private boolean moving;
 
     public Simulation(String picture) {
+        Camera camera = new Camera();
+        camera.startCamera(60, 2, 1300, 2000, 75, false, false, Settings.getInputPath(), 0.075, 0.1, 0.8, 0.8);
+
         this.pathToPicture = picture;
         Mat gray = ComputerVision.grayScale(ComputerVision.resize(picture));
-        RoboPos currentDetails = ComputerVision.retrieveRobot(gray, 0, 0);
-        this.contour = ComputerVision.retrieveContour(gray, currentDetails);
-        LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), currentDetails, ComputerVision.STEP_SIZE);
-        TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) currentDetails.getX(), (int) currentDetails.getY()));
-        this.agent = new Agent(0,currentDetails, traversalHandler);
+        KeyPoint[] kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), 0, 0);
+        
+        if (kps[0] == null || kps[1] == null) {
+            System.out.println("oh god no");
+        }
+        
+        int robotX = (int)kps[0].pt.x;
+        int robotY = (int)kps[0].pt.y;
+        int robotR = (int)kps[0].size/2;
+        
+        RoboPos rp = new RoboPos(robotX, robotY, robotR);
+        rp.setDirection(rp.getAngleTo(new Node((int)kps[1].pt.x, (int)kps[1].pt.y)));
+        
+        this.contour = ComputerVision.retrieveContour(gray, rp);
+        LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), rp, ComputerVision.STEP_SIZE);
+        TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) rp.getX(), (int) rp.getY()));
+        this.agent = new Agent(0,rp, traversalHandler);
         this.robotControl = new RobotControl();
 
         if (agent == null || contour == null || shortestPath == null) System.out.println("null pointer constructing simulation");
 
         connect();
-
-        Camera camera = new Camera();
-        camera.startCamera(60, 1, 1300, 2000, 75, false, false, Settings.getInputPath(), 0.075, 0.1, 0.8, 0.8);
-
-
         schedule();
     }
 
@@ -58,45 +70,77 @@ public class Simulation {
         robotControl.startConnection();
     }
 
-    private void initAngle() {
-
-    }
-
     private void schedule() {
         //scheduler = Executors.newScheduledThreadPool(1);
         scheduler =  Executors.newSingleThreadScheduledExecutor();
 
         //Problems with initial angle
-        n = null;
-        direction = 0;
+        n = agent.getHandler().getNode(agent.getHandler().getIndex());
 
         final Runnable robotDetector = new Runnable() {
             @Override
             public void run() {
-                RoboPos oldLocation = new RoboPos(agent.getCurrentPosition().getX(), agent.getCurrentPosition().getY(), agent.getCurrentPosition().getRadius());
-                agent.setCurrentPosition(ComputerVision.retrieveRobot(ComputerVision.grayScale(ComputerVision.resize(Settings.getInputPath())), 0, 0));
-                if (oldLocation.equals(agent.getCurrentPosition())) System.out.println("No change / can't detect");
+                //boolean finished = agent.getHandler().getIndex()+1 > agent.getHandler().length();
+                double rotationCoefficient = 0;
+                double linearCoefficient = 0;
 
-                int x = (int) agent.getCurrentPosition().getX();
-                int y = (int) agent.getCurrentPosition().getY();
-                if (x - ComputerVision.PROXIMITY <= n.getX() && x + ComputerVision.PROXIMITY >= n.getX() && y - ComputerVision.PROXIMITY <= n.getY() && y + ComputerVision.PROXIMITY >= n.getY()) {
-                    System.out.println("Close enough to move to next node");
-                    agent.getHandler().step();
-                    int m = agent.getHandler().getIndex();
-                    if (m != 0) {
-                        Node prevNode = agent.getHandler().getNode(m-1);
-                        Node newNode = agent.getHandler().getNode(m);
+                KeyPoint[] kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), 0, 0);
 
-                        // changed direction calculation to be consistent with (hopefully correct) calculation in RoboPos
-                        direction = Math.atan2(newNode.getX() - prevNode.getX(), -1 *(newNode.getY() - prevNode.getY()));
-                        //send robot command
-                        //problem: determine correct angle..
+                if (kps[0] == null || kps[1] == null) {
+                    System.out.println("oh god no");
+                }
+
+                int robotX = (int)kps[0].pt.x;
+                int robotY = (int)kps[0].pt.y;
+                int robotR = (int)kps[0].size/2;
+
+                agent.getCurrentPosition().setPosition(robotX, robotY);
+                agent.getCurrentPosition().setRadius(robotR);
+                agent.getCurrentPosition().setDirection(agent.getCurrentPosition().getAngleTo(new Node((int)kps[1].pt.x, (int)kps[1].pt.y)));
+
+                double correctAngle = agent.getCurrentPosition().getAngleTo(agent.getHandler().getNode(agent.getHandler().getIndex()+1));
+
+                double distance = (Math.toDegrees(correctAngle) - Math.toDegrees(agent.getCurrentPosition().getDirection())) % 360;
+
+                if (distance < -180) {
+                    distance += 360;
+                } else if (distance > 179) {
+                    distance -= 360;
+                }
+
+                if(Math.abs(distance) > 10){
+                    turning = true;
+                    moving = false;
+                    if (distance > 0){
+                        rotationCoefficient = -1;
+                    } else {
+                        rotationCoefficient = 1;
                     }
+                } else {
+                    turning = false;
+                    moving = true;
+                    linearCoefficient = 1;
+                }
+
+                if (!turning) {
+                    int x = (int) agent.getCurrentPosition().getX();
+                    int y = (int) agent.getCurrentPosition().getY();
+                    if (x - ComputerVision.PROXIMITY <= n.getX() && x + ComputerVision.PROXIMITY >= n.getX() && y - ComputerVision.PROXIMITY <= n.getY() && y + ComputerVision.PROXIMITY >= n.getY()) {
+                        agent.getHandler().step();
+                        turning = false;
+                        moving = false;
+                    }
+                }
+
+                if (turning && !moving) {
+                    robotControl.sendCommand(linearCoefficient, rotationCoefficient);
+                } else if (moving && !turning) {
+                    robotControl.sendCommand(linearCoefficient, rotationCoefficient);
                 }
             }
         };
 
-        final ScheduledFuture<?> robotDetectorHandle = scheduler.scheduleAtFixedRate(robotDetector, 1000, Simulation.TIME_STEP, TimeUnit.MILLISECONDS);
+        final ScheduledFuture<?> robotDetectorHandle = scheduler.scheduleAtFixedRate(robotDetector, 250, Simulation.TIME_STEP, TimeUnit.MILLISECONDS);
     }
 
     private void finish() {
