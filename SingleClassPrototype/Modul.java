@@ -164,7 +164,7 @@ public class Modul {
         if (!b) return;
 
         // TODO: find suitable values for the final camera-maze setup
-        camera.startCamera(60, 1, 1100, 1800, 75, true, true, Settings.getInputPath());
+        camera.startCamera(60, 1, 1300, 2000, 75, false, false, Settings.getInputPath(), 0.075, 0.1, 0.8, 0.8);
         control.startConnection();
 
         processingThread = new Thread() {
