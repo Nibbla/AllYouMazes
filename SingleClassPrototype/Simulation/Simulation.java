@@ -37,7 +37,7 @@ public class Simulation {
 
     public Simulation(String picture) {
         Camera camera = new Camera();
-        camera.startCamera(60, 2, 1300, 2000, 75, false, false, Settings.getInputPath(), 0.075, 0.1, 0.8, 0.8);
+        camera.startCamera(60, 2, 1300, 2000, 75, Settings.getInputPath(), 0.075, 0.1, 0.8, 0.8);
 
         this.pathToPicture = picture;
         Mat gray = ComputerVision.grayScale(ComputerVision.resize(picture));
