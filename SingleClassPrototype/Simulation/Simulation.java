@@ -6,6 +6,7 @@ import SpecialSettingsEtc.Settings;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
+import view.Camera;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -45,6 +46,11 @@ public class Simulation {
         if (agent == null || contour == null || shortestPath == null) System.out.println("null pointer constructing simulation");
 
         connect();
+
+        Camera camera = new Camera();
+        camera.startCamera(60, 1, 1300, 2000, 75, false, false, Settings.getInputPath(), 0.075, 0.1, 0.8, 0.8);
+
+
         schedule();
     }
 

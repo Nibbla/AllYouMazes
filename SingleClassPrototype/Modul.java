@@ -101,6 +101,7 @@ public class Modul {
 
             //previous classifier approach below
 
+
             BufferedImage bi = view.getCurrentShot();
 
             ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED),cl);
