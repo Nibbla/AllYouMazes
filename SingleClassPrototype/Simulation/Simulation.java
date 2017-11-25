@@ -46,7 +46,8 @@ public class Simulation {
         this.pathToPicture = picture;
 
         Camera camera = new Camera();
-        camera.startCamera(60, 1, 1300, 2000, 75, Settings.getInputPath(), 0.075, 0.1, 0.8, 0.8);
+        camera.startCamera(60, 1, 1300, 2000, 75, (""+Settings.getInputPath()+"new"), 0.075, 0.1, 0.8, 0.8);
+
 
         try {
             Thread.sleep(1000);

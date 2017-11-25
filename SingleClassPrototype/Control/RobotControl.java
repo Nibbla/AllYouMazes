@@ -20,7 +20,7 @@ public class RobotControl implements IControl {
     private final String username = "pi";
 
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
-    private final int startUpSeconds = 120;
+    private final int startUpSeconds = 20;
 
     // The basic structure of the startup command. The respective port and launchfile are specified here.
     private final String[] startCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/roslaunch -p 11311 -v --screen epuck_driver multi_epuck.launch"};
