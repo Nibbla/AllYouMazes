@@ -35,6 +35,8 @@ public class Simulation {
     private boolean turning;
     private boolean moving;
     private boolean detected;
+    private boolean alreadyTurning;
+    private boolean alreadyMoving;
 
     public IControl control;
     private static RobotControl factoryControl = new RobotControl();
@@ -123,10 +125,11 @@ public class Simulation {
                 if (kps[0] == null || kps[1] == null) {
                     System.out.println("oh god no");
                     detected = false;
+                } else {
+                    detected = true;
                 }
 
-                if (!detected) {
-
+                if (detected) {
                     int robotX = (int) kps[0].pt.x;
                     int robotY = (int) kps[0].pt.y;
                     int robotR = (int) kps[0].size / 2;
@@ -145,7 +148,7 @@ public class Simulation {
                         distance -= 360;
                     }
 
-                    if (Math.abs(distance) > 10) {
+                    if (Math.abs(distance) >= 10) {
                         turning = true;
                         moving = false;
                         if (distance > 0) {
@@ -166,13 +169,24 @@ public class Simulation {
                             agent.getHandler().step();
                             turning = false;
                             moving = false;
+                            System.out.println("next step");
                         }
                     }
 
                     if (turning && !moving) {
-                        control.sendCommand(linearCoefficient, rotationCoefficient);
+                        System.out.println("turning");
+                        if (!alreadyTurning) {
+                            control.sendCommand(linearCoefficient, rotationCoefficient);
+                            alreadyTurning = true;
+                            alreadyMoving = false;
+                        }
                     } else if (moving && !turning) {
-                        control.sendCommand(linearCoefficient, rotationCoefficient);
+                        System.out.println("moving");
+                        if (!alreadyMoving) {
+                            control.sendCommand(linearCoefficient, rotationCoefficient);
+                            alreadyTurning = false;
+                            alreadyMoving = true;
+                        }
                     }
                 }
             }

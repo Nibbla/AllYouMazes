@@ -14,13 +14,13 @@ import java.util.Map;
 public class RobotControl implements IControl {
 
     // Use this to dynamically change to another ROS-Version, i.e. Kinetic.
-    private final String ROSversion = "indigo";
+    private final String ROSversion = "kinetic";
 
     // Replace this with whatever username is valid for the current System.
-    private final String username = "eric";
+    private final String username = "pi";
 
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
-    private final int startUpSeconds = 10;
+    private final int startUpSeconds = 120;
 
     // The basic structure of the startup command. The respective port and launchfile are specified here.
     private final String[] startCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/roslaunch -p 11311 -v --screen epuck_driver multi_epuck.launch"};
