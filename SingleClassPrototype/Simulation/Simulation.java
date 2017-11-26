@@ -36,7 +36,9 @@ public class Simulation {
     private boolean moving;
     private boolean detected;
     private boolean alreadyTurning;
+    private double lastRotationCoefficient = 0;
     private boolean alreadyMoving;
+    private RoboPos lastPosition = new RoboPos(0,0,0,0);
 
     public IControl control;
     private static RobotControl factoryControl = new RobotControl();
@@ -46,7 +48,7 @@ public class Simulation {
         this.pathToPicture = picture;
 
         Camera camera = new Camera();
-        camera.startCamera(60, 1, 1300, 2000, 75, (""+Settings.getInputPath()+"new"), 0.075, 0.1, 0.8, 0.8);
+        camera.startCamera(60, 1, 1300, 2000, 75, (Settings.getInputPath()), 0.075, 0.1, 0.8, 0.8);
 
 
         try {
@@ -135,9 +137,14 @@ public class Simulation {
                     int robotY = (int) kps[0].pt.y;
                     int robotR = (int) kps[0].size / 2;
 
+                    lastPosition.setPosition(agent.getCurrentPosition().getX(), agent.getCurrentPosition().getY());
+                    lastPosition.setRadius(agent.getCurrentPosition().getRadius());
+                    lastPosition.setDirection(agent.getCurrentPosition().getDirection());
+
                     agent.getCurrentPosition().setPosition(robotX, robotY);
                     agent.getCurrentPosition().setRadius(robotR);
                     agent.getCurrentPosition().setDirection(agent.getCurrentPosition().getAngleTo(new Node((int) kps[1].pt.x, (int) kps[1].pt.y)));
+                    // agent.getCurrentPosition().setDirection(lastPosition.getAngleTo(new Node((int) agent.getCurrentPosition().getX(),(int) agent.getCurrentPosition().getY())));
 
                     double correctAngle = agent.getCurrentPosition().getAngleTo(agent.getHandler().getNode(agent.getHandler().getIndex() + 1));
 
@@ -176,10 +183,11 @@ public class Simulation {
 
                     if (turning && !moving) {
                         System.out.println("turning");
-                        if (!alreadyTurning) {
+                        if (!alreadyTurning && (rotationCoefficient == lastRotationCoefficient || lastRotationCoefficient == 0)) {
                             control.sendCommand(linearCoefficient, rotationCoefficient);
                             alreadyTurning = true;
                             alreadyMoving = false;
+                            lastRotationCoefficient = rotationCoefficient;
                         }
                     } else if (moving && !turning) {
                         System.out.println("moving");

@@ -51,7 +51,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = false;
+    public final static boolean DEBUG = true;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
@@ -656,13 +656,13 @@ public class ComputerVision {
         int bThreshold = 0;
 
         if (robot) {
-            rThreshold = 140;
-            gThreshold = 140;
-            bThreshold = 140;
+            rThreshold = 140; // 200
+            gThreshold = 140; // 120
+            bThreshold = 140; // 120
         } else {
-            rThreshold = 140;
-            gThreshold = 140;
-            bThreshold = 140;
+            rThreshold = 140; // 180
+            gThreshold = 140; // 180
+            bThreshold = 140; // 230
         }
 
         KeyPoint keyPoint = null;
