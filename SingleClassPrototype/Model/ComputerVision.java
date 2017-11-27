@@ -4,7 +4,6 @@ package Model;
  * Created by Jordy on 19-11-2017.
  */
 
-import SpecialSettingsEtc.Settings;
 import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.core.Point;
@@ -13,6 +12,10 @@ import org.opencv.features2d.Features2d;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.video.BackgroundSubtractorKNN;
+import org.opencv.video.BackgroundSubtractorMOG2;
+import org.opencv.video.Video;
+import org.opencv.videoio.VideoCapture;
 
 import java.awt.*;
 import java.io.File;
@@ -51,7 +54,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = true;
+    public final static boolean DEBUG = false;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
@@ -59,26 +62,38 @@ public class ComputerVision {
     public final static int RADIUS_EST = (int) (100 * SCALE_FACTOR);
     public final static int RADIUS_ESTOFFSET = (int) (20 * SCALE_FACTOR);
 
+    public static FeatureDetector angleDetector;
+    public static FeatureDetector robotDetector;
+
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    public static Mat resize(String picture) {
-        Mat img = Imgcodecs.imread(picture);
+    public static Mat readImg(String picture) {
+        return Imgcodecs.imread(picture);
+    }
 
-        int w = img.width();
-        int h = img.height();
-
+    public static Mat resize(Mat orig) {
         Mat simg = new Mat();
-        Imgproc.resize(img, simg, new Size(SCALE_FACTOR * w, SCALE_FACTOR * h));
+        int w = orig.width();
+        int h = orig.height();
+
+        Imgproc.resize(orig, simg, new Size(SCALE_FACTOR * w, SCALE_FACTOR * h));
+        orig.release();
 
         return simg;
     }
 
+    public static void initDetectors() {
+        angleDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+        angleDetector.read(System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobotangle.xml");
+        robotDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+        robotDetector.read(System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobot.xml");
+    }
+
     public static Mat grayScale(Mat img) {
         Mat gray = new Mat();
-        img.copyTo(gray);
-        Imgproc.cvtColor(gray, gray, Imgproc.COLOR_BGR2GRAY);
+        Imgproc.cvtColor(img, gray, Imgproc.COLOR_BGR2GRAY);
 
         return gray;
     }
@@ -463,7 +478,6 @@ public class ComputerVision {
 
     private static Mat featureProcessing(Mat m) {
         Mat equ = new Mat();
-        m.copyTo(equ);
         CLAHE clahe = Imgproc.createCLAHE(4.0 * SCALE_FACTOR, new Size(16.0 * SCALE_FACTOR, 16.0 * SCALE_FACTOR));
         clahe.apply(m, equ);
 
@@ -483,8 +497,6 @@ public class ComputerVision {
     }
 
     private static KeyPoint[] processAngle(Mat m) {
-        FeatureDetector angleDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
-        angleDetector.read(System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobotangle.xml");
         MatOfKeyPoint angleKeyPoints = new MatOfKeyPoint();
         angleDetector.detect(m, angleKeyPoints);
         KeyPoint[] angleKeyPointArray = angleKeyPoints.toArray();
@@ -498,8 +510,6 @@ public class ComputerVision {
     }
 
     private static KeyPoint[] processRobot(Mat m) {
-        FeatureDetector robotDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
-        robotDetector.read(System.getProperty("user.dir") + File.separator + "SingleClassPrototype" + File.separator + "Model" + File.separator + "xml" + File.separator + "blobrobot.xml");
         MatOfKeyPoint robotKeyPoints = new MatOfKeyPoint();
         robotDetector.detect(m, robotKeyPoints);
         KeyPoint[] robotKeyPointArray = robotKeyPoints.toArray();
@@ -512,32 +522,20 @@ public class ComputerVision {
         return robotKeyPointArray;
     }
 
-    private static Mat getRChannel(Mat img) {
+    private static List<Mat> getRGBChannels(Mat img) {
         List<Mat> channels = new ArrayList<Mat>();
         Core.split(img, channels);
-        return channels.get(2);
-    }
-
-    private static Mat getGChannel(Mat img) {
-        List<Mat> channels = new ArrayList<Mat>();
-        Core.split(img, channels);
-        return channels.get(1);
-    }
-
-    private static Mat getBChannel(Mat img) {
-        List<Mat> channels = new ArrayList<Mat>();
-        Core.split(img, channels);
-        return channels.get(0);
+        return channels;
     }
 
     public static KeyPoint[] robotv2(Mat img, int x, int y, int r) {
-        int searchSpace = (int)(r * 2.5);
+        int searchSpace = (int)(r * 2);
 
         int maxX = img.cols();
         int maxY = img.rows();
         int ax = 0;
         int ay = 0;
-        
+
         Rect rect = null;
 
         if ((x - searchSpace) < 0 && (y - searchSpace) < 0) { //top left
@@ -578,18 +576,18 @@ public class ComputerVision {
         }
 
         Mat cropped = img.submat(rect);
-        return robotv2(cropped, ax, ay);
+        return robotv2(null, cropped, ax, ay);
     }
 
-    public static KeyPoint[] robotv2(Mat img, int ax, int ay) {
-        Mat r = getRChannel(img);
-        Mat g = getGChannel(img);
+    public static KeyPoint[] robotv2(Mat orig, Mat img, int ax, int ay) {
+        List<Mat> channels = getRGBChannels(orig);
+        Mat r = channels.get(2);
+        Mat g = channels.get(1);
 
-        Mat pr = featureProcessing(r);
-        Mat pg = featureProcessing(g);
+        Mat pimg = featureProcessing(img);
 
-        KeyPoint[] robotKeyPoint = processRobot(pr);
-        KeyPoint[] angleKeyPoint = processAngle(pg);
+        KeyPoint[] robotKeyPoint = processRobot(pimg);
+        KeyPoint[] angleKeyPoint = processAngle(pimg);
 
         KeyPoint realRobotKeyPoint = null;
         KeyPoint realAngleKeyPoint = null;
@@ -597,38 +595,50 @@ public class ComputerVision {
         boolean robotSkip, angleSkip;
 
         if (robotKeyPoint.length < 1) {
-            System.out.println("No robot detected");
+            if (ComputerVision.DEBUG) {
+                System.out.println("No robot detected");
+            }
         }
 
         if (angleKeyPoint.length < 1) {
-            System.out.println("No angle detected");
+            if (ComputerVision.DEBUG) {
+                System.out.println("No angle detected");
+            }
         }
 
         if (robotKeyPoint.length == 1) {
-            System.out.println("Standard detection- robot");
+            if (ComputerVision.DEBUG) {
+                System.out.println("Standard detection- robot");
+            }
 
-            if (getBestKeyPoint(robotKeyPoint, true, img) == null) {
-                System.out.println("Found one robot, but seems to be flawed (not passing color test)");
+            if (getBestKeyPoint(robotKeyPoint, true, orig) == null) {
+                if (ComputerVision.DEBUG) {
+                    System.out.println("Found one robot, but seems to be flawed (not passing color test)");
+                }
             } else {
                 realRobotKeyPoint = robotKeyPoint[0];
             }
         }
 
         if (angleKeyPoint.length == 1) {
-            System.out.println("Standard detection- angle");
-            if (getBestKeyPoint(angleKeyPoint, false, img) == null) {
-                System.out.println("Found one angle, but seems to be flawed (not passing color test)");
+            if (ComputerVision.DEBUG) {
+                System.out.println("Standard detection- angle");
+            }
+            if (getBestKeyPoint(angleKeyPoint, false, orig) == null) {
+                if (ComputerVision.DEBUG) {
+                    System.out.println("Found one angle, but seems to be flawed (not passing color test)");
+                }
             } else {
                 realAngleKeyPoint = angleKeyPoint[0];
             }
         }
 
         if (robotKeyPoint.length > 1) {
-            realRobotKeyPoint = getBestKeyPoint(robotKeyPoint, true, img);
+            realRobotKeyPoint = getBestKeyPoint(robotKeyPoint, true, orig);
         }
 
         if (angleKeyPoint.length > 1) {
-            realAngleKeyPoint = getBestKeyPoint(angleKeyPoint, false, img);
+            realAngleKeyPoint = getBestKeyPoint(angleKeyPoint, false, orig);
         }
 
         if (ax != 0 && realRobotKeyPoint != null) {
@@ -654,15 +664,16 @@ public class ComputerVision {
         int rThreshold = 0;
         int gThreshold = 0;
         int bThreshold = 0;
+        Mat cImg = null;
 
         if (robot) {
-            rThreshold = 140; // 200
-            gThreshold = 140; // 120
-            bThreshold = 140; // 120
+            rThreshold = 130; // 200
+            gThreshold = 80; // 120
+            bThreshold = 80; // 120
         } else {
-            rThreshold = 140; // 180
-            gThreshold = 140; // 180
-            bThreshold = 140; // 230
+            rThreshold = 90; // 180
+            gThreshold = 90; // 180
+            bThreshold = 90; // 230
         }
 
         KeyPoint keyPoint = null;
@@ -696,15 +707,21 @@ public class ComputerVision {
         }
 
         if (num == 0) {
-            System.out.println("No suitable robot found out of multiple.");
+            if (ComputerVision.DEBUG) {
+                System.out.println("No suitable keypoint found out of multiple.");
+            }
         }
 
         if (num == 1) {
-            System.out.println("Best KeyPoint found");
+            if (ComputerVision.DEBUG) {
+                System.out.println("Best KeyPoint found");
+            }
         }
 
-        if (num == 2) {
-            System.out.println("Multiple suitable robots found.");
+        if (num > 2) {
+            if (ComputerVision.DEBUG) {
+                System.out.println("Multiple suitable keypoints found.");
+            }
             keyPoint = null;
         }
 
@@ -714,22 +731,110 @@ public class ComputerVision {
     //Note: kp.size is diameter, /2 gives ROUGHLY the radius
     //TODO incorporate checking on prev position
 
-    public static void main(String[] args) {
-        Mat img = resize(Settings.getInputPath());
-        KeyPoint[] kps = robotv2(img, 0, 0);
-        Imgproc.circle(img, kps[0].pt, 1, new Scalar(255), 3);
-        Imgproc.circle(img, kps[1].pt, 1, new Scalar(255), 3);
-        ImgWindow.newWindow(img);
-//        KeyPoint[] kps = robotv2(img, 0, 0);
-//        robotv2(img, kps[0]);
+    //only for testing
+    @Deprecated
+    public static void bgsTest() {
+        Mat gray = new Mat();
+        Mat diff = new Mat();
+        Mat prev = new Mat();
+        Mat frame = new Mat();
+        Mat fgMaskMOG2 = new Mat();
+        Mat fgMaskKNN = new Mat();
+        BackgroundSubtractorMOG2 mog2 = Video.createBackgroundSubtractorMOG2();
+        BackgroundSubtractorKNN knn = Video.createBackgroundSubtractorKNN();
+        ImgWindow mog2MaskWindow = ImgWindow.newWindow();
+        mog2MaskWindow.setTitle("MOG2");
+        ImgWindow knnMaskWindow = ImgWindow.newWindow();
+        knnMaskWindow.setTitle("KNN");
+        ImgWindow camWindow = ImgWindow.newWindow();
+        camWindow.setTitle("CAM");
+        ImgWindow testWindow = ImgWindow.newWindow();
+        testWindow.setTitle("TEST");
+        mog2.setDetectShadows(false);
+        VideoCapture capture = new VideoCapture(0);
+        int i = 1;
 
-        //retrievePath(gray, new MatOfPoint2f());
+        if (!capture.isOpened()) {
+            System.out.println("error");
+        } else {
+            while(true) {
+                if (capture.read(frame)) {
+                    mog2.apply(frame, fgMaskMOG2, .001);
+                    knn.apply(frame, fgMaskKNN, .001);
+
+                    Imgproc.rectangle(frame, new Point(10, 2), new Point(100, 20), new Scalar(255, 255, 255), -1);
+                    Imgproc.putText(frame, String.valueOf(i), new Point(15, 15), 1, 1, new Scalar(0, 0, 0), 1);
+                    i++;
+
+                    if (i > 2 ) {
+                        Core.absdiff(frame, prev, diff);
+                        diff = grayScale(diff);
+                        Imgproc.threshold(diff, diff, 0, 255, Imgproc.THRESH_OTSU);
+                        testWindow.setImage(diff);
+                    }
+
+                    camWindow.setImage(frame);
+                    mog2MaskWindow.setImage(fgMaskMOG2);
+                    knnMaskWindow.setImage(fgMaskKNN);
+
+                    if (i == 2 || i % 20 == 0) {
+                        frame.copyTo(prev);
+                    }
+                } else {
+                    System.out.println("couldnt read frame!");
+                    break;
+                }
+            }
+        }
+
+        capture.release();
+    }
+
+    public static Mat bgs(Mat m1, Mat m2) {
+        Mat diff = new Mat();
+        Core.absdiff(m1, m2, diff);
+        diff = grayScale(diff);
+        Imgproc.threshold(diff, diff, 0, 255, Imgproc.THRESH_OTSU);
+        return diff;
+    }
+
+    public static void doesitwork() {
+        //https://stackoverflow.com/questions/33321303/how-to-detect-bullet-holes-on-the-target-using-python
+        //check for morphology
+        //get hierarchy right
+        String path = "C:\\Users\\Jyr\\Desktop\\test1.jpg";
+        Mat orig = readImg(path);
+        Mat img = grayScale(orig);
+        //ImgWindow.newWindow(img);
+        long start = System.currentTimeMillis();
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierarchy = new Mat();
+        Imgproc.GaussianBlur(img, img, new Size(5, 5), 2, 2);
+        Imgproc.findContours(img, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
+        float[] radius = new float[1];
+        Point center = new Point();
+        Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(0).toArray()), center, radius);
+        //System.out.println(Imgproc.contourArea(contours.get(0)));
+        float[] radius2 = new float[1];
+        Point center2 = new Point();
+        Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(1).toArray()), center2, radius2);
+        //System.out.println(Imgproc.contourArea(contours.get(1)));
+        //Imgproc.drawContours(orig, contours, -1, new Scalar(255, 0, 0), 1);
+        long end = System.currentTimeMillis();
+        System.out.println(end-start);
+        Imgproc.circle(orig, center, (int)radius[0], new Scalar(255), 5);
+        Imgproc.circle(orig, center2, (int)radius2[0], new Scalar(255), 5);
+        ImgWindow.newWindow(orig);
+    }
+
+    public static void main(String[] args) {
+        doesitwork();
     }
 }
 
-    //Robot radius
-    //Possible to improve on houghcircles? Preset variables?
-    //Don't expect robot detection at EVERY image!
-    //Centralize shortest path (redundancy)
-    //TODO: cycle retrieve robot method to all possible methods we have
-    //TODO: multiple color channels?
+//Robot radius
+//Possible to improve on houghcircles? Preset variables?
+//Don't expect robot detection at EVERY image!
+//Centralize shortest path (redundancy)
+//TODO: cycle retrieve robot method to all possible methods we have
+//TODO: multiple color channels?
