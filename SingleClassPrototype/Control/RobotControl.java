@@ -200,7 +200,7 @@ public class RobotControl implements IControl {
 
     @Override
     public void sendCommand(double linearSpeed, double angularSpeed){
-        setMotorSpeed(linearSpeed*SLOWFORWARDSPEED, angularSpeed * SLOWFORWARDSPEED);
+        setMotorSpeed(linearSpeed*SLOWFORWARDSPEED, angularSpeed * SLOWANGULARSPEED);
         issueMotorSpeed();
     }
 
