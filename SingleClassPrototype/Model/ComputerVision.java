@@ -16,6 +16,7 @@ import org.opencv.video.BackgroundSubtractorKNN;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.opencv.video.Video;
 import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
 
 import java.awt.*;
 import java.io.File;
@@ -752,6 +753,15 @@ public class ComputerVision {
         testWindow.setTitle("TEST");
         mog2.setDetectShadows(false);
         VideoCapture capture = new VideoCapture(0);
+
+        capture.set(Videoio.CAP_PROP_FRAME_WIDTH,150);
+        capture.set(Videoio.CAP_PROP_FRAME_HEIGHT,150);
+        capture.set(Videoio.CAP_PROP_FPS, 1);
+        System.out.println(capture.get(Videoio.CAP_PROP_FORMAT));
+        capture.set(Videoio.CAP_PROP_MODE, Videoio.CAP_MODE_GRAY);
+        capture.set(Videoio.CAP_PROP_ZOOM, 2);
+
+
         int i = 1;
 
         if (!capture.isOpened()) {
@@ -828,7 +838,7 @@ public class ComputerVision {
     }
 
     public static void main(String[] args) {
-        doesitwork();
+        bgsTest();
     }
 }
 
