@@ -33,12 +33,10 @@ public class Simulation {
     private MatOfPoint contour;
     private ScheduledExecutorService scheduler;
     private Node n;
-    private boolean turning;
-    private boolean moving;
+
     private boolean detected;
-    private boolean alreadyTurning;
-    private double lastRotationCoefficient = 0;
-    private boolean alreadyMoving;
+
+
     private RoboPos lastPosition = new RoboPos(0,0,0,0);
 
     public IControl control;
@@ -65,8 +63,11 @@ public class Simulation {
          */
 
         // current image recognition. to be replaced with data from BGS
-        Mat gray = ComputerVision.grayScale(ComputerVision.resize(picture));
-        KeyPoint[] kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), 0, 0);
+        Mat backgroundImage = ComputerVision.readImg(picture);
+        Mat grayBackground = ComputerVision.grayScale(ComputerVision.resize(backgroundImage));
+        Mat newImage = ComputerVision.readImg(picture);
+        Mat grayNew = ComputerVision.grayScale(ComputerVision.resize(backgroundImage));
+        KeyPoint[] kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage), ComputerVision.resize(newImage), 0, 0);
         
         if (kps[0] == null || kps[1] == null) {
             System.out.println("oh god no");
@@ -85,11 +86,11 @@ public class Simulation {
         rp.setDirection(rp.getAngleTo(new Node((int)kps[1].pt.x, (int)kps[1].pt.y)));
 
         // scan contours of the maze
-        this.contour = ComputerVision.retrieveContour(gray, rp);
+        this.contour = ComputerVision.retrieveContour(grayBackground, rp);
 
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
-        LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), rp, 8);
+        LinkedList<Node> shortestPath = ComputerVision.retrievePath(grayBackground, new MatOfPoint2f(contour.toArray()), rp, 8);
 
         // init a traversalHandler based on the shortest path, to be passed to the agent
         TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) rp.getX(), (int) rp.getY()));
@@ -126,21 +127,21 @@ public class Simulation {
                 // set the current goal node. TODO: X and Y are swapped
                 n = agent.getHandler().getNode(agent.getHandler().getIndex());
 
-                // TODO: check if the gal was reached
+                // TODO: check if the goal was reached
                 //boolean finished = agent.getHandler().getIndex()+1 > agent.getHandler().length();
 
-                // these values well be adapted depending on the current position and goal of the robot.
-                double rotationCoefficient = 0;
-                double linearCoefficient = 0;
 
                 // input from the Computervision
                 KeyPoint[] kps = null;
 
                 // change method call depending on the last known robot position
+                // TODO: adapt to BGS method, this is only improvised to make Simulation compilable
+                Mat backgroundImage = ComputerVision.readImg(pathToPicture);
+                Mat newImage = ComputerVision.readImg(pathToPicture);
                 if (detected) {
-                    kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), (int)agent.getCurrentPosition().getX(), (int)agent.getCurrentPosition().getY(), (int)(agent.getCurrentPosition().getRadius()));
+                    kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage), (int)agent.getCurrentPosition().getX(), (int)agent.getCurrentPosition().getY(), (int)(agent.getCurrentPosition().getRadius()));
                 } else {
-                    kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), 0, 0);
+                    kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage),ComputerVision.resize(newImage), 0, 0);
                 }
 
 
@@ -159,88 +160,25 @@ public class Simulation {
                     int robotY = (int) kps[0].pt.y;
                     int robotR = (int) kps[0].size / 2;
 
-                    // store the current values of the robot for 'stuff'
-                    lastPosition.setPosition(agent.getCurrentPosition().getX(), agent.getCurrentPosition().getY());
-                    lastPosition.setRadius(agent.getCurrentPosition().getRadius());
-                    lastPosition.setDirection(agent.getCurrentPosition().getDirection());
-
-                    // update the fields in the agent with the new values
-                    agent.getCurrentPosition().setPosition(robotX, robotY);
-                    agent.getCurrentPosition().setRadius(robotR);
-                    agent.getCurrentPosition().setDirection(agent.getCurrentPosition().getAngleTo(new Node((int) kps[1].pt.x, (int) kps[1].pt.y)));
-                    // TODO: maybe use different approach for calculating the rotation
-                    // agent.getCurrentPosition().setDirection(lastPosition.getAngleTo(new Node((int) agent.getCurrentPosition().getX(),(int) agent.getCurrentPosition().getY())));
-
-                    // calculate the angle to the current goal. TODO: revert X,Y swap in method call.
-                    double correctAngle = agent.getCurrentPosition().getAngleTo(new Node(agent.getHandler().getNode(agent.getHandler().getIndex() + 1).getY(), agent.getHandler().getNode(agent.getHandler().getIndex() + 1).getX()));
-
-                    // calculate the needed rotation-distance
-                    double distance = (Math.toDegrees(correctAngle) - Math.toDegrees(agent.getCurrentPosition().getDirection())) % 360;
-
-                    if (distance < -180) {
-                        distance += 360;
-                    } else if (distance > 179) {
-                        distance -= 360;
-                    }
-
-                    // debug output for angle calculation
-                    /*
-                    System.out.println("desired angle: " + Math.toDegrees(correctAngle));
-                    System.out.println("needed rotation: " + distance);
-                    System.out.println("robot position: " + agent.getCurrentPosition().getX() + " | " + agent.getCurrentPosition().getY());
-                    System.out.println("current goal: " + n.getX() + " | " + n.getY());
-                    System.out.println("----------");
-                    */
-
-                    // check if needed angle is within allowed range (might depend on delay) and determine rotation direction.
-                    if (Math.abs(distance) >= ROTATIONERROR) {
-                        turning = true;
-                        moving = false;
-                        if (distance > 0) {
-                            rotationCoefficient = -1;
-                        } else {
-                            rotationCoefficient = 1;
-                        }
-                    } else {
-                        turning = false;
-                        moving = true;
-                        linearCoefficient = 1;
-                    }
-
-
-
-                    int x = (int) (agent.getCurrentPosition().getX());
-                    int y = (int) (agent.getCurrentPosition().getY());
-
-                    // while loop in order to .step() the path as long as the next nodes are too close.
-                    // TODO: maybe rework current tracing of path as it is not that 'Closed-loopish'
-                    while(Math.abs(n.getX() - y) <= (ComputerVision.PROXIMITY * ComputerVision.STEP_SIZE) && Math.abs(x - n.getY()) <= (ComputerVision.PROXIMITY * ComputerVision.STEP_SIZE)){
-                        agent.getHandler().step();
-                        if ((alreadyTurning || alreadyMoving) && !(lastPosition.equals(agent.getCurrentPosition()))){
-                            control.sendCommand(0, 0);
-                            alreadyTurning = false;
-                            alreadyMoving = false;
-                        }
-                        turning = false;
-                        moving = false;
-                        n = agent.getHandler().getNode(agent.getHandler().getIndex());
-                    }
-
+                    agent.update(new RoboPos(robotX, robotY, robotR), new Node((int) (kps[1].pt.x), (int) (kps[1].pt.y)));
 
                     // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
-                    if (turning && !moving) {
-                        if (!alreadyTurning || (rotationCoefficient != lastRotationCoefficient || lastRotationCoefficient == 0) || (lastPosition.equals(agent.getCurrentPosition()))) {
-                            control.sendCommand(linearCoefficient, rotationCoefficient);
-                            alreadyTurning = true;
-                            alreadyMoving = false;
-                            lastRotationCoefficient = rotationCoefficient;
+                    if (agent.isTurning() && !agent.isMoving()) {
+                        if (!agent.isAlreadyTurning() || (agent.getRotationCoefficient() != agent.getLastRotationCoefficient() || agent.getLastRotationCoefficient() == 0) || agent.doesNotMove()) {
+                            control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
+                            agent.setAlreadyTurning(true);
+                            agent.setAlreadyMoving(false);
+                            agent.setLastRotationCoefficient(agent.getRotationCoefficient());
                         }
-                    } else if (moving && !turning) {
-                        if (!alreadyMoving  || (lastPosition.equals(agent.getCurrentPosition()))) {
-                            control.sendCommand(linearCoefficient, rotationCoefficient);
-                            alreadyTurning = false;
-                            alreadyMoving = true;
+                    } else if (agent.isMoving() && !agent.isTurning()) {
+                        if (!agent.isAlreadyMoving()  || (lastPosition.equals(agent.getCurrentPosition())) || agent.doesNotMove()) {
+                            control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
+                            agent.setAlreadyTurning(false);
+                            agent.setAlreadyMoving(true);
                         }
+                    } else if (agent.isStopped()){
+                        control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
+                        agent.setStopped(false);
                     }
                 }
             }
