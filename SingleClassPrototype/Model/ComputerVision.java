@@ -16,6 +16,7 @@ import org.opencv.video.BackgroundSubtractorKNN;
 import org.opencv.video.BackgroundSubtractorMOG2;
 import org.opencv.video.Video;
 import org.opencv.videoio.VideoCapture;
+import org.opencv.videoio.Videoio;
 
 import java.awt.*;
 import java.io.File;
@@ -44,6 +45,7 @@ Double click on the jar you just added (in IntelliJ), click on the green plus ic
 //https://docs.opencv.org/java/3.1.0/
 
 //Don't use retrieveRobot anymore.
+//In fact most of them are outdated
 
 public class ComputerVision {
 
@@ -744,12 +746,10 @@ public class ComputerVision {
         BackgroundSubtractorKNN knn = Video.createBackgroundSubtractorKNN();
         ImgWindow mog2MaskWindow = ImgWindow.newWindow();
         mog2MaskWindow.setTitle("MOG2");
-        ImgWindow knnMaskWindow = ImgWindow.newWindow();
-        knnMaskWindow.setTitle("KNN");
+        //ImgWindow knnMaskWindow = ImgWindow.newWindow();
+        //knnMaskWindow.setTitle("KNN");
         ImgWindow camWindow = ImgWindow.newWindow();
         camWindow.setTitle("CAM");
-        ImgWindow testWindow = ImgWindow.newWindow();
-        testWindow.setTitle("TEST");
         mog2.setDetectShadows(false);
         VideoCapture capture = new VideoCapture(0);
         int i = 1;
@@ -760,26 +760,15 @@ public class ComputerVision {
             while(true) {
                 if (capture.read(frame)) {
                     mog2.apply(frame, fgMaskMOG2, .001);
-                    knn.apply(frame, fgMaskKNN, .001);
+                    //knn.apply(frame, fgMaskKNN, .1);
 
                     Imgproc.rectangle(frame, new Point(10, 2), new Point(100, 20), new Scalar(255, 255, 255), -1);
                     Imgproc.putText(frame, String.valueOf(i), new Point(15, 15), 1, 1, new Scalar(0, 0, 0), 1);
                     i++;
 
-                    if (i > 2 ) {
-                        Core.absdiff(frame, prev, diff);
-                        diff = grayScale(diff);
-                        Imgproc.threshold(diff, diff, 0, 255, Imgproc.THRESH_OTSU);
-                        testWindow.setImage(diff);
-                    }
-
                     camWindow.setImage(frame);
                     mog2MaskWindow.setImage(fgMaskMOG2);
-                    knnMaskWindow.setImage(fgMaskKNN);
-
-                    if (i == 2 || i % 20 == 0) {
-                        frame.copyTo(prev);
-                    }
+                    //knnMaskWindow.setImage(fgMaskKNN);
                 } else {
                     System.out.println("couldnt read frame!");
                     break;
@@ -793,42 +782,192 @@ public class ComputerVision {
     public static Mat bgs(Mat m1, Mat m2) {
         Mat diff = new Mat();
         Core.absdiff(m1, m2, diff);
-        diff = grayScale(diff);
-        Imgproc.threshold(diff, diff, 0, 255, Imgproc.THRESH_OTSU);
+        Imgproc.cvtColor(diff, diff, Imgproc.COLOR_BGR2HSV);
+        Scalar low = new Scalar(170, 50, 50);
+        Scalar high = new Scalar(180, 200, 200);
+        Core.inRange(diff, low, high, diff);
+        Imgproc.dilate(diff, diff, new Mat(), new Point(-1, -1), 5);
+        //diff = grayScale(diff);
+        //Mat kernel = Mat.ones(5, 5, CvType.CV_8UC1);
+        //Imgproc.morphologyEx(diff, diff, Imgproc.MORPH_OPEN, kernel);
+        //Imgproc.GaussianBlur(diff, diff, new Size(5,5), 2, 2);
+        //Imgproc.threshold(diff, diff, 0, 255, Imgproc.THRESH_OTSU);
+        //kernel.release();
         return diff;
     }
 
-    public static void doesitwork() {
-        //https://stackoverflow.com/questions/33321303/how-to-detect-bullet-holes-on-the-target-using-python
-        //check for morphology
-        //get hierarchy right
-        String path = "C:\\Users\\Jyr\\Desktop\\test1.jpg";
-        Mat orig = readImg(path);
-        Mat img = grayScale(orig);
-        //ImgWindow.newWindow(img);
-        long start = System.currentTimeMillis();
-        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-        Mat hierarchy = new Mat();
-        Imgproc.GaussianBlur(img, img, new Size(5, 5), 2, 2);
-        Imgproc.findContours(img, contours, hierarchy, Imgproc.RETR_TREE, Imgproc.CHAIN_APPROX_SIMPLE);
-        float[] radius = new float[1];
-        Point center = new Point();
-        Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(0).toArray()), center, radius);
-        //System.out.println(Imgproc.contourArea(contours.get(0)));
-        float[] radius2 = new float[1];
-        Point center2 = new Point();
-        Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(1).toArray()), center2, radius2);
-        //System.out.println(Imgproc.contourArea(contours.get(1)));
-        //Imgproc.drawContours(orig, contours, -1, new Scalar(255, 0, 0), 1);
-        long end = System.currentTimeMillis();
-        System.out.println(end-start);
-        Imgproc.circle(orig, center, (int)radius[0], new Scalar(255), 5);
-        Imgproc.circle(orig, center2, (int)radius2[0], new Scalar(255), 5);
-        ImgWindow.newWindow(orig);
+    public static void bgsLoop() {
+        //TODO:
+        Mat bg = new Mat();
+        Mat frame = new Mat();
+
+        ImgWindow camWindow = ImgWindow.newWindow();
+        camWindow.setTitle("CAM");
+
+        ImgWindow bgsWindow = ImgWindow.newWindow();
+        bgsWindow.setTitle("BGS");
+
+        VideoCapture capture = new VideoCapture(0);
+
+        int i = 1;
+
+        List<MatOfPoint> contours;
+        Mat hierarchy, crBg;
+        Mat crFrame = null;
+        int rad, space;
+        int ax = 0;
+        int ay = 0;
+        Rect roi;
+        Mat cropped, diff;
+        double area;
+        double[] h;
+        float[] radius;
+        float[] radiusD = null;
+        Point center;
+        Point centerD = null;
+        boolean found = false;
+
+        capture.set(Videoio.CAP_PROP_FRAME_WIDTH, 400);
+        capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, 600);
+
+        if (!capture.isOpened()) {
+            System.out.println("error");
+        } else {
+            while(true) {
+                if (capture.read(frame)) {
+                    long start = System.currentTimeMillis();
+                    //Imgproc.rectangle(frame, new Point(10, 2), new Point(200, 20), new Scalar(255, 255, 255), -1);
+                    //Imgproc.putText(frame, "FRAME: " + String.valueOf(i), new Point(15, 15), 1, 1, new Scalar(0, 0, 0), 1);
+                    i++;
+                    space = 0;
+
+                    if (i < 90) {
+                        camWindow.setImage(frame);
+                    } else if (i == 120) {
+                        frame.copyTo(bg);
+                    } else if (i > 120 && i <= 240) {
+                        diff = bgs(frame, bg);
+                        bgsWindow.setImage(diff);
+                        camWindow.setImage(frame);
+                    } else if (i > 240) {
+                        if (found) {
+                            space = (int)(radiusD[0]*1.5);
+                            System.out.println("x:" + (int)(centerD.x + ax - space)  + "|y:" + (int)(centerD.y + ay - space) + "|r:" + space);
+                            System.out.println("ax:" + ax + ", ay:" + ay + ", space:" + space);
+                            roi = new Rect(new Point((int)(centerD.x + ax - space), (int)(centerD.y + ay - space)), new Point((int)centerD.x + ax + space, (int)centerD.y + ay + space));
+                            crFrame = frame.submat(roi);
+                            crBg = bg.submat(roi);
+                            diff = bgs(crFrame, crBg);
+                        } else {
+                            diff = bgs(frame, bg);
+                        }
+
+                        bgsWindow.setImage(diff);
+
+                        contours = new ArrayList<MatOfPoint>();
+                        hierarchy = new Mat();
+                        Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+                        diff.release();
+
+                        if (!contours.isEmpty()) {
+                            radius = new float[1];
+                            center = new Point();
+                            Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(0).toArray()), center, radius);
+                            //Imgproc.circle(frame, center, (int)radius[0], new Scalar(255, 0, 0), 1);
+                            rad = (int)(radius[0] * 1.5);
+
+                            roi = new Rect(new Point((int)center.x - rad, (int)center.y - rad), new Point((int)center.x + rad, (int)center.y + rad));
+
+                            ax = (int)center.x - rad;
+                            ay = (int)center.y - rad;
+
+                            cropped = frame.submat(roi);
+                            Imgcodecs.imwrite("crop.jpg", cropped);
+
+                            //Imgproc.cvtColor(cropped, cropped, Imgproc.COLOR_BGR2HSV);
+                            //Scalar low = new Scalar(170, 100, 100);
+                            //Scalar high = new Scalar(180, 200, 200);
+                            //Core.inRange(cropped, low, high, diff);
+
+                            //cropped = grayScale(cropped);
+
+                            Mat cc = new Mat();
+                            Imgproc.cvtColor(cropped, cc, Imgproc.COLOR_BGR2HSV);
+
+                            Mat mask = new Mat();
+                            Mat tmp_mask1 = new Mat();
+                            Mat tmp_mask2 = new Mat();
+                            Core.inRange(cc, new Scalar(0, 50, 50), new Scalar(10, 200, 200), tmp_mask1);
+                            Core.inRange(cc, new Scalar(170, 50, 50), new Scalar(180, 200, 200), tmp_mask2);
+                            Core.add(tmp_mask1, tmp_mask2, mask);
+                            Mat kernel = Mat.ones(5, 5, CvType.CV_8UC1);
+                            Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
+
+                            contours = new ArrayList<MatOfPoint>();
+                            hierarchy = new Mat();
+
+                            //Imgproc.threshold(cropped, cropped, 0, 255, Imgproc.THRESH_OTSU);
+                            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+                            //Imgproc.drawContours(frame, contours, -1, new Scalar(255, 0, 0), 1);
+
+                            area = 0;
+                            found = false;
+
+                            if (!contours.isEmpty() && !hierarchy.empty()) {
+                                for (int j = 0; j < contours.size(); j++) {
+                                    h = hierarchy.get(0, j);
+                                    if (h[3] != -1) {
+                                        area = Imgproc.contourArea(contours.get(j));
+                                        if (area > 10) {
+                                            //System.out.println("Angle (possibly) found");
+                                            Rect r = Imgproc.boundingRect(contours.get(j));
+                                            Imgproc.rectangle(frame, new Point(r.x + ax, r.y + ay), new Point(r.x+r.width+ax, r.y+r.height+ay), new Scalar(255));
+                                        }
+                                    } else if (h[2] != -1) {
+                                        area = Imgproc.contourArea(contours.get(j));
+                                        if (area > 100) {
+                                            double kidArea = Imgproc.contourArea(contours.get((int)h[2]));
+                                            if (kidArea > 10) {
+                                                //System.out.println("Robot (possibly) found");
+                                                found = false;
+                                                radiusD = new float[1];
+                                                centerD = new Point();
+                                                //Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(j).toArray()), centerD, radiusD);
+                                                //Imgproc.circle(frame, new Point(centerD.x+ax, centerD.y+ay), (int)radiusD[0], new Scalar(255));
+                                                RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
+                                                r.center.x += ax;
+                                                r.center.y += ay;
+                                                Imgproc.ellipse(frame, r, new Scalar(255), 1);
+                                                //System.out.println("x:" + (centerD.x+ax) + ", y:" + (centerD.y+ay));
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (found) {
+                            camWindow.setImage(crFrame);
+                        } else {
+                            camWindow.setImage(frame);
+                        }
+                    }
+
+                    long end = System.currentTimeMillis();
+                    System.out.println("Update took " + (end-start) + " ms");
+
+                } else {
+                    System.out.println("couldnt read frame!");
+                    break;
+                }
+            }
+        }
+
+        capture.release();
     }
 
     public static void main(String[] args) {
-        doesitwork();
+        bgsLoop();
     }
 }
 
