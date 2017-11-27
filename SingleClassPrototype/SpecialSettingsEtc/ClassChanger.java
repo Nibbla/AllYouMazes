@@ -9,7 +9,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 
 /**The function of this class is, to
- * have a easy accessable way to edit
+ * have a easy accessable way to editFields
  * all public fields of a class.
  * The current tradeoff is,
  * that public variables are needed for this.

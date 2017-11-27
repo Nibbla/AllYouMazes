@@ -70,7 +70,7 @@ public class Classifier implements Changeable<Classifier> {
 
 
     @Override
-    public void edit() {
+    public void editFields() {
 
         ClassChanger<Classifier> c;
         Class<?> d = null;

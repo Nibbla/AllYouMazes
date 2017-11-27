@@ -105,7 +105,7 @@ public class MinimalPathGuardTask extends AbstractAgentTask
         if(startVertex == evaderVertex){
             return startVertex;
         }
-        // get Path from closest node to the node closest to the evader
+        // get PathDeprecated from closest node to the node closest to the evader
         // prune the original graph to only have the path edges
 
         Graph<Vector2D, DefaultWeightedEdge> pathGraph = createPathGraph(path);
@@ -440,7 +440,7 @@ public class MinimalPathGuardTask extends AbstractAgentTask
             return closestLine;
         }
         else{
-            throw new IllegalArgumentException("Path has no edges");
+            throw new IllegalArgumentException("PathDeprecated has no edges");
         }
     }
 

@@ -15,9 +15,9 @@ public interface IView extends Cloneable {
 
     //RoboPos getRobotCenter(ObjectType[][] m2, int numberOfPixelsToSkip);
 
-    Model getClassifiedModel();
+    ModelDeprecated getClassifiedModel();
 
-    public SpecialGraph getGraph(ObjectType[][] g, int imageType, RoboPos roboPos, int graphSkip, boolean workmode);
+    public DijkstraPathFinder getGraph(ObjectType[][] g, int imageType, RoboPos roboPos, int graphSkip, boolean workmode);
 
 
 

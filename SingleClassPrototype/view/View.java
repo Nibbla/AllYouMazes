@@ -2,11 +2,11 @@ package view;
 
 import Interfaces.IView;
 import Interfaces.ObjectType;
+import Model.DijkstraPathFinder;
 import SpecialSettingsEtc.Archivar;
 import SpecialSettingsEtc.Classifier;
 import SpecialSettingsEtc.Settings;
-import Model.Model;
-import Model.SpecialGraph;
+import Model.ModelDeprecated;
 import Model.RoboPos;
 import javafx.util.Pair;
 
@@ -71,17 +71,17 @@ public class View implements IView {
     }
 
     @Override
-    public Model getClassifiedModel() {
+    public ModelDeprecated getClassifiedModel() {
         return null;
     }
 
     @Override
-    public SpecialGraph getGraph(ObjectType[][] g, int imageType, RoboPos roboPos, int graphSkip, boolean showPathway) {
+    public DijkstraPathFinder getGraph(ObjectType[][] g, int imageType, RoboPos roboPos, int graphSkip, boolean showPathway) {
 
 
 
 
-        return new SpecialGraph(g,imageType,roboPos,graphSkip,showPathway);
+        return new DijkstraPathFinder(g,imageType,roboPos,graphSkip,showPathway);
     }
 
     @Override

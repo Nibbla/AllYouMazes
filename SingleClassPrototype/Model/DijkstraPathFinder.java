@@ -2,17 +2,21 @@ package Model;
 
 import Interfaces.ObjectType;
 
+import Util.ImgWindow;
+import org.opencv.core.*;
+import org.opencv.imgproc.Imgproc;
 import view.View;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.*;
 
 /**
  * Created by Nibbla on 06.10.2017.
  */
-public class SpecialGraph{
+public class DijkstraPathFinder {
     private final int left;
     private final int smallRight;
     private final int top;
@@ -26,7 +30,7 @@ public class SpecialGraph{
     private boolean visible;
 
 
-    public SpecialGraph(ObjectType[][] source, int imageType, RoboPos roboPos, int graphSkip, boolean showPathway){
+    public DijkstraPathFinder(ObjectType[][] source, int imageType, RoboPos roboPos, int graphSkip, boolean showPathway){
 
          left = 0;
          int right = source.length;
@@ -56,10 +60,6 @@ public class SpecialGraph{
                    //nodes.add(current);
                     Grid[x][y] = current;
                 }
-
-
-
-
 
             }
         }
@@ -94,6 +94,115 @@ public class SpecialGraph{
        if (showPathway) showPathway(source, imageType, roboPos, graphSkip);
 
 
+    }
+
+    //This method is a total mess and will be cleaned up soon
+    public static  Node[][] retrieveDijcstraGrid(Mat gray, MatOfPoint2f contour, double goalX, double goalY, int stepSize) {
+        int sRows = gray.rows() / stepSize;
+        int sCols = gray.cols() / stepSize;
+        Node[][] grid = new Node[sRows][sCols];
+
+        for (int x = 0; x < sRows; x++) {
+            for (int y = 0; y < sCols; y++) {
+
+                double t = Imgproc.pointPolygonTest(contour, new org.opencv.core.Point(y * stepSize, x * stepSize), false);
+                if (t == 0 || t == -1) {
+                    grid[x][y] = new Node(x * stepSize, y * stepSize);
+                }
+            }
+        }
+
+        for (int x = 0; x < sRows; x++) {
+            for (int y = 0; y < sCols; y++) {
+                if (grid[x][y] == null) continue;
+
+                for (int dx = x - 1; dx <= x + 1; dx += 1) {
+                    for (int dy = y - 1; dy <= y + 1; dy += 1) {
+                        if (dx < 0 || dx >= sRows || dy < 0 || dy >= sCols) continue;
+                        if (grid[dx][dy] == null) continue;
+                        if (dx == x && dy == y) continue;
+
+                        double dist = stepSize;
+                        if (dx != x && dy != y) dist = Math.sqrt(2 * stepSize * stepSize);
+                        grid[x][y].addNeighbour(grid[dx][dy], dist);
+                    }
+                }
+            }
+        }
+
+        ArrayList<Node> unvisitedSet = new ArrayList<>(400000);
+
+        Set<Node> settledNodes = new HashSet<>();
+        Set<Node> unsettledNodes = new HashSet<>();
+
+        int sX = (int) (goalX / stepSize);
+        int sY = (int) (goalY / stepSize);
+
+        while (sX % stepSize != 0) {
+            sX++;
+        }
+
+        while (sY % stepSize != 0) {
+            sY++;
+        }
+
+        if (grid[sY][sX] == null) System.out.println("No pathway possible");
+
+        for (int x = 0; x < sRows; x++) {
+            for (int y = 0; y < sCols; y++) {
+                if (grid[x][y] == null) continue;
+
+                if (x == sY && y == sX) grid[x][y].setDistance(0);
+                else grid[x][y].setDistance(Integer.MAX_VALUE);
+
+                unvisitedSet.add(grid[x][y]);
+            }
+        }
+
+        boolean stop = false;
+
+        while (!unvisitedSet.isEmpty()) {
+            Node n = getLowestDistanceNode(unvisitedSet);
+            unvisitedSet.remove(n);
+
+            if (n.getX() == 0 && n.getY() == 0) stop = true;
+
+            if (n == null) {
+                settledNodes.add(n);
+                break;
+            }
+
+            if (n.getAdjacentNodes() == null) {
+                settledNodes.add(n);
+                continue;
+            }
+
+            if (n.getAdjacentNodes().size() == 0) {
+                settledNodes.add(n);
+                continue;
+            }
+            Set<Map.Entry<Node, Double>> entrySet = n.getAdjacentNodes().entrySet();
+            for (Map.Entry<Node, Double> adjacencyPair :
+                    entrySet) {
+                Node adjacentNode = adjacencyPair.getKey();
+                double edgeWeight = adjacencyPair.getValue();
+                if (!settledNodes.contains(adjacentNode)) {
+                    calculateMinimumDistance(adjacentNode, edgeWeight, n);
+
+                    unsettledNodes.add(adjacentNode);
+                }
+            }
+
+            settledNodes.add(n);
+
+            if (stop) break;
+        }
+
+//        System.out.println(unvisitedSet.size());
+//
+
+
+        return grid;
     }
 
     private void showPathway(ObjectType[][] source, int imageType, RoboPos roboPos, int graphSkip) {
@@ -151,6 +260,10 @@ public class SpecialGraph{
         frame.setVisible(true);
     }
 
+    public static LinkedList<Node> getShortestPathFromGrid(Node[][] grid, RoboPos rb, int stepsize) {
+
+        return grid[(int) (rb.getX()/stepsize)][(int) (rb.getY()/stepsize)].shortestPath;
+    }
 
     public LinkedList<Node> calculatePathway(RoboPos roboPos, int goalX, int goalY, boolean showAstar) {
 
@@ -261,8 +374,8 @@ public class SpecialGraph{
         frame.repaint();
     }
 
-    private static void calculateMinimumDistance(Node evaluationNode,
-                                                 double edgeWeigh, Node sourceNode) {
+    public static void calculateMinimumDistance(Node evaluationNode,
+                                                double edgeWeigh, Node sourceNode) {
         double sourceDistance = sourceNode.getDistance();
         if (sourceDistance + edgeWeigh < evaluationNode.getDistance()) {
             evaluationNode.setDistance(sourceDistance + edgeWeigh);
@@ -273,7 +386,7 @@ public class SpecialGraph{
     }
 
 
-        private static Node getLowestDistanceNode(ArrayList<Node> unsettledNodes){
+        public static Node getLowestDistanceNode(ArrayList<Node> unsettledNodes){
             Node lowestDistanceNode = null;
             double lowestDistance = Integer.MAX_VALUE;
             for (Node node: unsettledNodes) {
@@ -301,5 +414,15 @@ public class SpecialGraph{
             frame.setVisible(false);
             frame=null;
         }
+    }
+
+
+    public static LinkedList<Node> reverseLinkedList(LinkedList<Node> shortestPath) {
+        LinkedList<Node> linky = new LinkedList<>();
+        while (!shortestPath.isEmpty()){
+            linky.add(shortestPath.getLast());
+            shortestPath.removeLast();
+        }
+        return linky;
     }
 }

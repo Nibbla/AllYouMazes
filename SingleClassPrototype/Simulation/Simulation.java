@@ -4,13 +4,11 @@ import Control.RobotControl;
 import Interfaces.IControl;
 import Model.*;
 import SpecialSettingsEtc.Settings;
-import org.opencv.core.KeyPoint;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfPoint;
-import org.opencv.core.MatOfPoint2f;
-import view.Camera;
+import Util.ImgWindow;
+import org.opencv.core.*;
+import org.opencv.imgproc.Imgproc;
+import sun.rmi.server.Util;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.*;
 
@@ -90,7 +88,15 @@ public class Simulation {
 
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
-        LinkedList<Node> shortestPath = ComputerVision.retrievePath(grayBackground, new MatOfPoint2f(contour.toArray()), rp, 8);
+        int stepsize = 8;
+        Node[][] grid = DijkstraPathFinder.retrieveDijcstraGrid(grayBackground, new MatOfPoint2f(contour.toArray()), 0,0, stepsize);
+        LinkedList<Node> shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,rp,stepsize);
+        shortestPath = DijkstraPathFinder.reverseLinkedList(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
+        for (Node no : shortestPath) {
+            Imgproc.circle(grayBackground, new org.opencv.core.Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
+        }
+        ImgWindow.newWindow(grayBackground);
+
 
         // init a traversalHandler based on the shortest path, to be passed to the agent
         TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) rp.getX(), (int) rp.getY()));

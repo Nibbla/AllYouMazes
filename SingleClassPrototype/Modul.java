@@ -1,27 +1,18 @@
 
 import Control.RobotControl;
 import Interfaces.*;
-import Model.Model;
+import Model.ModelDeprecated;
 import SpecialSettingsEtc.*;
-//import org.opencv.core.Mat;
-//import org.opencv.core.MatOfPoint;
-//import org.opencv.core.MatOfPoint2f;
 import view.Camera;
-import view.PixelObjectType;
 import Model.*;
-import Model.SpecialGraph;
+import Model.DijkstraPathFinder;
 import view.View;
-import javafx.util.Pair;
 
-import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Random;
-import java.util.Stack;
-import Model.RoboPos;
 
-import javax.swing.*;
+import Model.RoboPos;
 
 
 /** This class defines the basic structure of our program
@@ -37,7 +28,7 @@ public class Modul {
 
 
     private static View factoryView = new View();
-    private static Model factoryModel = new Model(rnd);
+    private static ModelDeprecated factoryModelDeprecated = new ModelDeprecated(rnd);
     private static RobotControl factoryControl = new RobotControl();
     private static Camera factoryCamera = new Camera();
 
@@ -50,12 +41,12 @@ public class Modul {
     private boolean[] workmodes = new boolean[Workmode.values().length]; //which workmodes are turned on.
     private boolean running;
     private int graphSkip = Settings.getGraphCreationPixelSkip();
-    private SpecialGraph g;
+    private DijkstraPathFinder g;
 
 
-    public Modul(View view , Model model, IControl control, ICamera camera) {
+    public Modul(View view , ModelDeprecated modelDeprecated, IControl control, ICamera camera) {
         this.view = view;
-        this.model = model;
+        this.model = modelDeprecated;
         this.control = control;
         this.camera = camera;
     }
@@ -64,7 +55,7 @@ public class Modul {
     public static void main(String[] args){
 
         try {
-            Modul modul = new Modul(factoryView.getInstance(),factoryModel.getInstance(),factoryControl.getInstance(), factoryCamera.getInstance());
+            Modul modul = new Modul(factoryView.getInstance(), factoryModelDeprecated.getInstance(),factoryControl.getInstance(), factoryCamera.getInstance());
 
             modul.setWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE, true);
             modul.setWorkmode(Workmode.JODISPECIALSAUCEANDNOTSIMPLECLASSIFICATOR, false);
@@ -90,55 +81,52 @@ public class Modul {
         int loop = -1;
         RoboPos lastPos = null;
         Classifier cl = new Classifier();
-        cl.edit();
+        cl.editFields();
+
         while (running){
             loop++;
             long loopStart = System.currentTimeMillis();
             //something is happening
             windowManagment();
-
-            //https://www.youtube.com/watch?v=bjSpO2B6G4s
-
-            //previous classifier approach below
-
-
-            BufferedImage bi = view.getCurrentShot();
-
-            ObjectType[][] m2 = view.classify(bi,isWorkmode(Workmode.SHOWKLASSIFIED),cl);
-            //RoboPos robotPos = view.getRobotCenter(m2, 1);
-            //System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
-            if (g != null) g.setVisible(false);
-            //g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
-            //LinkedList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
-
-            //previous classifier approach above
-
-
             RoboPos robotPos = new RoboPos(0,0,0);
 
-/*
-            //openCV approach below
+            //https://www.youtube.com/watch?v=bjSpO2B6G4s
+            if (isWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE)) {
+                //previous classifier approach below
+                BufferedImage bi = view.getCurrentShot();
 
-            Mat test = ComputerVision.preprocess(Settings.getInputPath());
-            ArrayList<Integer> positions= ComputerVision.retrieveRobot(test, 0, 0);
-            RoboPos robotPos = new RoboPos(positions.get(0), positions.get(1), positions.get(2));
-            MatOfPoint contour = ComputerVision.retrieveContour(test, positions);
-            LinkedList<Node> path = ComputerVision.retrievePath(test, new MatOfPoint2f(contour.toArray()), positions, 10);
-*/
-            //openCV approach above
+                ObjectType[][] m2 = view.classify(bi, isWorkmode(Workmode.SHOWKLASSIFIED), cl);
+                robotPos = view.getRobotCenter(m2, 1);
+                //System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
+                if (g != null) g.setVisible(false);
+                g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
+                LinkedList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
+
+                //previous classifier approach above
+            }
 
 
+            if (isWorkmode(Workmode.JODISPECIALSAUCEANDNOTSIMPLECLASSIFICATOR)) {
+                //openCV approach below
+                //markus had to comment out, because preprocess doesnt seem to be part of computer vision anymore
+               // Mat test = ComputerVision.preprocess(Settings.getInputPath());
+              //  ArrayList<Integer> positions = ComputerVision.retrieveRobot(test, 0, 0);
+                //robotPos = new RoboPos(positions.get(0), positions.get(1), positions.get(2));
+               // MatOfPoint contour = ComputerVision.retrieveContour(test, positions);
+               // LinkedList<Node> path = ComputerVision.retrieveDijcstraGrid(test, new MatOfPoint2f(contour.toArray()), positions, 10);
+                //openCV approach above
+            }
+
+            double direction = 0;
             if (lastPos == null){
                 control.move(Tangential.Direction.forward);
             }else {
-                double direction = Math.atan2(robotPos.getX()-lastPos.getX(), -1 * (robotPos.getY()-lastPos.getY()));
-                //control.sendCommand(1100,1800,robotPos,direction,path);
+                direction = Math.atan2(robotPos.getX()-lastPos.getX(), -1 * (robotPos.getY()-lastPos.getY()));
             }
+            //control.sendCommand(1100,1800,robotPos,direction,path);
             lastPos = robotPos;
-           // g.setStart(m.getRobotPosition());
-           // g.setGoal(4f,200f);
-           // Path p = g.calculatePathway();
-           // translateIntoCommands(p);
+
+
 
             long loopEnd = System.currentTimeMillis();
             double timeHappend = (loopEnd - loopStart)/1000.;
@@ -150,9 +138,7 @@ public class Modul {
 
 
 
-    private void translateIntoCommands(Path p) {
 
-    }
 
     private void windowManagment() {
         show(Workmode.SHOWSENSOR,isWorkmode(Workmode.SHOWSENSOR));
@@ -192,7 +178,6 @@ public class Modul {
 
             case SYSTEMOUT:
                 break;
-
             case SHOWKLASSIFIED:
                 break;
             case SHOWTESSELATED:
