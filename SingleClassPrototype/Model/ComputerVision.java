@@ -56,7 +56,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = false;
+    public final static boolean DEBUG = true;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
@@ -966,8 +966,46 @@ public class ComputerVision {
         capture.release();
     }
 
+    public static void contourv2(Mat img) {
+        Mat hsv = new Mat();
+        Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
+
+        Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
+        Mat mask = new Mat();
+        Scalar low = new Scalar(14, 30, 130);
+        Scalar high = new Scalar(23, 90, 255);
+        Core.inRange(hsv, low, high, mask);
+        Mat kernel = Mat.ones(17, 17, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
+
+        //Need to make sure that robot is removed.
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierarchy = new Mat();
+        Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        for (int i = 0; i < contours.size(); i++) {
+            MatOfPoint contour = contours.get(i);
+            if (Imgproc.contourArea(contour) < 500) {
+                Imgproc.fillConvexPoly(mask, contour, new Scalar(0));
+            }
+        }
+
+        //iterations = radius
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 10);
+
+        contours = new ArrayList<MatOfPoint>();
+        hierarchy = new Mat();
+        Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255), 2);
+
+        ImgWindow.newWindow(img);
+    }
+
+
     public static void main(String[] args) {
-        bgsLoop();
+        //bgsLoop();
+        Mat pic = resize(readImg("C:\\Users\\Jyr\\IdeaProjects\\Mazes4\\SingleClassPrototype\\Input\\latestScreen.jpg"));
+        contourv2(pic);
     }
 }
 
