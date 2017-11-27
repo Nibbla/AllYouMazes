@@ -10,7 +10,7 @@ public class Classifier implements Changeable<Classifier> {
 
     //wall rules
     public String wallrules = "wallrules";
-    public double wRedOgreenLowBound;
+    public double wRedOgreenLowBound = 1.1;
     public double wRedOgreenLowBoundP = 1;
     public double wRedOblueLowBound = 1.3;
     public double wRedOblueLowBoundP = 1;
@@ -70,7 +70,7 @@ public class Classifier implements Changeable<Classifier> {
 
 
     @Override
-    public void edit() {
+    public void editFields() {
 
         ClassChanger<Classifier> c;
         Class<?> d = null;

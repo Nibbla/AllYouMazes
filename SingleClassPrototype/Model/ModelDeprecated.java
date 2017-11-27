@@ -7,7 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-public class Model  implements IModel {
+public class ModelDeprecated implements IModel {
 
     private final NoiseFloor noiseFloor;
     private final NoiseFloor.Accessor quickSimpleAccessor;
@@ -15,11 +15,11 @@ public class Model  implements IModel {
 
     private static final int baseUnit = 100;
     private static final int CUBE_UNIT = (int) Math.ceil(Math.pow(baseUnit, 1 / 3.));
-    private static Model factoryModel = new Model(new Random(0));
+    private static ModelDeprecated factoryModelDeprecated = new ModelDeprecated(new Random(0));
     private Point robotPosition;
 
 
-    public Model(Random r) {
+    public ModelDeprecated(Random r) {
         this.noiseFloor = new NoiseFloor(r);
         quickSimpleAccessor = noiseFloor.getAccessor();
     }
@@ -28,8 +28,8 @@ public class Model  implements IModel {
         return quickSimpleAccessor.getNoiseFloor();
     }
 
-    public Model getInstance() throws CloneNotSupportedException {
-        return (Model) factoryModel.clone();
+    public ModelDeprecated getInstance() throws CloneNotSupportedException {
+        return (ModelDeprecated) factoryModelDeprecated.clone();
     }
 
     public Point getRobotPosition() {
@@ -149,7 +149,7 @@ public class Model  implements IModel {
                 return floor;
             }
 
-            public byte[] getNoiseStream(Path p) throws Exception {
+            public byte[] getNoiseStream(PathDeprecated p) throws Exception {
                 byte[] stream = new byte[p.length()];
                 p.fill(stream);
 

@@ -4,11 +4,11 @@ import view.Pixel;
 
 import java.util.List;
 
-public class Path{
+public class PathDeprecated {
     KartesianCoordinates start;
     List<PolarCoordinates> line;
 
-    private Path() {
+    private PathDeprecated() {
         start = null;
     }
 

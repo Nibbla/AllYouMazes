@@ -15,7 +15,7 @@ public class TraversalHandler {
     private boolean firstT;
     private boolean firstE;
 
-    //Need to edit this variable (for multiple e-pucks)
+    //Need to editFields this variable (for multiple e-pucks)
     private double maxSeparationDistance = 0;
 
     //TraversalStatus.START
