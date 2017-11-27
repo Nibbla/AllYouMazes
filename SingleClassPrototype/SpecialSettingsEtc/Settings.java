@@ -7,7 +7,7 @@ import java.io.File;
  */
 public class Settings {
     private static String inputPath = System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator + "testpi6.jpg";
-    private static String defaultInputPath = System.getProperty("user.dir") + "\\Input\\latestScreen.jpg";
+    private static String defaultInputPath = System.getProperty("user.dir") + File.separator +"SingleClassPrototype" + File.separator + "Input" + File.separator;
     private static int stepX = 5; //should be odd number
     private static int stepY = 5; //should be odd number
     private static int scansize = 4;

@@ -56,7 +56,8 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = true;
+    public final static boolean DEBUG = false;
+    public static boolean CONTOUR_TEST = false;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);
@@ -287,12 +288,13 @@ public class ComputerVision {
 
         Mat dilateElement = new Mat();
         org.opencv.core.Point p = new org.opencv.core.Point(-1, -1);
-        //Imgproc.dilate(thresh, thresh, dilateElement, p, (int) robotPos.getRadius());
+        //TODO still needs deletion of other contours + correct robot radius for dilation
+        Imgproc.dilate(thresh, thresh, dilateElement, p, 10);
 
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
         Mat hierarchy = new Mat();
         Imgproc.findContours(thresh, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        if (ComputerVision.DEBUG) {
+        if (ComputerVision.DEBUG || ComputerVision.CONTOUR_TEST) {
             Imgproc.drawContours(gray, contours, -1, new Scalar(0, 255, 0), 2);
         }
 
@@ -310,8 +312,10 @@ public class ComputerVision {
             return null;
         }
 
-        if (ComputerVision.DEBUG) {
-            ImgWindow.newWindow(gray);
+        if (ComputerVision.DEBUG || ComputerVision.CONTOUR_TEST) {
+            ImgWindow w = ImgWindow.newWindow();
+            w.setTitle("contour v1");
+            w.setImage(gray);
         }
 
         return contour;
@@ -985,7 +989,7 @@ public class ComputerVision {
 
         for (int i = 0; i < contours.size(); i++) {
             MatOfPoint contour = contours.get(i);
-            if (Imgproc.contourArea(contour) < 500) {
+            if (Imgproc.contourArea(contour) < 5000) {
                 Imgproc.fillConvexPoly(mask, contour, new Scalar(0));
             }
         }
@@ -996,9 +1000,13 @@ public class ComputerVision {
         contours = new ArrayList<MatOfPoint>();
         hierarchy = new Mat();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255), 2);
 
-        ImgWindow.newWindow(img);
+        if (ComputerVision.CONTOUR_TEST) {
+            Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255), 2);
+            ImgWindow w = ImgWindow.newWindow();
+            w.setTitle("contour v2");
+            w.setImage(img);
+        }
     }
 
 
