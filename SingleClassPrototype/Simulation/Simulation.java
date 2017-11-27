@@ -65,8 +65,11 @@ public class Simulation {
          */
 
         // current image recognition. to be replaced with data from BGS
-        Mat gray = ComputerVision.grayScale(ComputerVision.resize(picture));
-        KeyPoint[] kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), 0, 0);
+        Mat backgroundImage = ComputerVision.readImg(picture);
+        Mat grayBackground = ComputerVision.grayScale(ComputerVision.resize(backgroundImage));
+        Mat newImage = ComputerVision.readImg(picture);
+        Mat grayNew = ComputerVision.grayScale(ComputerVision.resize(backgroundImage));
+        KeyPoint[] kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage), ComputerVision.resize(newImage), 0, 0);
         
         if (kps[0] == null || kps[1] == null) {
             System.out.println("oh god no");
@@ -85,11 +88,11 @@ public class Simulation {
         rp.setDirection(rp.getAngleTo(new Node((int)kps[1].pt.x, (int)kps[1].pt.y)));
 
         // scan contours of the maze
-        this.contour = ComputerVision.retrieveContour(gray, rp);
+        this.contour = ComputerVision.retrieveContour(grayBackground, rp);
 
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
-        LinkedList<Node> shortestPath = ComputerVision.retrievePath(gray, new MatOfPoint2f(contour.toArray()), rp, 8);
+        LinkedList<Node> shortestPath = ComputerVision.retrievePath(grayBackground, new MatOfPoint2f(contour.toArray()), rp, 8);
 
         // init a traversalHandler based on the shortest path, to be passed to the agent
         TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) rp.getX(), (int) rp.getY()));
@@ -126,7 +129,7 @@ public class Simulation {
                 // set the current goal node. TODO: X and Y are swapped
                 n = agent.getHandler().getNode(agent.getHandler().getIndex());
 
-                // TODO: check if the gal was reached
+                // TODO: check if the goal was reached
                 //boolean finished = agent.getHandler().getIndex()+1 > agent.getHandler().length();
 
                 // these values well be adapted depending on the current position and goal of the robot.
@@ -137,10 +140,13 @@ public class Simulation {
                 KeyPoint[] kps = null;
 
                 // change method call depending on the last known robot position
+                // TODO: adapt to BGS method, this is only improvised to make Simulation compilable
+                Mat backgroundImage = ComputerVision.readImg(pathToPicture);
+                Mat newImage = ComputerVision.readImg(pathToPicture);
                 if (detected) {
-                    kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), (int)agent.getCurrentPosition().getX(), (int)agent.getCurrentPosition().getY(), (int)(agent.getCurrentPosition().getRadius()));
+                    kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage), (int)agent.getCurrentPosition().getX(), (int)agent.getCurrentPosition().getY(), (int)(agent.getCurrentPosition().getRadius()));
                 } else {
-                    kps = ComputerVision.robotv2(ComputerVision.resize(pathToPicture), 0, 0);
+                    kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage),ComputerVision.resize(newImage), 0, 0);
                 }
 
 
