@@ -709,7 +709,9 @@ public class ComputerVision {
         Mat cropped, diff;
         double area;
         double[] h;
+        float prevRadius = 0;
         float[] radius = null;
+        Point prev = null;
         Point center = null;
         boolean found = false;
 
@@ -741,6 +743,8 @@ public class ComputerVision {
                         frame.copyTo(copyFrame);
 
                         if (center != null && radius != null) {
+                            prev = center.clone();
+                            prevRadius = radius[0];
                             //System.out.println("cx:" + center.x + ", cy:" + center.y);
                             Rect rect = rectSearch(copyFrame, (int)center.x, (int)center.y, (int)(radius[0]*1.5));
                             Mat r = frame.submat(rect);
@@ -788,21 +792,36 @@ public class ComputerVision {
                                     if (area > 200) {
                                         double kidArea = Imgproc.contourArea(contours.get((int)h[2]));
                                         if (kidArea > 20) {
-                                            //System.out.println("Robot (possibly) found");
-                                            found = true;
-                                            radius = new float[1];
-                                            //center = new Point();
-                                            Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(j).toArray()), null, radius);
-                                            //Imgproc.circle(frame, new Point(centerD.x+ax, centerD.y+ay), (int)radiusD[0], new Scalar(255));
-                                            RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
-                                            r.center.x += ax;
-                                            r.center.y += ay;
 
-                                            center = new Point(r.center.x, r.center.y);
-                                            if (ComputerVision.DEBUG) {
-                                                Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
+                                            boolean invalid = false;
+                                            int maxDiffPos = 20;
+                                            int maxDiffRad = 15;
+                                            if (prev != null) {
+                                                if (Math.abs(prev.x - center.x) > maxDiffPos || Math.abs(prev.y - center.y) > maxDiffPos || Math.abs(prevRadius - radius[0]) > maxDiffRad) {
+                                                    if (ComputerVision.DEBUG) {
+                                                        System.out.println("Point INVALIDATED!");
+                                                        invalid = true;
+                                                    }
+                                                }
                                             }
-                                            //System.out.println("x:" + (centerD.x+ax) + ", y:" + (centerD.y+ay));
+
+                                            if (!invalid) {
+                                                //System.out.println("Robot (possibly) found");
+                                                found = true;
+                                                radius = new float[1];
+                                                //center = new Point();
+                                                Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(j).toArray()), null, radius);
+                                                //Imgproc.circle(frame, new Point(centerD.x+ax, centerD.y+ay), (int)radiusD[0], new Scalar(255));
+                                                RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
+                                                r.center.x += ax;
+                                                r.center.y += ay;
+
+                                                center = new Point(r.center.x, r.center.y);
+                                                if (ComputerVision.DEBUG) {
+                                                    Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
+                                                }
+                                                //System.out.println("x:" + (centerD.x+ax) + ", y:" + (centerD.y+ay));
+                                            }
                                         }
                                     }
                                 }
@@ -810,6 +829,8 @@ public class ComputerVision {
                         }
 
                         if (!found) {
+                            prev = null;
+                            prevRadius = 0;
                             radius = null;
                             center = null;
                             ax = 0;
