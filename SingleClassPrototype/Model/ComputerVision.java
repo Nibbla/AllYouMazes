@@ -56,7 +56,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = false;
+    public final static boolean DEBUG = true;
     public static boolean CONTOUR_TEST = false;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
@@ -64,6 +64,8 @@ public class ComputerVision {
 
     public final static int RADIUS_EST = (int) (100 * SCALE_FACTOR);
     public final static int RADIUS_ESTOFFSET = (int) (20 * SCALE_FACTOR);
+    public static int ax = 0;
+    public static int ay = 0;
 
     public static FeatureDetector angleDetector;
     public static FeatureDetector robotDetector;
@@ -635,33 +637,62 @@ public class ComputerVision {
         capture.release();
     }
 
+    @Deprecated
     public static Mat bgs(Mat m1, Mat m2) {
         Mat diff = new Mat();
         Core.absdiff(m1, m2, diff);
         Imgproc.cvtColor(diff, diff, Imgproc.COLOR_BGR2HSV);
-        Scalar low = new Scalar(170, 50, 50);
-        Scalar high = new Scalar(180, 200, 200);
-        Core.inRange(diff, low, high, diff);
-        Imgproc.dilate(diff, diff, new Mat(), new Point(-1, -1), 5);
+        Mat mask = new Mat();
+        Mat tmp_mask1 = new Mat();
+        Mat tmp_mask2 = new Mat();
+        //Core.inRange(diff, new Scalar(0, 100, 100), new Scalar(15, 200, 200), tmp_mask1);
+        Core.inRange(diff, new Scalar(165, 80, 60), new Scalar(180, 200, 230), mask);
+        //Core.add(tmp_mask2, tmp_mask1, mask);
+        Mat kernel = Mat.ones(10, 10, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_DILATE, kernel);
+        //Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
         //diff = grayScale(diff);
         //Mat kernel = Mat.ones(5, 5, CvType.CV_8UC1);
         //Imgproc.morphologyEx(diff, diff, Imgproc.MORPH_OPEN, kernel);
         //Imgproc.GaussianBlur(diff, diff, new Size(5,5), 2, 2);
         //Imgproc.threshold(diff, diff, 0, 255, Imgproc.THRESH_OTSU);
         //kernel.release();
-        return diff;
+        return mask;
+    }
+
+    public static Mat bgs(Mat m1) {
+        Mat cc = new Mat();
+        m1.copyTo(cc);
+        Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
+        Mat mask = new Mat();
+        Mat tmp_mask1 = new Mat();
+        Mat tmp_mask2 = new Mat();
+        Core.inRange(cc, new Scalar(0, 80, 50), new Scalar(15, 200, 230), tmp_mask1);
+        Core.inRange(cc, new Scalar(165, 80, 50), new Scalar(180, 200, 230), tmp_mask2);
+        Core.add(tmp_mask1, tmp_mask2, mask);
+        Mat kernel = Mat.ones(5, 5, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
+        return mask;
     }
 
     public static void bgsLoop() {
-        //TODO:
         Mat bg = new Mat();
         Mat frame = new Mat();
 
-        ImgWindow camWindow = ImgWindow.newWindow();
-        camWindow.setTitle("CAM");
+        ImgWindow camWindow = null;
+        if (ComputerVision.DEBUG) {
+            camWindow = ImgWindow.newWindow();
+            camWindow.setTitle("CAM");
+        }
 
-        ImgWindow bgsWindow = ImgWindow.newWindow();
-        bgsWindow.setTitle("BGS");
+        ImgWindow bgsWindow = null;
+        if (ComputerVision.DEBUG) {
+            bgsWindow = ImgWindow.newWindow();
+            bgsWindow.setTitle("BGS");
+        }
+
+        //ImgWindow testWindow = ImgWindow.newWindow();
+        //bgsWindow.setTitle("TEST");
 
         VideoCapture capture = new VideoCapture(0);
 
@@ -670,21 +701,19 @@ public class ComputerVision {
         List<MatOfPoint> contours;
         Mat hierarchy, crBg;
         Mat crFrame = null;
+        int sp;
         int rad, space;
-        int ax = 0;
-        int ay = 0;
         Rect roi;
         Mat cropped, diff;
         double area;
         double[] h;
-        float[] radius;
-        float[] radiusD = null;
-        Point center;
-        Point centerD = null;
+        float[] radius = null;
+        Point center = null;
         boolean found = false;
 
         capture.set(Videoio.CAP_PROP_FRAME_WIDTH, 400);
         capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, 600);
+        //capture.set(Videoio.CAP_PROP_FPS, 4);
 
         if (!capture.isOpened()) {
             System.out.println("error");
@@ -697,114 +726,93 @@ public class ComputerVision {
                     i++;
                     space = 0;
 
-                    if (i < 90) {
-                        camWindow.setImage(frame);
-                    } else if (i == 120) {
+                    if (i < 30) {
+                        if (ComputerVision.DEBUG) {
+                            camWindow.setImage(frame);
+                        }
+                    } else if (i == 30) {
                         frame.copyTo(bg);
-                    } else if (i > 120 && i <= 240) {
-                        diff = bgs(frame, bg);
-                        bgsWindow.setImage(diff);
-                        camWindow.setImage(frame);
-                    } else if (i > 240) {
-                        if (found) {
-                            space = (int)(radiusD[0]*1.5);
-                            System.out.println("x:" + (int)(centerD.x + ax - space)  + "|y:" + (int)(centerD.y + ay - space) + "|r:" + space);
-                            System.out.println("ax:" + ax + ", ay:" + ay + ", space:" + space);
-                            roi = new Rect(new Point((int)(centerD.x + ax - space), (int)(centerD.y + ay - space)), new Point((int)centerD.x + ax + space, (int)centerD.y + ay + space));
-                            crFrame = frame.submat(roi);
-                            crBg = bg.submat(roi);
-                            diff = bgs(crFrame, crBg);
+                    } else if (i > 30) {
+                        found = false;
+
+                        Mat copyFrame = new Mat();
+                        frame.copyTo(copyFrame);
+
+                        if (center != null && radius != null) {
+                            //System.out.println("cx:" + center.x + ", cy:" + center.y);
+                            Rect rect = rectSearch(copyFrame, (int)center.x, (int)center.y, (int)(radius[0]*1.5));
+                            Mat r = frame.submat(rect);
+                            diff = bgs(r);
                         } else {
-                            diff = bgs(frame, bg);
+                            diff = bgs(frame);
                         }
 
-                        bgsWindow.setImage(diff);
+                        if (ComputerVision.DEBUG) {
+                            bgsWindow.setImage(diff);
+                        }
+
+                        //Rect testRect= rectSearch(frame,0,0, 100);
+                        //Mat diffcropped = frame.submat(testRect);
+                        //testWindow.setImage(diffcropped);
+                        //bgsWindow.setImage(diff);
 
                         contours = new ArrayList<MatOfPoint>();
                         hierarchy = new Mat();
-                        Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-                        diff.release();
 
-                        if (!contours.isEmpty()) {
-                            radius = new float[1];
-                            center = new Point();
-                            Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(0).toArray()), center, radius);
-                            //Imgproc.circle(frame, center, (int)radius[0], new Scalar(255, 0, 0), 1);
-                            rad = (int)(radius[0] * 1.5);
+                        //Imgproc.threshold(cropped, cropped, 0, 255, Imgproc.THRESH_OTSU);
+                        Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+                        //Imgproc.drawContours(frame, contours, -1, new Scalar(0, 255, 0), 1);
+                        area = 0;
 
-                            roi = new Rect(new Point((int)center.x - rad, (int)center.y - rad), new Point((int)center.x + rad, (int)center.y + rad));
+                        if (!contours.isEmpty() && !hierarchy.empty()) {
+                            for (int j = 0; j < contours.size(); j++) {
+                                h = hierarchy.get(0, j);
+                                if (h[3] != -1) {
+                                    area = Imgproc.contourArea(contours.get(j));
+                                    if (area > 20) {
+                                        //System.out.println("Angle (possibly) found");
+                                        RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
+                                        r.center.x += ax;
+                                        r.center.y += ay;
 
-                            ax = (int)center.x - rad;
-                            ay = (int)center.y - rad;
-
-                            cropped = frame.submat(roi);
-                            Imgcodecs.imwrite("crop.jpg", cropped);
-
-                            //Imgproc.cvtColor(cropped, cropped, Imgproc.COLOR_BGR2HSV);
-                            //Scalar low = new Scalar(170, 100, 100);
-                            //Scalar high = new Scalar(180, 200, 200);
-                            //Core.inRange(cropped, low, high, diff);
-
-                            //cropped = grayScale(cropped);
-
-                            Mat cc = new Mat();
-                            Imgproc.cvtColor(cropped, cc, Imgproc.COLOR_BGR2HSV);
-
-                            Mat mask = new Mat();
-                            Mat tmp_mask1 = new Mat();
-                            Mat tmp_mask2 = new Mat();
-                            Core.inRange(cc, new Scalar(0, 50, 50), new Scalar(10, 200, 200), tmp_mask1);
-                            Core.inRange(cc, new Scalar(170, 50, 50), new Scalar(180, 200, 200), tmp_mask2);
-                            Core.add(tmp_mask1, tmp_mask2, mask);
-                            Mat kernel = Mat.ones(5, 5, CvType.CV_8UC1);
-                            Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
-
-                            contours = new ArrayList<MatOfPoint>();
-                            hierarchy = new Mat();
-
-                            //Imgproc.threshold(cropped, cropped, 0, 255, Imgproc.THRESH_OTSU);
-                            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
-                            //Imgproc.drawContours(frame, contours, -1, new Scalar(255, 0, 0), 1);
-
-                            area = 0;
-                            found = false;
-
-                            if (!contours.isEmpty() && !hierarchy.empty()) {
-                                for (int j = 0; j < contours.size(); j++) {
-                                    h = hierarchy.get(0, j);
-                                    if (h[3] != -1) {
-                                        area = Imgproc.contourArea(contours.get(j));
-                                        if (area > 10) {
-                                            //System.out.println("Angle (possibly) found");
-                                            Rect r = Imgproc.boundingRect(contours.get(j));
-                                            Imgproc.rectangle(frame, new Point(r.x + ax, r.y + ay), new Point(r.x+r.width+ax, r.y+r.height+ay), new Scalar(255));
+                                        if (ComputerVision.DEBUG) {
+                                            Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
                                         }
-                                    } else if (h[2] != -1) {
-                                        area = Imgproc.contourArea(contours.get(j));
-                                        if (area > 100) {
-                                            double kidArea = Imgproc.contourArea(contours.get((int)h[2]));
-                                            if (kidArea > 10) {
-                                                //System.out.println("Robot (possibly) found");
-                                                found = false;
-                                                radiusD = new float[1];
-                                                centerD = new Point();
-                                                //Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(j).toArray()), centerD, radiusD);
-                                                //Imgproc.circle(frame, new Point(centerD.x+ax, centerD.y+ay), (int)radiusD[0], new Scalar(255));
-                                                RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
-                                                r.center.x += ax;
-                                                r.center.y += ay;
-                                                Imgproc.ellipse(frame, r, new Scalar(255), 1);
-                                                //System.out.println("x:" + (centerD.x+ax) + ", y:" + (centerD.y+ay));
+                                    }
+                                } else if (h[2] != -1) {
+                                    area = Imgproc.contourArea(contours.get(j));
+                                    if (area > 200) {
+                                        double kidArea = Imgproc.contourArea(contours.get((int)h[2]));
+                                        if (kidArea > 20) {
+                                            //System.out.println("Robot (possibly) found");
+                                            found = true;
+                                            radius = new float[1];
+                                            //center = new Point();
+                                            Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(j).toArray()), null, radius);
+                                            //Imgproc.circle(frame, new Point(centerD.x+ax, centerD.y+ay), (int)radiusD[0], new Scalar(255));
+                                            RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
+                                            r.center.x += ax;
+                                            r.center.y += ay;
+
+                                            center = new Point(r.center.x, r.center.y);
+                                            if (ComputerVision.DEBUG) {
+                                                Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
                                             }
+                                            //System.out.println("x:" + (centerD.x+ax) + ", y:" + (centerD.y+ay));
                                         }
                                     }
                                 }
                             }
                         }
 
-                        if (found) {
-                            camWindow.setImage(crFrame);
-                        } else {
+                        if (!found) {
+                            radius = null;
+                            center = null;
+                            ax = 0;
+                            ay = 0;
+                        }
+
+                        if (ComputerVision.DEBUG) {
                             camWindow.setImage(frame);
                         }
                     }
@@ -861,11 +869,47 @@ public class ComputerVision {
         }
     }
 
+    public static Rect rectSearch(Mat img, int x, int y, int searchSpace) {
+        Rect rect = null;
+        int maxX = img.cols();
+        int maxY = img.rows();
+
+        if ((x - searchSpace) < 0 && (y - searchSpace) < 0) { //top left
+            rect = new Rect(new Point(0, 0), new Point(searchSpace, searchSpace));
+
+        } else if ((x + searchSpace) > maxX && (y - searchSpace) < 0) { //top right
+            rect = new Rect(new Point(maxX - searchSpace * 2, 0), new Point(maxX, searchSpace * 2));
+
+        } else if ((x - searchSpace) < 0 && (y + searchSpace) > maxY) { //bottom left
+            rect = new Rect(new Point(0, maxY - searchSpace * 2), new Point(searchSpace * 2, maxY));
+
+        } else if ((x + searchSpace) > maxX && (y + searchSpace) > maxY) { //bottom right
+            rect = new Rect(new Point(maxX - searchSpace * 2, maxY - searchSpace * 2), new Point(maxX, maxY));
+
+        } else if ((x - searchSpace) < 0) { //left
+            rect = new Rect(new Point(0, y - searchSpace), new Point(searchSpace * 2, y + searchSpace));
+
+        } else if ((y - searchSpace) < 0) { //top
+            rect = new Rect(new Point(x - searchSpace, 0), new Point(x + searchSpace, searchSpace * 2));
+
+        } else if ((x + searchSpace) > maxX) { //right
+            rect = new Rect(new Point(maxX - searchSpace * 2, y - searchSpace), new Point(maxX, y + searchSpace));
+
+        } else if ((y + searchSpace) > maxY) { //bottom
+
+        } else {
+            rect = new Rect(new Point(x - searchSpace, y - searchSpace), new Point(x + searchSpace, y + searchSpace));
+            ax = x - searchSpace;
+            ay = y - searchSpace;
+        }
+
+        return rect;
+    }
 
     public static void main(String[] args) {
-        //bgsLoop();
-        Mat pic = resize(readImg("C:\\Users\\Jyr\\IdeaProjects\\Mazes4\\SingleClassPrototype\\Input\\latestScreen.jpg"));
-        contourv2(pic);
+        bgsLoop();
+//        Mat pic = resize(readImg("C:\\Users\\Jyr\\IdeaProjects\\Mazes4\\SingleClassPrototype\\Input\\latestScreen.jpg"));
+//        contourv2(pic);
     }
 }
 
