@@ -661,6 +661,8 @@ public class ComputerVision {
     }
 
     public static Mat bgs(Mat m1) {
+        //Format I encountered is 360 (degrees), 100 (percent), 100 (percent)
+        //HSV in OpenCV is 180, 255, 255 format.
         Mat cc = new Mat();
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
@@ -767,6 +769,7 @@ public class ComputerVision {
                         if (!contours.isEmpty() && !hierarchy.empty()) {
                             for (int j = 0; j < contours.size(); j++) {
                                 h = hierarchy.get(0, j);
+                                //if it has a parent
                                 if (h[3] != -1) {
                                     area = Imgproc.contourArea(contours.get(j));
                                     if (area > 20) {
@@ -779,6 +782,7 @@ public class ComputerVision {
                                             Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
                                         }
                                     }
+                                //if it has a child
                                 } else if (h[2] != -1) {
                                     area = Imgproc.contourArea(contours.get(j));
                                     if (area > 200) {
@@ -830,7 +834,35 @@ public class ComputerVision {
         capture.release();
     }
 
-    public static void contourv2(Mat img) {
+    /*
+    TODO
+    We want to extract the black underground
+    For this we need to apply a mask (HSV filtering)
+
+    ----------
+    ImgWindow window = ImgWindow.newWindow();
+    window.setImage(hsv);
+
+    ImgWindow.newWindow(hsv);
+    ----------
+
+    call findContours
+    it is possible that you have to blur beforehand
+
+    its important that you find the largest contour
+    then, you want to construct a bounding rectangle around this contour
+
+    contours.get(i) where i is the largest contour
+    Rect bounding = Imgproc.boundRect(contours.get(i));
+
+    Mat roi = img.submat(bounding);
+    contourv2(roi);
+
+    have to think about ax, ay
+     */
+
+    public static MatOfPoint contourv2(Mat img) {
+        MatOfPoint mazeContour = null;
         Mat hsv = new Mat();
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
 
@@ -861,12 +893,21 @@ public class ComputerVision {
         hierarchy = new Mat();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
+        if (contours.size() == 1) {
+            mazeContour = contours.get(0);
+        } else {
+            if (contours.isEmpty()) System.out.println("No contours");
+            else System.out.println("Found multiple contours");
+        }
+
         if (ComputerVision.CONTOUR_TEST) {
             Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255), 2);
             ImgWindow w = ImgWindow.newWindow();
             w.setTitle("contour v2");
             w.setImage(img);
         }
+
+        return mazeContour;
     }
 
     public static Rect rectSearch(Mat img, int x, int y, int searchSpace) {
@@ -876,27 +917,30 @@ public class ComputerVision {
 
         if ((x - searchSpace) < 0 && (y - searchSpace) < 0) { //top left
             rect = new Rect(new Point(0, 0), new Point(searchSpace, searchSpace));
-
         } else if ((x + searchSpace) > maxX && (y - searchSpace) < 0) { //top right
             rect = new Rect(new Point(maxX - searchSpace * 2, 0), new Point(maxX, searchSpace * 2));
-
+            ax = maxX - searchSpace * 2;
         } else if ((x - searchSpace) < 0 && (y + searchSpace) > maxY) { //bottom left
             rect = new Rect(new Point(0, maxY - searchSpace * 2), new Point(searchSpace * 2, maxY));
-
+            ay = maxY - searchSpace * 2;
         } else if ((x + searchSpace) > maxX && (y + searchSpace) > maxY) { //bottom right
             rect = new Rect(new Point(maxX - searchSpace * 2, maxY - searchSpace * 2), new Point(maxX, maxY));
-
+            ax = maxX - searchSpace * 2;
+            ay = maxY - searchSpace * 2;
         } else if ((x - searchSpace) < 0) { //left
             rect = new Rect(new Point(0, y - searchSpace), new Point(searchSpace * 2, y + searchSpace));
-
+            ay = y - searchSpace;
         } else if ((y - searchSpace) < 0) { //top
             rect = new Rect(new Point(x - searchSpace, 0), new Point(x + searchSpace, searchSpace * 2));
-
+            ax = x - searchSpace;
         } else if ((x + searchSpace) > maxX) { //right
             rect = new Rect(new Point(maxX - searchSpace * 2, y - searchSpace), new Point(maxX, y + searchSpace));
-
+            ax = maxX - searchSpace * 2;
+            ay = y - searchSpace;
         } else if ((y + searchSpace) > maxY) { //bottom
-
+            rect = new Rect(new Point(x - searchSpace, maxY - searchSpace * 2), new Point(x + searchSpace, maxY));
+            ax = x - searchSpace;
+            ay = maxY - searchSpace * 2;
         } else {
             rect = new Rect(new Point(x - searchSpace, y - searchSpace), new Point(x + searchSpace, y + searchSpace));
             ax = x - searchSpace;
