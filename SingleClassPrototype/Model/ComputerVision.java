@@ -754,7 +754,7 @@ public class ComputerVision {
                         }
 
                         if (ComputerVision.DEBUG) {
-                            
+
                             Mat test = backgroundContour(copyFrame);
                             bgsWindow.setImage(test);
                         }
@@ -989,7 +989,7 @@ public class ComputerVision {
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
-        Mat hierarchy = null;
+        Mat hierarchy = new Mat();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
         int biggestContourIndex = 0;
