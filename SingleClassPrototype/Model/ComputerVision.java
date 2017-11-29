@@ -56,7 +56,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = true;
+    public final static boolean DEBUG = false;
     public static boolean CONTOUR_TEST = false;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
@@ -646,7 +646,7 @@ public class ComputerVision {
         Mat tmp_mask1 = new Mat();
         Mat tmp_mask2 = new Mat();
         //Core.inRange(diff, new Scalar(0, 100, 100), new Scalar(15, 200, 200), tmp_mask1);
-        Core.inRange(diff, new Scalar(165, 80, 60), new Scalar(180, 200, 230), mask);
+        Core.inRange(diff, new Scalar(20, 63, 60), new Scalar(180, 200, 230), mask);
         //Core.add(tmp_mask2, tmp_mask1, mask);
         Mat kernel = Mat.ones(10, 10, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_DILATE, kernel);
@@ -668,9 +668,9 @@ public class ComputerVision {
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
         Mat mask = new Mat();
         Mat tmp_mask1 = new Mat();
+		Core.inRange(cc, new Scalar(0, 150, 90), new Scalar(15, 240, 190), tmp_mask1);
         Mat tmp_mask2 = new Mat();
-        Core.inRange(cc, new Scalar(0, 80, 50), new Scalar(15, 200, 230), tmp_mask1);
-        Core.inRange(cc, new Scalar(165, 80, 50), new Scalar(180, 200, 230), tmp_mask2);
+        Core.inRange(cc, new Scalar(170, 150, 90), new Scalar(180, 240, 190), tmp_mask2);
         Core.add(tmp_mask1, tmp_mask2, mask);
         Mat kernel = Mat.ones(5, 5, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
@@ -715,6 +715,8 @@ public class ComputerVision {
         Point center = null;
         boolean found = false;
 
+		Rect croppedArea = new Rect();
+
         capture.set(Videoio.CAP_PROP_FRAME_WIDTH, 1000);
         capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, 1000);
         //capture.set(Videoio.CAP_PROP_FPS, 4);
@@ -735,9 +737,15 @@ public class ComputerVision {
                             camWindow.setImage(frame);
                         }
                     } else if (i == 30) {
+						croppedArea = backgroundRect(frame);
+						frame = frame.submat(croppedArea);
                         frame.copyTo(bg);
+						MatOfPoint test = contourv2(bg);
+
                     } else if (i > 30) {
                         found = false;
+
+						frame = frame.submat(croppedArea);
 
                         Mat copyFrame = new Mat();
                         frame.copyTo(copyFrame);
@@ -754,9 +762,7 @@ public class ComputerVision {
                         }
 
                         if (ComputerVision.DEBUG) {
-
-                            Mat test = backgroundContour(copyFrame);
-                            bgsWindow.setImage(test);
+                            bgsWindow.setImage(diff);
                         }
 
                         //Rect testRect= rectSearch(frame,0,0, 100);
@@ -885,16 +891,19 @@ public class ComputerVision {
      */
 
     public static MatOfPoint contourv2(Mat img) {
+                    long start = System.currentTimeMillis();
         MatOfPoint mazeContour = null;
         Mat hsv = new Mat();
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
-        Mat mask = new Mat();
-        Scalar low = new Scalar(14, 30, 130);
-        Scalar high = new Scalar(23, 90, 255);
-        Core.inRange(hsv, low, high, mask);
-        Mat kernel = Mat.ones(17, 17, CvType.CV_8UC1);
+		Mat mask = new Mat();
+        Mat tmp_mask1 = new Mat();
+		Core.inRange(hsv, new Scalar(0, 30, 50), new Scalar(50, 190, 230), tmp_mask1);
+        Mat tmp_mask2 = new Mat();
+        Core.inRange(hsv, new Scalar(165, 30, 50), new Scalar(180, 190, 230), tmp_mask2);
+        Core.add(tmp_mask1, tmp_mask2, mask);
+        Mat kernel = Mat.ones(10, 10, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         //Need to make sure that robot is removed.
@@ -929,7 +938,8 @@ public class ComputerVision {
             w.setTitle("contour v2");
             w.setImage(img);
         }
-
+                    long end = System.currentTimeMillis();
+                    System.out.println("Contour took " + (end-start) + " ms");
         return mazeContour;
     }
 
@@ -973,17 +983,16 @@ public class ComputerVision {
         return rect;
     }
 
-    public static Mat backgroundContour(Mat fullimage){
-        Mat croppedImage = new Mat();
-
+    public static Rect backgroundRect(Mat fullimage){
         MatOfPoint backgroundContour = null;
         Mat hsv = new Mat();
         Imgproc.cvtColor(fullimage, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
+
         Mat mask = new Mat();
-        Scalar low = new Scalar(14, 13, 29);
-        Scalar high = new Scalar(75, 8, 31);
+        Scalar low = new Scalar(0, 0, 0);
+        Scalar high = new Scalar(180, 255, 30);
         Core.inRange(hsv, low, high, mask);
         Mat kernel = Mat.ones(17, 17, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
@@ -992,7 +1001,10 @@ public class ComputerVision {
         Mat hierarchy = new Mat();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
+
+
         int biggestContourIndex = 0;
+
 
         for(int index = 0; index < contours.size(); index++){
             if (contours.get(index).size().area() >= contours.get(biggestContourIndex).size().area()){
@@ -1000,10 +1012,7 @@ public class ComputerVision {
             }
         }
 
-        Rect boundingRectangle = Imgproc.boundingRect(contours.get(biggestContourIndex));
-        croppedImage = fullimage.submat(boundingRectangle);
-
-        return croppedImage;
+        return Imgproc.boundingRect(contours.get(biggestContourIndex));
     }
 
     public static void main(String[] args) {
