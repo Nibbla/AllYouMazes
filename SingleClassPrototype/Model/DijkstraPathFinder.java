@@ -158,14 +158,14 @@ public class DijkstraPathFinder {
                 unvisitedSet.add(grid[x][y]);
             }
         }
-
-        boolean stop = false;
+        
+        //boolean stop = false;
 
         while (!unvisitedSet.isEmpty()) {
             Node n = getLowestDistanceNode(unvisitedSet);
             unvisitedSet.remove(n);
 
-            if (n.getX() == 0 && n.getY() == 0) stop = true;
+            //if (n.getX() == 0 && n.getY() == 0) stop = true;
 
             if (n == null) {
                 settledNodes.add(n);
@@ -195,7 +195,7 @@ public class DijkstraPathFinder {
 
             settledNodes.add(n);
 
-            if (stop) break;
+            //if (stop) break;
         }
 
 //        System.out.println(unvisitedSet.size());
