@@ -23,7 +23,7 @@ import java.util.concurrent.*;
 
 public class Simulation {
 
-    public final static int TIME_STEP = 500;
+    public final static int TIME_STEP = 200;
     private static final double ROTATIONERROR = 25;
 
     private Agent agent;
@@ -40,34 +40,19 @@ public class Simulation {
     public IControl control;
     private static RobotControl factoryControl = new RobotControl();
 
+    private ComputerVision.ImageRecognition cv = new ComputerVision.ImageRecognition();
+
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
-     * @param picture the string path to the input picture. Will probably be removed due to BGS-Computervision
      */
-    public Simulation(String picture) {
-        this.pathToPicture = picture;
-
-        // previous approach to start a raspistill process in order to caprute images every 0.5s. NOTE: this is image is still not 'scaled down' (this can be achieved by halving the pixel values).
-        /*
-        Camera camera = new Camera();
-        camera.startCamera(60, 2, 1300, 2000, 75, (Settings.getInputPath()), 0.075, 0.1, 0.8, 0.8);
-
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-         */
+    public Simulation() {
+        cv.initCamera(1000,1000,3000);
 
         // current image recognition. to be replaced with data from BGS
-        Mat backgroundImage = ComputerVision.readImg(picture);
-        Mat grayBackground = ComputerVision.grayScale(ComputerVision.resize(backgroundImage));
-        Mat newImage = ComputerVision.readImg(picture);
-        Mat grayNew = ComputerVision.grayScale(ComputerVision.resize(backgroundImage));
-        KeyPoint[] kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage), ComputerVision.resize(newImage), 0, 0);
+
+        Point currentPosition = cv.getCenter();
         
-        if (kps[0] == null || kps[1] == null) {
+        if (currentPosition == null) {
             System.out.println("oh god no");
             detected = false;
         } else {
@@ -75,27 +60,29 @@ public class Simulation {
         }
 
         // extract robot position and radius from computervision
-        int robotX = (int)kps[0].pt.x;
-        int robotY = (int)kps[0].pt.y;
-        int robotR = (int)kps[0].size/2;
+        int robotX = (int)(currentPosition.x);
+        int robotY = (int)(currentPosition.y);
+        int robotR = (int)(cv.getRadius()/2);
 
         // create RoboPos vaiable to be passed to the angent
         RoboPos rp = new RoboPos(robotX, robotY, robotR);
-        rp.setDirection(rp.getAngleTo(new Node((int)kps[1].pt.x, (int)kps[1].pt.y)));
+        rp.setDirection(0);
 
         // scan contours of the maze
-        this.contour = ComputerVision.retrieveContour(grayBackground, rp);
+        contour = cv.getCurrentContours();
 
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
+        Mat currentFrame = cv.getFrame();
+
         int stepsize = 8;
-        Node[][] grid = DijkstraPathFinder.retrieveDijcstraGrid(grayBackground, new MatOfPoint2f(contour.toArray()), 0,0, stepsize);
+        Node[][] grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), 0,0, stepsize);
         LinkedList<Node> shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,rp,stepsize);
         shortestPath = DijkstraPathFinder.reverseLinkedList(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
         for (Node no : shortestPath) {
-            Imgproc.circle(grayBackground, new org.opencv.core.Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
+            Imgproc.circle(currentFrame, new org.opencv.core.Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
         }
-        ImgWindow.newWindow(grayBackground);
+        ImgWindow.newWindow(currentFrame);
 
 
         // init a traversalHandler based on the shortest path, to be passed to the agent
@@ -138,20 +125,10 @@ public class Simulation {
 
 
                 // input from the Computervision
-                KeyPoint[] kps = null;
-
-                // change method call depending on the last known robot position
-                // TODO: adapt to BGS method, this is only improvised to make Simulation compilable
-                Mat backgroundImage = ComputerVision.readImg(pathToPicture);
-                Mat newImage = ComputerVision.readImg(pathToPicture);
-                if (detected) {
-                    kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage), (int)agent.getCurrentPosition().getX(), (int)agent.getCurrentPosition().getY(), (int)(agent.getCurrentPosition().getRadius()));
-                } else {
-                    kps = ComputerVision.robotv2(ComputerVision.resize(backgroundImage),ComputerVision.resize(newImage), 0, 0);
-                }
+                Point currentPosition = cv.getCenter();
 
 
-                if (kps[0] == null || kps[1] == null) {
+                if (currentPosition == null) {
                     System.out.println("oh god no");
                     detected = false;
                 } else {
@@ -162,11 +139,11 @@ public class Simulation {
                 if (detected) {
 
                     // extract the robots position and radius
-                    int robotX = (int) kps[0].pt.x;
-                    int robotY = (int) kps[0].pt.y;
-                    int robotR = (int) kps[0].size / 2;
+                    int robotX = (int) (currentPosition.x);
+                    int robotY = (int) (currentPosition.y);
+                    int robotR = (int) (cv.getRadius()/2);
 
-                    agent.update(new RoboPos(robotX, robotY, robotR), new Node((int) (kps[1].pt.x), (int) (kps[1].pt.y)));
+                    agent.update(new RoboPos(robotX, robotY, robotR), new Node(0, 0));
 
                     // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
                     if (agent.isTurning() && !agent.isMoving()) {
@@ -199,7 +176,7 @@ public class Simulation {
     }
 
     public static void main(String[] args) {
-        Simulation sim = new Simulation(Settings.getInputPath());
+        Simulation sim = new Simulation();
     }
 
 }

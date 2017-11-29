@@ -891,7 +891,6 @@ public class ComputerVision {
      */
 
     public static MatOfPoint contourv2(Mat img) {
-                    long start = System.currentTimeMillis();
         MatOfPoint mazeContour = null;
         Mat hsv = new Mat();
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
@@ -938,8 +937,7 @@ public class ComputerVision {
             w.setTitle("contour v2");
             w.setImage(img);
         }
-                    long end = System.currentTimeMillis();
-                    System.out.println("Contour took " + (end-start) + " ms");
+
         return mazeContour;
     }
 
@@ -1013,6 +1011,240 @@ public class ComputerVision {
         }
 
         return Imgproc.boundingRect(contours.get(biggestContourIndex));
+    }
+
+    public static class ImageRecognition{
+        private Mat bg, frame, diff, hierarchy;
+
+        private VideoCapture capture;
+
+        private int numberOfFrames;
+
+        private List<MatOfPoint> contours;
+        private MatOfPoint currentContours;
+
+
+        private double area;
+        private double[] h;
+
+        private float prevRadius;
+        private float[] radius;
+
+        private Point prev;
+        private Point center;
+
+        private boolean found;
+        private boolean croppingAreaKnown;
+
+        private Rect croppedArea;
+        private Rect roi;
+
+        ImgWindow camWindow = null;
+        ImgWindow bgsWindow = null;
+
+
+        public ImageRecognition(){
+            initVars();
+        }
+
+        private void initVars(){
+            bg = new Mat();
+            frame = new Mat();
+            diff = new Mat();
+            hierarchy = new Mat();
+
+            numberOfFrames = 0;
+
+            contours = new ArrayList<MatOfPoint>();
+
+            area = 0;
+            h = new double[]{};
+
+            prevRadius = 0;
+            radius = null;
+
+            prev = null;
+            center = null;
+
+            found = false;
+            croppingAreaKnown = false;
+
+            roi = new Rect();
+            croppedArea = new Rect();
+
+            if (ComputerVision.DEBUG) {
+                camWindow = ImgWindow.newWindow();
+                camWindow.setTitle("CAM");
+                bgsWindow = ImgWindow.newWindow();
+                bgsWindow.setTitle("BGS");
+            }
+        }
+
+        private void readNextFrame(){
+            try {
+                capture.read(frame);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error reading next frame");
+            }
+            if (croppingAreaKnown){
+                frame = frame.submat(croppedArea);
+            } else {
+                determineCroppedArea();
+                frame = frame.submat(croppedArea);
+            }
+        }
+
+        private void determineCroppedArea(){
+            try {
+                croppedArea = backgroundRect(frame);
+                croppingAreaKnown = true;
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error determining cropping area.");
+            }
+        }
+
+        private void determineRobotSearchArea(){
+            readNextFrame();
+
+            if (center != null && radius != null) {
+                prev = center.clone();
+                prevRadius = radius[0];
+                Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*1.5));
+                Mat r = frame.submat(rect);
+                diff = bgs(r);
+            } else {
+                diff = bgs(frame);
+            }
+        }
+
+        public void initCamera(int width, int height, int startupTimeMS){
+            try {
+                capture = new VideoCapture(0);
+                capture.set(Videoio.CAP_PROP_FRAME_WIDTH, width);
+                capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, height);
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error initializing camera.");
+            }
+
+            try {
+                Thread.sleep(startupTimeMS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                System.out.println("Error waiting for camera initialization.");
+            }
+        }
+
+        public void determineMazeContours(){
+            readNextFrame();
+            frame.copyTo(bg);
+            currentContours = contourv2(bg);
+        }
+
+        public void findRobotPosition(){
+            determineRobotSearchArea();
+
+            found = false;
+            area = 0;
+
+
+            Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+
+            if (!contours.isEmpty() && !hierarchy.empty()) {
+                for (int j = 0; j < contours.size(); j++) {
+                    h = hierarchy.get(0, j);
+                    //if it has a parent
+                    if (h[3] != -1) {
+                        area = Imgproc.contourArea(contours.get(j));
+                        if (area > 20) {
+                            //System.out.println("Angle (possibly) found");
+                            RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
+                            r.center.x += ax;
+                            r.center.y += ay;
+
+                            if (ComputerVision.DEBUG) {
+                                Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
+                            }
+                        }
+                        //if it has a child
+                    } else if (h[2] != -1) {
+                        area = Imgproc.contourArea(contours.get(j));
+                        if (area > 200) {
+                            double kidArea = Imgproc.contourArea(contours.get((int)h[2]));
+                            if (kidArea > 20) {
+
+                                boolean invalid = false;
+                                int maxDiffPos = 20;
+                                int maxDiffRad = 15;
+                                if (prev != null) {
+                                    if (Math.abs(prev.x - center.x) > maxDiffPos || Math.abs(prev.y - center.y) > maxDiffPos || Math.abs(prevRadius - radius[0]) > maxDiffRad) {
+                                        if (ComputerVision.DEBUG) {
+                                            System.out.println("Point INVALIDATED!");
+                                            invalid = true;
+                                        }
+                                    }
+                                }
+
+                                if (!invalid) {
+                                    //System.out.println("Robot (possibly) found");
+                                    found = true;
+                                    radius = new float[1];
+                                    Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(j).toArray()), null, radius);
+                                    RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
+                                    r.center.x += ax;
+                                    r.center.y += ay;
+
+                                    center = new Point(r.center.x, r.center.y);
+                                    if (ComputerVision.DEBUG) {
+                                        Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!found) {
+                prev = null;
+                prevRadius = 0;
+                radius = null;
+                center = null;
+                ax = 0;
+                ay = 0;
+            }
+
+            if (ComputerVision.DEBUG) {
+                camWindow.setImage(frame);
+            }
+        }
+
+        public void stopImagerecognition(){
+            capture.release();
+        }
+
+        public Point getCenter() {
+            return center;
+        }
+
+        public Point getPrev() {
+            return prev;
+        }
+
+        public MatOfPoint getCurrentContours() {
+            return currentContours;
+        }
+
+        public float getRadius() {
+            return radius[0];
+        }
+
+        public Mat getFrame() {
+            readNextFrame();
+            return frame;
+        }
     }
 
     public static void main(String[] args) {
