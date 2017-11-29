@@ -257,7 +257,11 @@ public class DijkstraPathFinder {
         // frame.getContentPane().add(new JLabel(new ImageIcon(b2)));
 
         frame.pack();
+        frame.setFocusableWindowState(false);
+
+
         frame.setVisible(true);
+        frame.setFocusableWindowState(true);
     }
 
     public static LinkedList<Node> getShortestPathFromGrid(Node[][] grid, RoboPos rb, int stepsize) {
