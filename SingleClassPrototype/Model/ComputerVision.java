@@ -715,8 +715,8 @@ public class ComputerVision {
         Point center = null;
         boolean found = false;
 
-        capture.set(Videoio.CAP_PROP_FRAME_WIDTH, 400);
-        capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, 600);
+        capture.set(Videoio.CAP_PROP_FRAME_WIDTH, 1000);
+        capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, 1000);
         //capture.set(Videoio.CAP_PROP_FPS, 4);
 
         if (!capture.isOpened()) {
@@ -754,7 +754,9 @@ public class ComputerVision {
                         }
 
                         if (ComputerVision.DEBUG) {
-                            bgsWindow.setImage(diff);
+                            
+                            Mat test = backgroundContour(copyFrame);
+                            bgsWindow.setImage(test);
                         }
 
                         //Rect testRect= rectSearch(frame,0,0, 100);
@@ -969,6 +971,39 @@ public class ComputerVision {
         }
 
         return rect;
+    }
+
+    public static Mat backgroundContour(Mat fullimage){
+        Mat croppedImage = new Mat();
+
+        MatOfPoint backgroundContour = null;
+        Mat hsv = new Mat();
+        Imgproc.cvtColor(fullimage, hsv, Imgproc.COLOR_BGR2HSV);
+
+        Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
+        Mat mask = new Mat();
+        Scalar low = new Scalar(14, 13, 29);
+        Scalar high = new Scalar(75, 8, 31);
+        Core.inRange(hsv, low, high, mask);
+        Mat kernel = Mat.ones(17, 17, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
+
+        List<MatOfPoint> contours = new ArrayList<MatOfPoint>();
+        Mat hierarchy = null;
+        Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+
+        int biggestContourIndex = 0;
+
+        for(int index = 0; index < contours.size(); index++){
+            if (contours.get(index).size().area() >= contours.get(biggestContourIndex).size().area()){
+                biggestContourIndex = index;
+            }
+        }
+
+        Rect boundingRectangle = Imgproc.boundingRect(contours.get(biggestContourIndex));
+        croppedImage = fullimage.submat(boundingRectangle);
+
+        return croppedImage;
     }
 
     public static void main(String[] args) {
