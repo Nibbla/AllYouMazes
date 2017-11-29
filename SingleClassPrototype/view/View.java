@@ -300,7 +300,9 @@ public class View implements IView {
         // frame.getContentPane().add(new JLabel(new ImageIcon(b2)));
 
         frame.pack();
+        frame.setFocusableWindowState(false);
         frame.setVisible(true);
+        frame.setFocusableWindowState(true);
     }
 
 
@@ -409,14 +411,93 @@ public class View implements IView {
         Archivar.shout("Value at " + x + "  " + y + " is R:" + valueR + " G:" + valueG + " B:" + valueB);
     }
 
-    public RoboPos getRobotCenter(ObjectType[][] m2, int numberOfPixelsToSkip) {
+    public ArrayList<RoboPos> getRobotCenter(ObjectType[][] m2, int numberOfPixelsToSkip) {
         ArrayList<ArrayList<Pair<Integer, Integer>>> clusters = new ArrayList<>();
-
+        int cpimt = 0;
         //Checking every pixel takes way too much computation time, I tested with skipping 50, works fine.
+
+        getClustersNew(m2, numberOfPixelsToSkip, clusters, cpimt);
+       // getClusters(m2, numberOfPixelsToSkip, clusters, cpimt);
+
+
+
+
+        //Extrapolating robot position from the largest cluster that we found (we assume the largest is the robot)
+        ArrayList<Pair<Integer, Integer>> largestCluster = new ArrayList<>();
+        ArrayList<RoboPos> allRobots = new ArrayList<>();
+
+
+        while (clusters.size()!= 0) {
+            int max = 0;
+            int maxIndex = 0;
+            for (int i = 0; i < clusters.size(); i++) {
+                if (clusters.get(i).size() > max) {
+                    largestCluster = clusters.get(i);
+                    max = clusters.get(i).size();
+                    maxIndex = i;
+                }
+            }
+
+            double xSum = 0;
+            double ySum = 0;
+
+            for (Pair<Integer, Integer> p : largestCluster) {
+                xSum += p.getKey();
+                ySum += p.getValue();
+            }
+
+            double x = xSum / largestCluster.size();
+            double y = ySum / largestCluster.size();
+
+            allRobots.add(new RoboPos(x, y, Math.sqrt(largestCluster.size()) * 1.1284 * 0.5));
+            clusters.remove(maxIndex);
+        }
+        return allRobots;
+    }
+
+    private void getClustersNew(ObjectType[][] m2, int numberOfPixelsToSkip, ArrayList<ArrayList<Pair<Integer, Integer>>> clusters, int cpimt) {
+        ObjectType[][] m3 = new ObjectType[m2.length][m2[0].length];
+        int   xLength = m2.length;
+        int   yLength = m2[0].length;
+        for (int i = 0; i < xLength; i++) {
+            System.arraycopy(m2[i],0,m3[i],0,xLength);
+        }
+
+        for (int i = 0; i < xLength; i++) {
+            for (int j = 0; j < yLength; j++) {
+                if (m3[i][j] == ObjectType.robot){
+                    ArrayList<Pair<Integer, Integer>> cluster = getClusterFrom(m3, i, j,xLength,yLength,numberOfPixelsToSkip);
+                    clusters.add(cluster);
+                }
+            }
+        }
+
+    }
+
+    private ArrayList<Pair<Integer, Integer>> getClusterFrom(ObjectType[][] m3, int i, int j,int width, int height,int stepsize) {
+        ArrayList<Pair<Integer, Integer>> cluster = new ArrayList<>(100);
+        if (i<0||i>=width||j<0||j>=height) return cluster;
+        if (m3[i][j]!=ObjectType.robot) return cluster;
+
+
+        m3[i][j]=ObjectType.floor;
+        cluster.add(new Pair<>(i,j));
+
+        cluster.addAll(getClusterFrom(m3, i+stepsize, j,width,height,stepsize));
+        cluster.addAll(getClusterFrom(m3, i-stepsize, j,width,height,stepsize));
+        cluster.addAll(getClusterFrom(m3, i, j+stepsize,width,height,stepsize));
+        cluster.addAll(getClusterFrom(m3, i, j-stepsize,width,height,stepsize));
+
+        return cluster;
+    }
+
+    private void getClusters(ObjectType[][] m2, int numberOfPixelsToSkip, ArrayList<ArrayList<Pair<Integer, Integer>>> clusters, int cpimt) {
         for (int i = 0; i < m2.length; i+=numberOfPixelsToSkip) {
             for (int j = 0; j < m2[i].length; j+=numberOfPixelsToSkip) {
+                Archivar.shout(i + " " + j +" :RobotCenterCheck");
                 if (m2[i][j]== ObjectType.robot) {
 
+                    Archivar.shout("RobotPixelCheck: " + cpimt++);
                     for (int k = 0; k < clusters.size(); k++) {
                         ArrayList<Pair<Integer, Integer>> curCluster = clusters.get(k);
                         if (curCluster.contains(new Pair(i, j))) {
@@ -453,30 +534,7 @@ public class View implements IView {
                 }
             }
         }
-
-        //Extrapolating robot position from the largest cluster that we found (we assume the largest is the robot)
-        ArrayList<Pair<Integer, Integer>> largestCluster = new ArrayList<>();
-        int max = 0;
-        for (int i = 0; i < clusters.size(); i++) {
-            if (clusters.get(i).size() > max) {
-                largestCluster = clusters.get(i);
-                max = clusters.get(i).size();
-            }
-        }
-
-        double xSum = 0;
-        double ySum = 0;
-
-        for (Pair<Integer, Integer> p: largestCluster) {
-            xSum += p.getKey();
-            ySum += p.getValue();
-        }
-
-        double x = xSum / largestCluster.size();
-        double y = ySum / largestCluster.size();
-        return new RoboPos(x, y,Math.sqrt(largestCluster.size())*1.1284*0.5);
     }
-
 
 
     public class Pixel{

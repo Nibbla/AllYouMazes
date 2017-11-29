@@ -5,7 +5,7 @@ import java.io.IOException;
 /**
  * Created by Nibbla on 21.10.2017.
  */
-public class Classifier implements Changeable<Classifier> {
+public class ClassifierDeprecated implements Changeable<ClassifierDeprecated> {
 
     //wall rules
     public static  String wallrules = "wallrules";
@@ -54,24 +54,21 @@ public class Classifier implements Changeable<Classifier> {
     public static  double rGreenP=2;
     public static  double rGreenUpBound2=270;
     public static  double rGreenUpBoundP2 = -1;
-    public static  double rRedLowBound = 200;
-    public static double rRedLowBoundP = 5;
 
-    ClassChanger<Classifier> c;
+
     //goal1 rules
 
     //goal2 rules
 
 
-    public Classifier() {
-
+    public ClassifierDeprecated() {
+        ClassChanger<ClassifierDeprecated> c;
         Class<?> d = null;
 
         d = this.getClass();//;Class.forName("sample.RuleSet");
 
-        c = new ClassChanger<Classifier>(d,this);
+        c = new ClassChanger<ClassifierDeprecated>(d,this);
         c.load("default.clsf");
-        c.apply();
     }
 
 
@@ -81,29 +78,34 @@ public class Classifier implements Changeable<Classifier> {
     @Override
     public void editFields() {
 
-       c.setVisible(true);
+        ClassChanger<ClassifierDeprecated> c;
+        Class<?> d = null;
+
+            d = this.getClass();//;Class.forName("sample.RuleSet");
+
+        c = new ClassChanger<ClassifierDeprecated>(d,this);
 
     }
 
     @Override
     public void save(String path) throws IOException {
-        ClassChanger<Classifier> c;
+        ClassChanger<ClassifierDeprecated> c;
         Class<?> d = null;
 
         d = this.getClass();//;Class.forName("sample.RuleSet");
 
-        c = new ClassChanger<Classifier>(d,this);
+        c = new ClassChanger<ClassifierDeprecated>(d,this);
         c.save("default.clsf");
     }
 
     @Override
     public void load(String path) throws IOException {
-        ClassChanger<Classifier> c;
+        ClassChanger<ClassifierDeprecated> c;
         Class<?> d = null;
 
         d = this.getClass();//;Class.forName("sample.RuleSet");
 
-        c = new ClassChanger<Classifier>(d,this);
+        c = new ClassChanger<ClassifierDeprecated>(d,this);
         c.load("default.clsf");
     }
 

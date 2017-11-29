@@ -6,6 +6,7 @@ import SpecialSettingsEtc.Classifier;
 
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 /**
  * Created by Nibbla on 26.09.2017.
@@ -23,5 +24,5 @@ public interface IView extends Cloneable {
 
     ObjectType[][] classify(BufferedImage bi, boolean showClassification, Classifier classifier);
 
-    RoboPos getRobotCenter(ObjectType[][] m2, int i);
+    ArrayList<RoboPos> getRobotCenter(ObjectType[][] m2, int i);
 }

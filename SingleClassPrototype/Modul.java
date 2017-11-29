@@ -96,8 +96,8 @@ public class Modul {
                 BufferedImage bi = view.getCurrentShot();
 
                 ObjectType[][] m2 = view.classify(bi, isWorkmode(Workmode.SHOWKLASSIFIED), cl);
-                robotPos = view.getRobotCenter(m2, 1);
-                //System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
+                robotPos = view.getRobotCenter(m2, 4).get(0);
+                System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
                 if (g != null) g.setVisible(false);
                 g = view.getGraph(m2, bi.getType(), robotPos, graphSkip, isWorkmode(Workmode.SHOWASTAR));
                 LinkedList<Node> path = g.calculatePathway(robotPos,0,0,isWorkmode(Workmode.SHOWASTAR));
@@ -132,7 +132,7 @@ public class Modul {
             double timeHappend = (loopEnd - loopStart)/1000.;
             Archivar.shout("Loop: "+ loop + " took " + timeHappend + " seconds to complete");
         }
-
+        System.out.println("Finished programm at " + System.currentTimeMillis());
     }
 
 

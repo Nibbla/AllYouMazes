@@ -8,6 +8,6 @@ import java.io.IOException;
  */
 public interface Changeable<E> {
     public void editFields();
-    public void save() throws IOException;
-    public void load()throws IOException;
+    public void save(String path) throws IOException;
+    public void load(String path)throws IOException;
 }
