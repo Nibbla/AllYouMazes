@@ -59,6 +59,7 @@ public class PixelObjectType {
         //if (green/blue>1.25) robotility+=1;
         if (green>cl.rGreenLowBound&&green<cl.rGreenUpBound) robotility = robotility + cl.rGreenP;
         if (green<cl.rGreenUpBound2) robotility= robotility + cl.rGreenUpBoundP2;
+        if (red>cl.rRedLowBound) robotility= robotility + cl.rRedLowBoundP;
 
         // wallility = wc[0] * red + wc[1] * green + wc[2] * blue;
         // floorility = wc[3] * red + wc[4] * green + wc[5] * blue;

@@ -115,11 +115,11 @@ public class ClassChanger<W> extends JFrame{
         addController();
 
         pack();
-        setVisible(true);
+
 
     }
 
-    private void apply() {
+    public void apply() {
         Enumeration fields = dictionary.elements();
         WHILUST:while (fields.hasMoreElements()){
             Field f = (Field) fields.nextElement();
@@ -153,7 +153,7 @@ public class ClassChanger<W> extends JFrame{
     public void save(String s) {
 
         JFileChooser fileChooser = new JFileChooser();
-        String currentDir = System.getProperty("user.dir");
+        String currentDir = Settings.getDefaultInputPath();
         fileChooser.setCurrentDirectory(new File(currentDir));
         File file = null;
         if (s==null) {
@@ -185,7 +185,7 @@ public class ClassChanger<W> extends JFrame{
 
     public void load(String s) {
         JFileChooser fileChooser = new JFileChooser();
-        String currentDir = System.getProperty("user.dir");
+        String currentDir = Settings.getDefaultInputPath();
         fileChooser.setCurrentDirectory(new File(currentDir));
         File file = null;
         if (s==null) {

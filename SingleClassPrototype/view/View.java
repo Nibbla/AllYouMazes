@@ -415,39 +415,80 @@ public class View implements IView {
         ArrayList<ArrayList<Pair<Integer, Integer>>> clusters = new ArrayList<>();
         int cpimt = 0;
         //Checking every pixel takes way too much computation time, I tested with skipping 50, works fine.
-        getClusters(m2, numberOfPixelsToSkip, clusters, cpimt);
-        ObjectType[][] m3 = new ObjectType[m2.length][m2[0].length];
-        int   xLength = m2.length;
-        for (int i = 0; i < m2.length; i++) {
-            System.arraycopy(m2[i],0,m3[i],0,xLength);
-        }
+
+        getClustersNew(m2, numberOfPixelsToSkip, clusters, cpimt);
+       // getClusters(m2, numberOfPixelsToSkip, clusters, cpimt);
+
 
 
 
         //Extrapolating robot position from the largest cluster that we found (we assume the largest is the robot)
         ArrayList<Pair<Integer, Integer>> largestCluster = new ArrayList<>();
-        int max = 0;
-        for (int i = 0; i < clusters.size(); i++) {
-            if (clusters.get(i).size() > max) {
-                largestCluster = clusters.get(i);
-                max = clusters.get(i).size();
+        ArrayList<RoboPos> allRobots = new ArrayList<>();
+
+
+        while (clusters.size()!= 0) {
+            int max = 0;
+            int maxIndex = 0;
+            for (int i = 0; i < clusters.size(); i++) {
+                if (clusters.get(i).size() > max) {
+                    largestCluster = clusters.get(i);
+                    max = clusters.get(i).size();
+                    maxIndex = i;
+                }
+            }
+
+            double xSum = 0;
+            double ySum = 0;
+
+            for (Pair<Integer, Integer> p : largestCluster) {
+                xSum += p.getKey();
+                ySum += p.getValue();
+            }
+
+            double x = xSum / largestCluster.size();
+            double y = ySum / largestCluster.size();
+
+            allRobots.add(new RoboPos(x, y, Math.sqrt(largestCluster.size()) * 1.1284 * 0.5));
+            clusters.remove(maxIndex);
+        }
+        return allRobots;
+    }
+
+    private void getClustersNew(ObjectType[][] m2, int numberOfPixelsToSkip, ArrayList<ArrayList<Pair<Integer, Integer>>> clusters, int cpimt) {
+        ObjectType[][] m3 = new ObjectType[m2.length][m2[0].length];
+        int   xLength = m2.length;
+        int   yLength = m2[0].length;
+        for (int i = 0; i < xLength; i++) {
+            System.arraycopy(m2[i],0,m3[i],0,xLength);
+        }
+
+        for (int i = 0; i < xLength; i++) {
+            for (int j = 0; j < yLength; j++) {
+                if (m3[i][j] == ObjectType.robot){
+                    ArrayList<Pair<Integer, Integer>> cluster = getClusterFrom(m3, i, j,xLength,yLength,numberOfPixelsToSkip);
+                    clusters.add(cluster);
+                }
             }
         }
 
-        double xSum = 0;
-        double ySum = 0;
+    }
 
-        for (Pair<Integer, Integer> p: largestCluster) {
-            xSum += p.getKey();
-            ySum += p.getValue();
-        }
+    private ArrayList<Pair<Integer, Integer>> getClusterFrom(ObjectType[][] m3, int i, int j,int width, int height,int stepsize) {
+        ArrayList<Pair<Integer, Integer>> cluster = new ArrayList<>(100);
+        if (i<0||i>=width||j<0||j>=height) return cluster;
+        if (m3[i][j]!=ObjectType.robot) return cluster;
 
-        double x = xSum / largestCluster.size();
-        double y = ySum / largestCluster.size();
-        ArrayList<RoboPos> allRobots = new ArrayList<>();
-        allRobots.add(new RoboPos(x, y,Math.sqrt(largestCluster.size())*1.1284*0.5));
 
-        return allRobots;
+        m3[i][j]=ObjectType.floor;
+        cluster.add(new Pair<>(i,j));
+
+        cluster.addAll(getClusterFrom(m3, i+stepsize, j,width,height,stepsize));
+        cluster.addAll(getClusterFrom(m3, i-stepsize, j,width,height,stepsize));
+        cluster.addAll(getClusterFrom(m3, i, j+stepsize,width,height,stepsize));
+        cluster.addAll(getClusterFrom(m3, i, j-stepsize,width,height,stepsize));
+
+        return cluster;
     }
 
     private void getClusters(ObjectType[][] m2, int numberOfPixelsToSkip, ArrayList<ArrayList<Pair<Integer, Integer>>> clusters, int cpimt) {
