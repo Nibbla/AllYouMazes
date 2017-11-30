@@ -142,6 +142,8 @@ public class Simulation {
                 // perform the following steps if the robot was detectd. otherwise wait for next computervision-result
                 if (detected) {
 
+                    boolean needToSend = false;
+
                     // extract the robots position and radius
                     int robotX = (int) (currentPosition.x);
                     int robotY = (int) (currentPosition.y);
@@ -150,22 +152,14 @@ public class Simulation {
                     agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int)(anglePosition.x), (int)(anglePosition.y),0));
 
                     // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
-                    if (agent.isTurning() && !agent.isMoving()) {
-                        if (!agent.isAlreadyTurning() || (agent.getRotationCoefficient() != agent.getLastRotationCoefficient() || agent.getLastRotationCoefficient() == 0) || agent.doesNotMove()) {
-                            control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
-                            agent.setAlreadyTurning(true);
-                            agent.setAlreadyMoving(false);
-                            agent.setLastRotationCoefficient(agent.getRotationCoefficient());
-                        }
-                    } else if (agent.isMoving() && !agent.isTurning()) {
-                        if (!agent.isAlreadyMoving()  || (lastPosition.equals(agent.getCurrentPosition())) || agent.doesNotMove()) {
-                            control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
-                            agent.setAlreadyTurning(false);
-                            agent.setAlreadyMoving(true);
-                        }
-                    } else if (agent.isStopped()){
-                        control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
-                        agent.setStopped(false);
+                    if (agent.canMove() && !agent.isMoving()){
+                        needToSend = true;
+                    } else if (agent.needsToTurn() && (!agent.isTurning() || agent.getPrevRotationCoefficient() != agent.getRotationCoefficient())){
+                        needToSend = true;
+                    }
+
+                    if (needToSend){
+                        control.sendCommand(agent.getLinearCoefficient(),agent.getRotationCoefficient());
                     }
                 }
             }
