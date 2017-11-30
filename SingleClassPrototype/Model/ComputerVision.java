@@ -56,7 +56,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = true;
+    public final static boolean DEBUG = false;
     public static boolean CONTOUR_TEST = false;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
@@ -688,9 +688,6 @@ public class ComputerVision {
         Mat kernel = Mat.ones(3, 3, CvType.CV_8UC1);
         Imgproc.morphologyEx(tmp_mask1, tmp_mask1, Imgproc.MORPH_OPEN, kernel);
 
-        ImgWindow window = ImgWindow.newWindow();
-        window.setImage(tmp_mask1);
-
         return tmp_mask1;
     }
 
@@ -763,6 +760,8 @@ public class ComputerVision {
                         found = false;
 
 						frame = frame.submat(croppedArea);
+
+						Imgcodecs.imwrite("test_eric.jpg", frame);
 
                         Mat copyFrame = new Mat();
                         frame.copyTo(copyFrame);
@@ -929,13 +928,14 @@ public class ComputerVision {
 
         for (int i = 0; i < contours.size(); i++) {
             MatOfPoint contour = contours.get(i);
-            if (Imgproc.contourArea(contour) < 5000) {
+            if (Imgproc.contourArea(contour) < 9000) {
                 Imgproc.fillConvexPoly(mask, contour, new Scalar(0));
             }
         }
 
+
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 10);
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 20);
 
         contours = new ArrayList<MatOfPoint>();
         hierarchy = new Mat();
@@ -1151,8 +1151,8 @@ public class ComputerVision {
 
             if (center != null && radius != null) {
                 prev = center.clone();
-                prevRadius = radius[0]*2;
-                Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*1.5));
+                prevRadius = radius[0];
+                Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*3));
                 Mat r = frame.submat(rect);
                 diff = bgsAngle(r);
             } else {
@@ -1210,7 +1210,7 @@ public class ComputerVision {
                     }
 
                     for (Point contourPoint: contours.get(biggestContour).toArray()) {
-                        double distance = Math.sqrt(Math.pow((center.x - contourPoint.x),2) + Math.pow((center.y - contourPoint.y),2));
+                        double distance = Math.sqrt(Math.pow(((center.x - ax) - contourPoint.x),2) + Math.pow(((center.y - ay) - contourPoint.y),2));
 
                         if(distance >= furthestDistance){
                             furthestDistance = distance;

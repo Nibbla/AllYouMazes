@@ -81,7 +81,7 @@ public class Simulation {
         for (Node no : shortestPath) {
             Imgproc.circle(currentFrame, new org.opencv.core.Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
         }
-        ImgWindow.newWindow(currentFrame);
+        //ImgWindow.newWindow(currentFrame);
 
 
         // init a traversalHandler based on the shortest path, to be passed to the agent

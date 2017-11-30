@@ -10,8 +10,8 @@ public class Agent {
     private double rotationCoefficient = 0, linearCoefficient = 0, lastRotationCoefficient = 0;
     private boolean turning, moving, alreadyTurning, alreadyMoving, stopped;
 
-    private final double PROXIMITY = 20;
-    private final double ROTATIONERROR = 20;
+    private final double PROXIMITY = 35;
+    private final double ROTATIONERROR = 45;
 
     // TODO: make use of ROS_ID in controller. this is to anticipate multiple epucks.
     private int ROS_ID;
@@ -54,7 +54,7 @@ public class Agent {
 
         currentPosition = newPosition;
         currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
-		currentPosition.setDirection(lastPosition.getAngleTo(new Node((int)(currentPosition.getX()),(int)(currentPosition.getY()))));
+		//currentPosition.setDirection(lastPosition.getAngleTo(new Node((int)(currentPosition.getX()),(int)(currentPosition.getY()))));
 
         Node currentPathPosition = handler.getNode(handler.getIndex());
         Node nextPathPosition = handler.getNode(handler.getIndex() + 1);
@@ -73,6 +73,7 @@ public class Agent {
 
         // debug output for angle calculation
                     
+					System.out.println("current angle: " + Math.toDegrees(this.getCurrentPosition().getDirection()));
                     System.out.println("desired angle: " + Math.toDegrees(correctAngle));
                     System.out.println("needed rotation: " + distance);
                     System.out.println("robot position: " + this.getCurrentPosition().getX() + " | " + this.getCurrentPosition().getY());
@@ -86,10 +87,10 @@ public class Agent {
             moving = false;
             if (distance > 0) {
                 rotationCoefficient = -1;
-            	linearCoefficient = 1;
+            	//linearCoefficient = 1;
             } else {
                 rotationCoefficient = 1;
-				linearCoefficient = 1;
+				//linearCoefficient = 1;
             }
         } else {
             turning = false;
