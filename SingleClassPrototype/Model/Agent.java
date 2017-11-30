@@ -47,13 +47,13 @@ public class Agent {
         this.ROS_ID = ROS_ID;
     }
 
-    public void update(RoboPos newPosition, Node rotationKP){
+    public void update(RoboPos newPosition, RoboPos rotationPoint){
         lastPosition.setPosition(currentPosition.getX(), currentPosition.getY());
         lastPosition.setRadius(currentPosition.getRadius());
         lastPosition.setDirection(currentPosition.getDirection());
 
         currentPosition = newPosition;
-        //currentPosition.setDirection(currentPosition.getAngleTo(rotationKP));
+        currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
 		currentPosition.setDirection(lastPosition.getAngleTo(new Node((int)(currentPosition.getX()),(int)(currentPosition.getY()))));
 
         Node currentPathPosition = handler.getNode(handler.getIndex());

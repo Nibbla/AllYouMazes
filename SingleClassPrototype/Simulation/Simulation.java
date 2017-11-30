@@ -125,8 +125,10 @@ public class Simulation {
 
                 // input from the Computervision
 				cv.findRobotPosition();
-
                 Point currentPosition = cv.getCenter();
+
+                cv.findAnglePosition();
+                Point anglePosition = cv.getAngle();
 
 
 
@@ -145,7 +147,7 @@ public class Simulation {
                     int robotY = (int) (currentPosition.y);
                     int robotR = (int) (cv.getRadius()/2);
 
-                    agent.update(new RoboPos(robotX, robotY, robotR), new Node(0, 0));
+                    agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int)(anglePosition.x), (int)(anglePosition.y),0));
 
                     // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
                     if (agent.isTurning() && !agent.isMoving()) {

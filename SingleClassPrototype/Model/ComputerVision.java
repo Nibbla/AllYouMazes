@@ -677,6 +677,23 @@ public class ComputerVision {
         return mask;
     }
 
+    public static Mat bgsAngle(Mat m1) {
+        //Format I encountered is 360 (degrees), 100 (percent), 100 (percent)
+        //HSV in OpenCV is 180, 255, 255 format.
+        Mat cc = new Mat();
+        m1.copyTo(cc);
+        Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
+        Mat tmp_mask1 = new Mat();
+        Core.inRange(cc, new Scalar(40, 100, 25), new Scalar(80, 230, 110), tmp_mask1);
+        Mat kernel = Mat.ones(3, 3, CvType.CV_8UC1);
+        Imgproc.morphologyEx(tmp_mask1, tmp_mask1, Imgproc.MORPH_OPEN, kernel);
+
+        ImgWindow window = ImgWindow.newWindow();
+        window.setImage(tmp_mask1);
+
+        return tmp_mask1;
+    }
+
     public static void bgsLoop() {
         Mat bg = new Mat();
         Mat frame = new Mat();
@@ -1032,6 +1049,7 @@ public class ComputerVision {
 
         private Point prev;
         private Point center;
+        private Point angle;
 
         private boolean found;
         private boolean croppingAreaKnown;
@@ -1128,6 +1146,24 @@ public class ComputerVision {
             }
         }
 
+        private void determineAngleSearchArea(){
+            readNextFrame();
+
+            if (center != null && radius != null) {
+                prev = center.clone();
+                prevRadius = radius[0]*2;
+                Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*1.5));
+                Mat r = frame.submat(rect);
+                diff = bgsAngle(r);
+            } else {
+                diff = bgsAngle(frame);
+            }
+
+            if (ComputerVision.DEBUG) {
+                bgsWindow.setImage(diff);
+            }
+        }
+
         public void initCamera(int width, int height, int startupTimeMS){
             try {
                 capture = new VideoCapture(0);
@@ -1150,6 +1186,48 @@ public class ComputerVision {
             readNextFrame();
             frame.copyTo(bg);
             currentContours = contourv2(bg);
+        }
+
+        public void findAnglePosition(){
+            if (found){
+                determineAngleSearchArea();
+                boolean foundPoint = false;
+
+                contours.clear();
+
+                Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+
+                int biggestContour = 0;
+                Point furthestPoint = new Point();
+                double furthestDistance = 0;
+
+                if (!contours.isEmpty() && !hierarchy.empty()) {
+                    for (int j = 0; j < contours.size(); j++) {
+                        if (contours.get(j).size().area() >= contours.get(biggestContour).size().area()){
+                            foundPoint = true;
+                            biggestContour = j;
+                        }
+                    }
+
+                    for (Point contourPoint: contours.get(biggestContour).toArray()) {
+                        double distance = Math.sqrt(Math.pow((center.x - contourPoint.x),2) + Math.pow((center.y - contourPoint.y),2));
+
+                        if(distance >= furthestDistance){
+                            furthestDistance = distance;
+                            furthestPoint = contourPoint;
+                        }
+                    }
+
+                }
+
+                if (!foundPoint) {
+                    angle = center;
+                    ax = 0;
+                    ay = 0;
+                } else {
+                    angle = new Point(furthestPoint.x + ax, furthestPoint.y + ay);
+                }
+            }
         }
 
         public void findRobotPosition(){
@@ -1261,10 +1339,17 @@ public class ComputerVision {
             readNextFrame();
             return frame;
         }
+
+        public Point getAngle() {
+            return angle;
+        }
     }
 
     public static void main(String[] args) {
-        bgsLoop();
+        //bgsLoop();
+        Mat image = Imgcodecs.imread("/Users/eric/test_eric.jpg");
+        bgsAngle(image);
+
 //        Mat pic = resize(readImg("C:\\Users\\Jyr\\IdeaProjects\\Mazes4\\SingleClassPrototype\\Input\\latestScreen.jpg"));
 //        contourv2(pic);
     }
