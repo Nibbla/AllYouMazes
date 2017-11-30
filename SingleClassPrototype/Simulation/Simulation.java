@@ -3,11 +3,9 @@ package Simulation;
 import Control.RobotControl;
 import Interfaces.IControl;
 import Model.*;
-import SpecialSettingsEtc.Settings;
 import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
-import sun.rmi.server.Util;
 
 import java.util.LinkedList;
 import java.util.concurrent.*;
@@ -23,7 +21,7 @@ import java.util.concurrent.*;
 
 public class Simulation {
 
-    public final static int TIME_STEP = 200;
+    public final static int TIME_STEP = 500;
     private static final double ROTATIONERROR = 25;
 
     private Agent agent;
@@ -50,6 +48,7 @@ public class Simulation {
 
         // current image recognition. to be replaced with data from BGS
 
+		cv.findRobotPosition();
         Point currentPosition = cv.getCenter();
         
         if (currentPosition == null) {
@@ -77,7 +76,7 @@ public class Simulation {
 
         int stepsize = 8;
         Node[][] grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), 0,0, stepsize);
-        LinkedList<Node> shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,rp,stepsize);
+        LinkedList<Node> shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,new RoboPos(rp.getY(), rp.getX(), 0,0),stepsize);
         shortestPath = DijkstraPathFinder.reverseLinkedList(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
         for (Node no : shortestPath) {
             Imgproc.circle(currentFrame, new org.opencv.core.Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
@@ -118,14 +117,17 @@ public class Simulation {
             @Override
             public void run() {
                 // set the current goal node. TODO: X and Y are swapped
-                n = agent.getHandler().getNode(agent.getHandler().getIndex());
+                // n = agent.getHandler().getNode(agent.getHandler().getIndex());
 
                 // TODO: check if the goal was reached
                 //boolean finished = agent.getHandler().getIndex()+1 > agent.getHandler().length();
 
 
                 // input from the Computervision
+				cv.findRobotPosition();
+
                 Point currentPosition = cv.getCenter();
+
 
 
                 if (currentPosition == null) {

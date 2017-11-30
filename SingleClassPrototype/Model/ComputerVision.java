@@ -56,7 +56,7 @@ public class ComputerVision {
     //TODO maybe cut out part if image isnt entirely on the black paper
     //TODO blob detection/background substraction
 
-    public final static boolean DEBUG = false;
+    public final static boolean DEBUG = true;
     public static boolean CONTOUR_TEST = false;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
@@ -1044,6 +1044,7 @@ public class ComputerVision {
 
 
         public ImageRecognition(){
+			System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
             initVars();
         }
 
@@ -1093,6 +1094,10 @@ public class ComputerVision {
                 determineCroppedArea();
                 frame = frame.submat(croppedArea);
             }
+
+			if (ComputerVision.DEBUG) {
+                camWindow.setImage(frame);
+            }
         }
 
         private void determineCroppedArea(){
@@ -1116,6 +1121,10 @@ public class ComputerVision {
                 diff = bgs(r);
             } else {
                 diff = bgs(frame);
+            }
+
+			if (ComputerVision.DEBUG) {
+               bgsWindow.setImage(diff);
             }
         }
 
@@ -1149,11 +1158,13 @@ public class ComputerVision {
             found = false;
             area = 0;
 
+			contours.clear();
 
             Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
             if (!contours.isEmpty() && !hierarchy.empty()) {
                 for (int j = 0; j < contours.size(); j++) {
+
                     h = hierarchy.get(0, j);
                     //if it has a parent
                     if (h[3] != -1) {
@@ -1167,6 +1178,8 @@ public class ComputerVision {
                             if (ComputerVision.DEBUG) {
                                 Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
                             }
+
+
                         }
                         //if it has a child
                     } else if (h[2] != -1) {
@@ -1200,6 +1213,8 @@ public class ComputerVision {
                                     if (ComputerVision.DEBUG) {
                                         Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
                                     }
+
+
                                 }
                             }
                         }
@@ -1216,9 +1231,8 @@ public class ComputerVision {
                 ay = 0;
             }
 
-            if (ComputerVision.DEBUG) {
-                camWindow.setImage(frame);
-            }
+
+
         }
 
         public void stopImagerecognition(){
@@ -1234,6 +1248,8 @@ public class ComputerVision {
         }
 
         public MatOfPoint getCurrentContours() {
+			readNextFrame();
+			currentContours = contourv2(frame);
             return currentContours;
         }
 

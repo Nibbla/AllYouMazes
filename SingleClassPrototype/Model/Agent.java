@@ -53,7 +53,8 @@ public class Agent {
         lastPosition.setDirection(currentPosition.getDirection());
 
         currentPosition = newPosition;
-        currentPosition.setDirection(currentPosition.getAngleTo(rotationKP));
+        //currentPosition.setDirection(currentPosition.getAngleTo(rotationKP));
+		currentPosition.setDirection(lastPosition.getAngleTo(new Node((int)(currentPosition.getX()),(int)(currentPosition.getY()))));
 
         Node currentPathPosition = handler.getNode(handler.getIndex());
         Node nextPathPosition = handler.getNode(handler.getIndex() + 1);
@@ -71,13 +72,13 @@ public class Agent {
         }
 
         // debug output for angle calculation
-                    /*
+                    
                     System.out.println("desired angle: " + Math.toDegrees(correctAngle));
                     System.out.println("needed rotation: " + distance);
-                    System.out.println("robot position: " + agent.getCurrentPosition().getX() + " | " + agent.getCurrentPosition().getY());
-                    System.out.println("current goal: " + n.getX() + " | " + n.getY());
+                    System.out.println("robot position: " + this.getCurrentPosition().getX() + " | " + this.getCurrentPosition().getY());
+                    System.out.println("current goal: " + nextPathPosition.getY() + " | " + nextPathPosition.getX());
                     System.out.println("----------");
-                    */
+                    
 
         // check if needed angle is within allowed range (might depend on delay) and determine rotation direction.
         if (Math.abs(distance) >= ROTATIONERROR) {
@@ -85,8 +86,10 @@ public class Agent {
             moving = false;
             if (distance > 0) {
                 rotationCoefficient = -1;
+            	linearCoefficient = 1;
             } else {
                 rotationCoefficient = 1;
+				linearCoefficient = 1;
             }
         } else {
             turning = false;
