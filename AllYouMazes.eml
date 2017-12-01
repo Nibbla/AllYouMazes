@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component inherit-compiler-output="true" inheritJdk="true">
+	<output-test url="file://$MODULE_DIR$/out/test/AllYouMazes"/>
+	<exclude-output/>
+	<contentEntry url="file://$MODULE_DIR$">
+		<excludeFolder url="file://$MODULE_DIR$/Magic"/>
+		<excludeFolder url="file://$MODULE_DIR$/additional Files"/>
+	</contentEntry>
+	<levels>
+		<level name="opencv-331" value="project"/>
+	</levels>
+</component>
