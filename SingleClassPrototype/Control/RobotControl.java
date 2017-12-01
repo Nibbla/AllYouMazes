@@ -26,20 +26,21 @@ public class RobotControl implements IControl {
     private final String[] startCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/roslaunch -p 11311 -v --screen epuck_driver multi_epuck.launch"};
 
     // The basic structure of a movement command. For more information check the ROS documentation.
-    private final String[] movementCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/rostopic pub --once /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: 0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: 0.0}}\'"};
+    private final String[] movementCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/rostopic pub /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: 0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: 0.0}}\'"};
 
     // These are used to spawn the processes that Control the epuck.
     private ProcessBuilder processGenerator;
     private Process initRosProcess;
     private Process motorSpeedProcess;
     private boolean isRunning;
+	private boolean isSending;
 
     // Implementation of factory pattern
     private static RobotControl factoryControl = new RobotControl();
 
     // Values used for moving slowly either forward or angular
-    private final double SLOWFORWARDSPEED = 0.5;
-    private final double SLOWANGULARSPEED = 0.3;
+    private final double SLOWFORWARDSPEED = 0.6;
+    private final double SLOWANGULARSPEED = 0.1;
     private final double POSITIONERROR = 3;
     private final double ROTATIONERROR = 3;
 
@@ -255,7 +256,12 @@ public class RobotControl implements IControl {
         try {
             processGenerator.command(movementCommand);
             System.out.println("Trying to send");
+			if (isSending){
+				motorSpeedProcess.destroy();
+				isSending = false;
+			}
             motorSpeedProcess = processGenerator.start();
+			isSending = true;
             System.out.println("Sending command: " + movementCommand);
         } catch (Exception e) {
             e.printStackTrace();
@@ -270,7 +276,7 @@ public class RobotControl implements IControl {
      * @param angular an anguar speed. a positive value is for counterclockwise, a negative value for clockwise.
      */
     private void setMotorSpeed(double linear, double angular) {
-        movementCommand[2] = "/opt/ros/" + ROSversion + "/bin/rostopic pub --once /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: " + linear + ", y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: " + angular + "}}\'";
+        movementCommand[2] = "/opt/ros/" + ROSversion + "/bin/rostopic pub /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: " + linear + ", y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: " + angular + "}}\'";
     }
 
     /**

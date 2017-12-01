@@ -7,14 +7,14 @@ public class Agent {
     private RoboPos lastPosition = new RoboPos(0,0,0,0);
     private TraversalHandler handler;
     private Node currentGoal;
-    private double rotationCoefficient = 0, linearCoefficient = 0, lastRotationCoefficient = 0;
-    private boolean turning, moving, alreadyTurning, alreadyMoving, stopped;
+    private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0;
 
-    private final double PROXIMITY = 20;
-    private final double ROTATIONERROR = 20;
+    private final double PROXIMITY = 50;
+    private final double ROTATIONERROR = 45;
 
     // TODO: make use of ROS_ID in controller. this is to anticipate multiple epucks.
     private int ROS_ID;
+    private boolean needsToTurn, canMove, isTurning, isMoving;
 
     public Agent(int ROS_ID, RoboPos currentPosition, TraversalHandler handler){
         this.ROS_ID = ROS_ID;
@@ -47,19 +47,43 @@ public class Agent {
         this.ROS_ID = ROS_ID;
     }
 
-    public void update(RoboPos newPosition, Node rotationKP){
+    public void update(RoboPos newPosition, RoboPos rotationPoint){
+        needsToTurn = false;
+        canMove = false;
+
+        isTurning = false;
+        isMoving = false;
+
+
         lastPosition.setPosition(currentPosition.getX(), currentPosition.getY());
         lastPosition.setRadius(currentPosition.getRadius());
         lastPosition.setDirection(currentPosition.getDirection());
 
+        prevRotationCoefficient = rotationCoefficient;
+		prevLinearCoefficient = linearCoefficient;
+
         currentPosition = newPosition;
-        currentPosition.setDirection(currentPosition.getAngleTo(rotationKP));
+        currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
+
 
         Node currentPathPosition = handler.getNode(handler.getIndex());
-        Node nextPathPosition = handler.getNode(handler.getIndex() + 1);
+
+        int x = (int) (currentPosition.getX());
+        int y = (int) (currentPosition.getY());
+
+        // while loop in order to .step() the path as long as the next nodes are too close.
+        // TODO: maybe rework current tracing of path as it is not that 'Closed-loopish'
+        // TODO: swap Y and X as soon as path returns X and Y
+        while(Math.abs(currentPathPosition.getX() - y) <= (PROXIMITY) && Math.abs(x - currentPathPosition.getY()) <= (PROXIMITY)){
+
+			handler.step();
+            currentPathPosition = handler.getNode(handler.getIndex());
+        }
+
+        determineChanges();
 
         // TODO: swap Y and X as soon as path returns as X and Y
-        double correctAngle = currentPosition.getAngleTo(new Node(nextPathPosition.getY(), nextPathPosition.getX()));
+        double correctAngle = currentPosition.getAngleTo(new Node(currentPathPosition.getY(), currentPathPosition.getX()));
 
         // calculate the needed rotation-distance
         double distance = (Math.toDegrees(correctAngle) - Math.toDegrees(currentPosition.getDirection())) % 360;
@@ -72,67 +96,45 @@ public class Agent {
 
         // debug output for angle calculation
                     /*
+					System.out.println("current angle: " + Math.toDegrees(this.getCurrentPosition().getDirection()));
                     System.out.println("desired angle: " + Math.toDegrees(correctAngle));
                     System.out.println("needed rotation: " + distance);
-                    System.out.println("robot position: " + agent.getCurrentPosition().getX() + " | " + agent.getCurrentPosition().getY());
-                    System.out.println("current goal: " + n.getX() + " | " + n.getY());
+                    System.out.println("robot position: " + this.getCurrentPosition().getX() + " | " + this.getCurrentPosition().getY());
+                    System.out.println("current goal: " + currentPathPosition.getY() + " | " + currentPathPosition.getX());
                     System.out.println("----------");
                     */
 
         // check if needed angle is within allowed range (might depend on delay) and determine rotation direction.
         if (Math.abs(distance) >= ROTATIONERROR) {
-            turning = true;
-            moving = false;
+            needsToTurn = true;
+            canMove = false;
             if (distance > 0) {
                 rotationCoefficient = -1;
+            	linearCoefficient = 0;
             } else {
                 rotationCoefficient = 1;
+				linearCoefficient = 0;
             }
         } else {
-            turning = false;
-            moving = true;
+            needsToTurn = false;
+            canMove = true;
+            rotationCoefficient = 0;
             linearCoefficient = 1;
         }
 
-        int x = (int) (currentPosition.getX());
-        int y = (int) (currentPosition.getY());
+    }
 
-        // while loop in order to .step() the path as long as the next nodes are too close.
-        // TODO: maybe rework current tracing of path as it is not that 'Closed-loopish'
-        // TODO: swap Y and X as soon as path returns X and Y
-        while(Math.abs(currentPathPosition.getX() - y) <= (PROXIMITY) && Math.abs(x - currentPathPosition.getY()) <= (PROXIMITY)){
-            handler.step();
-            if ((alreadyTurning || alreadyMoving) && !(lastPosition.equals(getCurrentPosition()))){
-                linearCoefficient = 0;
-                rotationCoefficient = 0;
-                alreadyTurning = false;
-                alreadyMoving = false;
-                stopped = true;
-            }
-            turning = false;
-            moving = false;
-            currentPathPosition = handler.getNode(handler.getIndex());
+    private void determineChanges() {
+        if ((lastPosition.getX() == currentPosition.getX()) && (lastPosition.getY() == currentPosition.getY())){
+            isMoving = false;
+        } else {
+            isMoving = true;
         }
-    }
-    
-    public boolean doesNotMove(){
-        return currentPosition.equals(lastPosition);
-    }
-    
-    public boolean isAlreadyTurning(){
-        return alreadyTurning;
-    }
-    
-    public boolean isAlreadyMoving(){
-        return alreadyMoving;
-    }
-
-    public boolean isMoving() {
-        return moving;
-    }
-
-    public boolean isTurning() {
-        return turning;
+        if (lastPosition.getDirection() == currentPosition.getDirection()){
+            isTurning = false;
+        } else {
+            isTurning = true;
+        }
     }
 
     public double getRotationCoefficient(){
@@ -143,27 +145,31 @@ public class Agent {
         return linearCoefficient;
     }
 
-    public void setAlreadyTurning(boolean alreadyTurning){
-        this.alreadyTurning = alreadyTurning;
+    public boolean canMove() {
+        return canMove;
     }
 
-    public void setAlreadyMoving(boolean alreadyMoving){
-        this.alreadyMoving = alreadyMoving;
+    public boolean needsToTurn() {
+        return needsToTurn;
     }
 
-    public double getLastRotationCoefficient() {
-        return lastRotationCoefficient;
+    public boolean isMoving() {
+        return isMoving;
     }
 
-    public void setLastRotationCoefficient(double lastRotationCoefficient) {
-        this.lastRotationCoefficient = lastRotationCoefficient;
+    public boolean isTurning() {
+        return isTurning;
     }
 
-    public boolean isStopped() {
-        return stopped;
+    public double getPrevRotationCoefficient() {
+        return prevRotationCoefficient;
     }
 
-    public void setStopped(boolean stopped) {
-        this.stopped = stopped;
+	public double getPrevLinearCoefficient() {
+        return prevLinearCoefficient;
     }
+
+	public boolean isStuck(){
+		return lastPosition.equals(currentPosition);
+	}
 }
