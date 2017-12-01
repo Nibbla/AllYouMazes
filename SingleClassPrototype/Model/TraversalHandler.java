@@ -29,11 +29,13 @@ public class TraversalHandler {
     }
 
     public void changePath(LinkedList<Node> path, int state) {
-        path.clear();
+        this.path.clear();
         this.path = path;
+		System.out.println(this.path);
         setState(TraversalStatus.INIT);
         firstT = true;
         firstE = true;
+		i = 0;
     }
 
     public void step() {

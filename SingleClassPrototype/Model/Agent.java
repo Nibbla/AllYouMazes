@@ -7,9 +7,9 @@ public class Agent {
     private RoboPos lastPosition = new RoboPos(0,0,0,0);
     private TraversalHandler handler;
     private Node currentGoal;
-    private double rotationCoefficient = 0, linearCoefficient = 0, prevRotationCoefficient = 0;
+    private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0;
 
-    private final double PROXIMITY = 35;
+    private final double PROXIMITY = 50;
     private final double ROTATIONERROR = 45;
 
     // TODO: make use of ROS_ID in controller. this is to anticipate multiple epucks.
@@ -60,9 +60,11 @@ public class Agent {
         lastPosition.setDirection(currentPosition.getDirection());
 
         prevRotationCoefficient = rotationCoefficient;
+		prevLinearCoefficient = linearCoefficient;
 
         currentPosition = newPosition;
         currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
+
 
         Node currentPathPosition = handler.getNode(handler.getIndex());
 
@@ -73,7 +75,8 @@ public class Agent {
         // TODO: maybe rework current tracing of path as it is not that 'Closed-loopish'
         // TODO: swap Y and X as soon as path returns X and Y
         while(Math.abs(currentPathPosition.getX() - y) <= (PROXIMITY) && Math.abs(x - currentPathPosition.getY()) <= (PROXIMITY)){
-            handler.step();
+
+			handler.step();
             currentPathPosition = handler.getNode(handler.getIndex());
         }
 
@@ -92,14 +95,14 @@ public class Agent {
         }
 
         // debug output for angle calculation
-                    
+                    /*
 					System.out.println("current angle: " + Math.toDegrees(this.getCurrentPosition().getDirection()));
                     System.out.println("desired angle: " + Math.toDegrees(correctAngle));
                     System.out.println("needed rotation: " + distance);
                     System.out.println("robot position: " + this.getCurrentPosition().getX() + " | " + this.getCurrentPosition().getY());
                     System.out.println("current goal: " + currentPathPosition.getY() + " | " + currentPathPosition.getX());
                     System.out.println("----------");
-                    
+                    */
 
         // check if needed angle is within allowed range (might depend on delay) and determine rotation direction.
         if (Math.abs(distance) >= ROTATIONERROR) {
@@ -161,4 +164,12 @@ public class Agent {
     public double getPrevRotationCoefficient() {
         return prevRotationCoefficient;
     }
+
+	public double getPrevLinearCoefficient() {
+        return prevLinearCoefficient;
+    }
+
+	public boolean isStuck(){
+		return lastPosition.equals(currentPosition);
+	}
 }

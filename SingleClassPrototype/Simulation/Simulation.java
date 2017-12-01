@@ -21,7 +21,7 @@ import java.util.concurrent.*;
 
 public class Simulation {
 
-    public final static int TIME_STEP = 500;
+    public final static int TIME_STEP = 333;
     private static final double ROTATIONERROR = 25;
 
     private Agent agent;
@@ -31,6 +31,7 @@ public class Simulation {
     private Node n;
 
     private boolean detected;
+	private boolean prevStuck;
 
 
     private RoboPos lastPosition = new RoboPos(0,0,0,0);
@@ -39,6 +40,9 @@ public class Simulation {
     private static RobotControl factoryControl = new RobotControl();
 
     private ComputerVision.ImageRecognition cv = new ComputerVision.ImageRecognition();
+
+	public static Node[][] grid;
+	private LinkedList<Node> shortestPath;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -75,8 +79,8 @@ public class Simulation {
         Mat currentFrame = cv.getFrame();
 
         int stepsize = 8;
-        Node[][] grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), 0,0, stepsize);
-        LinkedList<Node> shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,new RoboPos(rp.getY(), rp.getX(), 0,0),stepsize);
+        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), 0,0, stepsize);
+        shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,new RoboPos(rp.getY(), rp.getX(), 0,0),stepsize);
         shortestPath = DijkstraPathFinder.reverseLinkedList(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
         for (Node no : shortestPath) {
             Imgproc.circle(currentFrame, new org.opencv.core.Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
@@ -113,6 +117,11 @@ public class Simulation {
         //scheduler = Executors.newScheduledThreadPool(1);
         scheduler =  Executors.newSingleThreadScheduledExecutor();
 
+/*
+        control.sendCommand(1,0);
+
+		try{Thread.sleep(3000);}catch(Exception e){}
+*/
         final Runnable robotDetector = new Runnable() {
             @Override
             public void run() {
@@ -131,7 +140,6 @@ public class Simulation {
                 Point anglePosition = cv.getAngle();
 
 
-
                 if (currentPosition == null) {
                     System.out.println("oh god no");
                     detected = false;
@@ -141,6 +149,8 @@ public class Simulation {
 
                 // perform the following steps if the robot was detectd. otherwise wait for next computervision-result
                 if (detected) {
+        			
+
 
                     boolean needToSend = false;
 
@@ -149,17 +159,34 @@ public class Simulation {
                     int robotY = (int) (currentPosition.y);
                     int robotR = (int) (cv.getRadius()/2);
 
+					//shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,new RoboPos(robotY, robotX, 0,0),8);
+        			//shortestPath = DijkstraPathFinder.reverseLinkedList(shortestPath);
+					//agent.getHandler().changePath(shortestPath, 0);
+
+
+
                     agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int)(anglePosition.x), (int)(anglePosition.y),0));
+
 
                     // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
                     if (agent.canMove() && !agent.isMoving()){
                         needToSend = true;
                     } else if (agent.needsToTurn() && (!agent.isTurning() || agent.getPrevRotationCoefficient() != agent.getRotationCoefficient())){
                         needToSend = true;
-                    }
+                    } 
+
 
                     if (needToSend){
-                        control.sendCommand(agent.getLinearCoefficient(),agent.getRotationCoefficient());
+						if ((agent.getPrevRotationCoefficient() != agent.getRotationCoefficient()) || (agent.getPrevLinearCoefficient() != agent.getLinearCoefficient()) || (agent.isStuck() && !prevStuck)){
+							System.out.println(agent.getLinearCoefficient()+ " | "+agent.getRotationCoefficient());
+                        	control.sendCommand(agent.getLinearCoefficient(),agent.getRotationCoefficient());
+							if (prevStuck){
+								prevStuck = false;
+							} else {
+								prevStuck = true;
+								}
+						}
+						
                     }
                 }
             }

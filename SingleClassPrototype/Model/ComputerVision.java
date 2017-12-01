@@ -674,6 +674,11 @@ public class ComputerVision {
         Core.add(tmp_mask1, tmp_mask2, mask);
         Mat kernel = Mat.ones(5, 5, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
+
+		cc.release();
+		tmp_mask1.release();
+		tmp_mask2.release();
+		kernel.release();
         return mask;
     }
 
@@ -687,6 +692,9 @@ public class ComputerVision {
         Core.inRange(cc, new Scalar(40, 100, 25), new Scalar(80, 230, 110), tmp_mask1);
         Mat kernel = Mat.ones(3, 3, CvType.CV_8UC1);
         Imgproc.morphologyEx(tmp_mask1, tmp_mask1, Imgproc.MORPH_OPEN, kernel);
+
+		cc.release();
+		kernel.release();
 
         return tmp_mask1;
     }
@@ -935,7 +943,7 @@ public class ComputerVision {
 
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 20);
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 25);
 
         contours = new ArrayList<MatOfPoint>();
         hierarchy = new Mat();
@@ -954,6 +962,13 @@ public class ComputerVision {
             w.setTitle("contour v2");
             w.setImage(img);
         }
+
+		hsv.release();
+		mask.release();
+		tmp_mask1.release();
+		tmp_mask2.release();
+		kernel.release();
+		hierarchy.release();
 
         return mazeContour;
     }
@@ -1026,6 +1041,11 @@ public class ComputerVision {
                 biggestContourIndex = index;
             }
         }
+
+		hsv.release();
+		mask.release();
+		hierarchy.release();
+		kernel.release();
 
         return Imgproc.boundingRect(contours.get(biggestContourIndex));
     }
@@ -1137,6 +1157,7 @@ public class ComputerVision {
                 Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*1.5));
                 Mat r = frame.submat(rect);
                 diff = bgs(r);
+				r.release();
             } else {
                 diff = bgs(frame);
             }
@@ -1155,6 +1176,7 @@ public class ComputerVision {
                 Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*3));
                 Mat r = frame.submat(rect);
                 diff = bgsAngle(r);
+				r.release();
             } else {
                 diff = bgsAngle(frame);
             }
@@ -1186,6 +1208,7 @@ public class ComputerVision {
             readNextFrame();
             frame.copyTo(bg);
             currentContours = contourv2(bg);
+			bg.release();
         }
 
         public void findAnglePosition(){
@@ -1227,7 +1250,12 @@ public class ComputerVision {
                 } else {
                     angle = new Point(furthestPoint.x + ax, furthestPoint.y + ay);
                 }
+
+
+			frame.release();
+			diff.release();
             }
+
         }
 
         public void findRobotPosition(){
@@ -1298,6 +1326,12 @@ public class ComputerVision {
                         }
                     }
                 }
+
+
+			
+			frame.release();
+			diff.release();
+
             }
 
             if (!found) {
@@ -1308,8 +1342,6 @@ public class ComputerVision {
                 ax = 0;
                 ay = 0;
             }
-
-
 
         }
 
