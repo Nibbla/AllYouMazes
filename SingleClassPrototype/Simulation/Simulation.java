@@ -39,7 +39,7 @@ public class Simulation {
     public IControl control;
     private static RobotControl factoryControl = new RobotControl();
 
-    private ComputerVision.ImageRecognition cv = new ComputerVision.ImageRecognition();
+    private ImageRecognition cv = new ImageRecognition();
 
 	public static Node[][] grid;
 	private LinkedList<Node> shortestPath;
@@ -69,7 +69,12 @@ public class Simulation {
 
         // create RoboPos vaiable to be passed to the angent
         RoboPos rp = new RoboPos(robotX, robotY, robotR);
-        rp.setDirection(0);
+
+        cv.findAnglePosition();
+        Point anglePosition = cv.getAngle();
+
+        RoboPos ap = new RoboPos(anglePosition.x, anglePosition.y, 0);
+        rp.setDirection(ap.getAngleTo(new Node((int)(rp.getX()), (int)(rp.getY()))));
 
         // scan contours of the maze
         contour = cv.getCurrentContours();
