@@ -109,17 +109,17 @@ public class Agent {
             needsToTurn = true;
             canMove = false;
             if (distance > 0) {
-                rotationCoefficient = -1;
+                rotationCoefficient = -1 * (Math.abs(distance) / 180);
             	linearCoefficient = 0;
             } else {
-                rotationCoefficient = 1;
+                rotationCoefficient = 1 * (Math.abs(distance) / 180);
 				linearCoefficient = 0;
             }
         } else {
             needsToTurn = false;
             canMove = true;
             rotationCoefficient = 0;
-            linearCoefficient = 1;
+            linearCoefficient = 0.5;
         }
 
     }

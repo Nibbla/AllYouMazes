@@ -39,8 +39,10 @@ public class RobotControl implements IControl {
     private static RobotControl factoryControl = new RobotControl();
 
     // Values used for moving slowly either forward or angular
-    private final double SLOWFORWARDSPEED = 0.7;
-    private final double SLOWANGULARSPEED = 0.13;
+    private final double MINFORWARDSPEED = 0.5;
+    private final double MAXFORWARDSPEED = 3.5;
+    private final double MINANGULARSPEED = 0.1;
+    private final double MAXANGULARSPEED = 1.5;
     private final double POSITIONERROR = 3;
     private final double ROTATIONERROR = 3;
 
@@ -101,7 +103,7 @@ public class RobotControl implements IControl {
      */
     @Override
     public void move(Tangential.Direction Direction) {
-        setMotorSpeed(Direction.linearSpeed * SLOWFORWARDSPEED, Direction.angularSpeed * SLOWANGULARSPEED);
+        setMotorSpeed(Direction.linearSpeed * MINFORWARDSPEED, Direction.angularSpeed * MAXANGULARSPEED);
         issueMotorSpeed();
     }
 
@@ -195,13 +197,36 @@ public class RobotControl implements IControl {
         /**
          * set and issue the new speed depending on the above findings, i.e. issue rotation or issue forward-movement
          */
-        setMotorSpeed(linearCoefficient * SLOWFORWARDSPEED, rotationCoefficient * SLOWANGULARSPEED);
+        double tmpLinearSpeed = 0;
+        double tmpAngularSpeed = 0;
+
+        if (linearCoefficient != 0){
+            tmpLinearSpeed = Math.max((linearCoefficient * MAXFORWARDSPEED),MINFORWARDSPEED);
+        }
+
+        if (rotationCoefficient != 0){
+            tmpAngularSpeed = Math.max((rotationCoefficient * MAXANGULARSPEED),MINANGULARSPEED);
+        }
+
+        setMotorSpeed(tmpLinearSpeed, tmpAngularSpeed);
         issueMotorSpeed();
     }
 
     @Override
     public void sendCommand(double linearSpeed, double angularSpeed){
-        setMotorSpeed(linearSpeed*SLOWFORWARDSPEED, angularSpeed * SLOWANGULARSPEED);
+        double tmpLinearSpeed = 0;
+        double tmpAngularSpeed = 0;
+
+        if (linearSpeed != 0){
+            tmpLinearSpeed = Math.max((linearSpeed * MAXFORWARDSPEED),MINFORWARDSPEED);
+        }
+
+        if (angularSpeed != 0){
+            tmpAngularSpeed = Math.max((linearSpeed * MAXANGULARSPEED),MINANGULARSPEED);
+        }
+
+
+        setMotorSpeed(linearSpeed*tmpLinearSpeed, angularSpeed * tmpAngularSpeed);
         issueMotorSpeed();
     }
 

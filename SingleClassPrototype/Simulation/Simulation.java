@@ -44,6 +44,12 @@ public class Simulation {
 	public static Node[][] grid;
 	private LinkedList<Node> shortestPath;
 
+	private double lastSendLinearSpeed = 0;
+	private double lastSentAngularSpeed = 0;
+
+	private double LINEARSENSITIVITY = 0.1;
+	private double ANGULARSENSITIVITY = 0.05;
+
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
      */
@@ -172,7 +178,6 @@ public class Simulation {
 
                     agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int)(anglePosition.x), (int)(anglePosition.y),0));
 
-
                     // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
                     if (agent.canMove() && !agent.isMoving()){
                         needToSend = true;
@@ -180,10 +185,18 @@ public class Simulation {
                         needToSend = true;
                     } 
 
+                    double linearDifference = Math.abs(agent.getLinearCoefficient() - lastSendLinearSpeed);
+                    double rotationDifference = Math.abs(agent.getRotationCoefficient() - lastSentAngularSpeed);
+
+                    if (linearDifference <= LINEARSENSITIVITY || rotationDifference <= ANGULARSENSITIVITY){
+                        needToSend = false;
+                    }
 
                     if (needToSend){
 						if ((agent.getPrevRotationCoefficient() != agent.getRotationCoefficient()) || (agent.getPrevLinearCoefficient() != agent.getLinearCoefficient()) || (agent.isStuck() && !prevStuck)){
 							System.out.println(agent.getLinearCoefficient()+ " | "+agent.getRotationCoefficient());
+							lastSendLinearSpeed = agent.getLinearCoefficient();
+							lastSentAngularSpeed = agent.getRotationCoefficient();
                         	control.sendCommand(agent.getLinearCoefficient(),agent.getRotationCoefficient());
 							if (prevStuck){
 								prevStuck = false;
