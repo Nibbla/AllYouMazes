@@ -188,7 +188,7 @@ public class Simulation {
                     double linearDifference = Math.abs(agent.getLinearCoefficient() - lastSendLinearSpeed);
                     double rotationDifference = Math.abs(agent.getRotationCoefficient() - lastSentAngularSpeed);
 
-                    if (linearDifference <= LINEARSENSITIVITY || rotationDifference <= ANGULARSENSITIVITY){
+                    if ((linearDifference <= LINEARSENSITIVITY && linearDifference > 0) || (rotationDifference <= ANGULARSENSITIVITY && rotationDifference > 0)){
                         needToSend = false;
                     }
 

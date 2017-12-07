@@ -2,6 +2,7 @@ package Model;
 
 import Util.ImgWindow;
 import org.opencv.core.*;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
@@ -108,6 +109,8 @@ public class ImageRecognition{
         if (ComputerVision.DEBUG) {
             camWindow.setImage(frame);
         }
+
+        Imgcodecs.imwrite("ReallyNicePicture.jpg", frame);
     }
 
     private void determineCroppedArea(){
@@ -255,7 +258,7 @@ public class ImageRecognition{
         mask.release();
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(cc, new Scalar(40, 100, 25), new Scalar(80, 230, 110), mask);
+        Core.inRange(cc, new Scalar(40, 50, 35), new Scalar(80, 210, 140), mask);
         kernel = Mat.ones(3, 3, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
 
@@ -269,9 +272,9 @@ public class ImageRecognition{
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
-        Core.inRange(hsv, new Scalar(0, 30, 50), new Scalar(50, 190, 230), tmp_mask1);
-        Core.inRange(hsv, new Scalar(165, 30, 50), new Scalar(180, 190, 230), tmp_mask2);
-        Core.add(tmp_mask1, tmp_mask2, mask);
+        Core.inRange(hsv, new Scalar(15, 9, 50), new Scalar(50, 110, 150), mask);
+        //Core.inRange(hsv, new Scalar(165, 30, 50), new Scalar(180, 190, 230), tmp_mask2);
+        //Core.add(tmp_mask1, tmp_mask2, mask);
         kernel = Mat.ones(10, 10, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 

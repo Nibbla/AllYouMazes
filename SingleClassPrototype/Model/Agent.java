@@ -119,7 +119,7 @@ public class Agent {
             needsToTurn = false;
             canMove = true;
             rotationCoefficient = 0;
-            linearCoefficient = 0.5;
+            linearCoefficient = 0.7;
         }
 
     }
