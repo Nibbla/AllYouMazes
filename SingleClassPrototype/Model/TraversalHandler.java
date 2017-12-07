@@ -10,7 +10,7 @@ public class TraversalHandler {
 
     private TraversalStatus state;
     private Node agent;
-    private LinkedList<Node> path;
+    private LinkedList<Line> path;
     private int i = 0;
     private boolean firstT;
     private boolean firstE;
@@ -20,7 +20,7 @@ public class TraversalHandler {
 
     //TraversalStatus.START
     
-    public TraversalHandler(LinkedList<Node> path, Node agent) {
+    public TraversalHandler(LinkedList<Line> path, Node agent) {
         this.path = path;
         this.agent = agent;
         setState(TraversalStatus.INIT);
@@ -28,7 +28,7 @@ public class TraversalHandler {
         firstE = true;
     }
 
-    public void changePath(LinkedList<Node> path, int state) {
+    public void changePath(LinkedList<Line> path, int state) {
         this.path.clear();
         this.path = path;
 		System.out.println(this.path);
@@ -46,7 +46,7 @@ public class TraversalHandler {
         return i;
     }
 
-    public Node getNode(int index) {
+    public Line getLine(int index) {
         return path.get(index);
     }
 

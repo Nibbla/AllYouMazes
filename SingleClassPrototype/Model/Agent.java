@@ -66,7 +66,7 @@ public class Agent {
         currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
 
 
-        Node currentPathPosition = handler.getNode(handler.getIndex());
+        Node currentPathPosition = handler.getLine(handler.getIndex()).getB();
 
         int x = (int) (currentPosition.getX());
         int y = (int) (currentPosition.getY());
@@ -77,7 +77,7 @@ public class Agent {
         while(Math.abs(currentPathPosition.getX() - y) <= (PROXIMITY) && Math.abs(x - currentPathPosition.getY()) <= (PROXIMITY)){
 
 			handler.step();
-            currentPathPosition = handler.getNode(handler.getIndex());
+            currentPathPosition = handler.getLine(handler.getIndex()).getB();
         }
 
         determineChanges();

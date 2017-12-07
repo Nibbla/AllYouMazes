@@ -269,6 +269,11 @@ public class DijkstraPathFinder {
         return grid[(int) (rb.getX()/stepsize)][(int) (rb.getY()/stepsize)].shortestPath;
     }
 
+    public static LinkedList<Line> getShortestPathFromGridLine(Node[][] grid, RoboPos rb, int stepsize) {
+
+        return grid[(int) (rb.getX()/stepsize)][(int) (rb.getY()/stepsize)].shortestPathLines;
+    }
+
     public LinkedList<Node> calculatePathway(RoboPos roboPos, int goalX, int goalY, boolean showAstar) {
 
 
@@ -423,6 +428,15 @@ public class DijkstraPathFinder {
 
     public static LinkedList<Node> reverseLinkedList(LinkedList<Node> shortestPath) {
         LinkedList<Node> linky = new LinkedList<>();
+        while (!shortestPath.isEmpty()){
+            linky.add(shortestPath.getLast());
+            shortestPath.removeLast();
+        }
+        return linky;
+    }
+
+    public static LinkedList<Line> reverseLinkedListLine(LinkedList<Line> shortestPath) {
+        LinkedList<Line> linky = new LinkedList<>();
         while (!shortestPath.isEmpty()){
             linky.add(shortestPath.getLast());
             shortestPath.removeLast();

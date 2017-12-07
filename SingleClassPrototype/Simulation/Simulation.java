@@ -42,13 +42,13 @@ public class Simulation {
     private ImageRecognition cv = new ImageRecognition();
 
 	public static Node[][] grid;
-	private LinkedList<Node> shortestPath;
+	private LinkedList<Line> shortestPath;
 
 	private double lastSendLinearSpeed = 0;
 	private double lastSentAngularSpeed = 0;
 
 	private double LINEARSENSITIVITY = 0.1;
-	private double ANGULARSENSITIVITY = 0.05;
+	private double ANGULARSENSITIVITY = 0.2;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -91,12 +91,12 @@ public class Simulation {
 
         int stepsize = 8;
         grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), 0,0, stepsize);
-        shortestPath = DijkstraPathFinder.getShortestPathFromGrid(grid,new RoboPos(rp.getY(), rp.getX(), 0,0),stepsize);
-        shortestPath = DijkstraPathFinder.reverseLinkedList(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
-        for (Node no : shortestPath) {
-            Imgproc.circle(currentFrame, new org.opencv.core.Point(no.getY(), no.getX()), 1, new Scalar(255), 1);
+        shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid,new RoboPos(rp.getY(), rp.getX(), 0,0),stepsize);
+        shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
+        for (Line no : shortestPath) {
+            Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
-        //ImgWindow.newWindow(currentFrame);
+        ImgWindow.newWindow(currentFrame);
 
 
         // init a traversalHandler based on the shortest path, to be passed to the agent
