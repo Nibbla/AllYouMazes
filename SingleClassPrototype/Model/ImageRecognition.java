@@ -94,8 +94,7 @@ public class ImageRecognition{
 
     private void readNextFrame(){
         try {
-            //capture.read(frame);
-            frame = Imgcodecs.imread("/Users/eric/ReallyNicePicture.jpg");
+            capture.read(frame);
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error reading next frame");

@@ -54,7 +54,7 @@ public class Simulation {
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
      */
     public Simulation() {
-        //cv.initCamera(1000,1000,3000);
+        cv.initCamera(1000,1000,3000);
 
         // current image recognition. to be replaced with data from BGS
 
