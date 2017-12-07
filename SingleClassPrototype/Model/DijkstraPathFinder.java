@@ -271,7 +271,7 @@ public class DijkstraPathFinder {
 
     public static LinkedList<Line> getShortestPathFromGridLine(Node[][] grid, RoboPos rb, int stepsize) {
 
-        return grid[(int) (rb.getX()/stepsize)][(int) (rb.getY()/stepsize)].shortestPathLines;
+        return grid[(int) (rb.getX()/stepsize)][(int) (rb.getY()/stepsize)].getShortestPathLines();
     }
 
     public LinkedList<Node> calculatePathway(RoboPos roboPos, int goalX, int goalY, boolean showAstar) {

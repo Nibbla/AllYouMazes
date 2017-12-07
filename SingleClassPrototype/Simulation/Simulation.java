@@ -54,7 +54,7 @@ public class Simulation {
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
      */
     public Simulation() {
-        cv.initCamera(1000,1000,3000);
+        //cv.initCamera(1000,1000,3000);
 
         // current image recognition. to be replaced with data from BGS
 
@@ -94,6 +94,7 @@ public class Simulation {
         shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid,new RoboPos(rp.getY(), rp.getX(), 0,0),stepsize);
         shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
         for (Line no : shortestPath) {
+            System.out.println(no);
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
         ImgWindow.newWindow(currentFrame);
