@@ -15,6 +15,7 @@ public class Node{
     Map<Node,Double> neighbours = new HashMap<>(8);
     ArrayList<Double> weights = new ArrayList<>(8);
     LinkedList<Node> shortestPath = new LinkedList<>();
+    LinkedList<Line> shortestPathLines = new LinkedList<>();
     int x;
     int y;
     private double distance;
@@ -47,6 +48,45 @@ public class Node{
         this.shortestPath = shortestPath;
     }
 
+    private void resolveShortestPathLines() {
+        if (!shortestPathLines.isEmpty()) shortestPathLines.clear();
+        if (shortestPath.size() < 3) System.out.println("Path too small");
+
+        ArrayList<Node> aPath = new ArrayList<>(shortestPath);
+
+        Node start = null;
+        Line tmp = null;
+
+        for (int i = 0; i < aPath.size() - 2; i++) {
+            Node p1 = aPath.get(i);
+            Node p2 = aPath.get(i+1);
+            Node p3 = aPath.get(i+2);
+
+            if (i == 0) start = p1;
+
+            //x, y interchanged
+
+            double left = (p2.x - p1.x) * (p3.y - p2.y);
+            double right = (p3.x - p2.x) * (p2.y - p1.y);
+
+            if (left == right) {
+            } else {
+                tmp = new Line(start, p2);
+                start = p2;
+            }
+
+            if (tmp != null) shortestPathLines.add(tmp);
+        }
+
+        tmp = new Line(start, aPath.get(aPath.size() - 1));
+        shortestPathLines.add(tmp);
+    }
+
+    public LinkedList<Line> getShortestPathLines() {
+        resolveShortestPathLines();
+        return shortestPathLines;
+    }
+
     public Map<Node, Double> getAdjacentNodes() {
         return neighbours;
     }
@@ -61,5 +101,20 @@ public class Node{
 
     public String toString() {
         return "[x: " + y + ", y: " + x + "]";
+    }
+
+    public static void main(String[] args) {
+        Node a = new Node(1, 1);
+        Node b = new Node(2, 2);
+        Node c = new Node(3, 3);
+        Node e  = new Node(0, 0);
+
+        LinkedList<Node> lel = new LinkedList<>();
+        lel.add(a);
+        lel.add(b);
+        lel.add(c);
+        e.setShortestPath(lel);
+        System.out.println(e.getShortestPath());
+        System.out.println(e.getShortestPathLines());
     }
 }
