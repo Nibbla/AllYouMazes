@@ -1,11 +1,14 @@
 package SpecialSettingsEtc;
 
 import Interfaces.ObjectType;
-import net.objecthunter.exp4j.*;
 import net.objecthunter.exp4j.operator.Operator;
 
-
-import java.io.IOException;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,85 +16,124 @@ import java.util.List;
 /**
  * Created by Nibbla on 21.10.2017.
  */
-public class Classifier implements IClassifier {
+public class ClassifierWithRules implements  IClassifier {
 
     //wall rules
-    public static  String wallrules = "wallrules";
-    public static  double wRedOgreenLowBound = 1.1;
-    public static  double wRedOgreenLowBoundP = 1;
-    public static  double wRedOblueLowBound = 1.3;
-    public static  double wRedOblueLowBoundP = 1;
-    public static  double wRed1LowBound = 165;
-    public static  double wRed1LowBoundP = 1;
-    public static  double wRed2LowBound = 200;
-    public static  double wRed2LowBoundP = 2;
-    public static  double wGreenLowBound = 200;
-    public static  double wGreenLowBoundP = 2;
-    public static  double wBlueLowBound = 200;
-    public static  double wBlueLowBoundP = 2;
-    //floor rules
-    public static  String floorrules = "floorrules";
-    public static  double fRedOgreenUpBound1=1.2;
-    public static  double fRedOgreenLowBound1 = 0.8;
-    public static  double wRedOGreenP1 = 1;
-    public static  double fGreenOblueUpBound = 1.2;
-    public static  double fgreenOblueLowBound = 0.8;
-    public static  double wGreenOBlueP = 1;
-    public static  double fBlueOGreenUpBound = 1.2;
-    public static  double fBlueOGreenLowBound = 0.8;
-    public static  double wBlueOGreen = 1;
-    public static  double fRedOGreenUpBound2=1.1;
-    public static  double fRedOGreenLowBound2 = 0.9;
-    public static  double wRedOGreenP2 = 1;
-    public static  double fGreenOBlueUpBound = 1.1;
-    public static  double fGreenOBlueLowBound = 0.9;
-    public static  double fGreenOBlue = 1;
-    public static  double fBlueOGreenUpBound2=1.1;
-    public static  double fblueOGreenLowBound2 = 0.9;
-    public static  double fblueOgreenP2 = 1;
 
-
-    //robot rules
-    public static  String robotrules = "robotrules";
-    public static  double rGreenOredLowBound=1.15;
-    public static  double rGreenOredLowBoundP=2;
-    public static  double rGreenOblueLowBound=1.15;
-    public static  double rGreenOblueLowBoundP=2;
-    public static  double rGreenLowBound =140;
-    public static  double rGreenUpBound=200;
-    public static  double rGreenP=2;
-    public static  double rGreenUpBound2=270;
-    public static  double rGreenUpBoundP2 = -1;
-    public static  double rRedLowBound = 200;
-    public static double rRedLowBoundP = 5;
     private final List<Operator> operators;
 
-    ClassChanger<Classifier> c;
-    private ArrayList<String> rules = new ArrayList<>();
+    ClassChanger<ClassifierWithRules> c;
+    private  List<Rules> rules;
+    private Frame frame;
     //goal1 rules
 
     //goal2 rules
+    private static class Rules {
+        private int i;
+        public static  int j;
+        private int string;
+
+        public static void addOrder(Operator o) {
+            if ()
+        }
+
+        public int getString() {
+            return string;
+        }
+    }
+    public static List<Rules> loadRules(String s){
+        JFileChooser fileChooser = new JFileChooser();
+        String currentDir = Settings.getDefaultInputPath();
+        fileChooser.setCurrentDirectory(new File(currentDir));
+        File file = null;
+        if (s==null) {
+            if (fileChooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                file = fileChooser.getSelectedFile();
+            }
+        }else {
+            file = new File(s);
+        }
+        if (file == null) saveRules("default.clr");
+
+        try {
+            BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+            String line =  bufferedReader.readLine();
+
+            while (line!=null){
+                String[] values = line.split(";");
+                dictionary2.get(values[0]).setText(values[1]);
+                line =  bufferedReader.readLine();
 
 
-    public ArrayList<String> getRules() {
+            }
+            bufferedReader.close();;
+        } catch (FileNotFoundException e) {
+            saveRules("default.clr");
+            loadRules("default.clsf");
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e){
+            e.printStackTrace();
+        }
+        return new ArrayList<>();
+    }
+
+    private static void saveRules(String s) {
+
+    }
+    public List<Rules> getRules() {
         return rules;
     }
 
-    public void setRules(ArrayList<String> rules) {
+    public void setRules(List<Rules> rules) {
         this.rules = rules;
     }
 
-    public Classifier() {
+    public ClassifierWithRules() {
         operators = createOperators();
         createRules();
 
         Class<?> d = null;
-
         d = this.getClass();//;Class.forName("sample.RuleSet");
-
-        c = new ClassChanger<Classifier>(d,this);
+        c = new ClassChanger<ClassifierWithRules>(d,this);
         c.load("default.clsf");
         c.apply();
+        rules = loadRules("default.clr");
+
+        createWindow();
+
+
+    }
+
+    private void createWindow(Rules r, ArrayList<Rules> rules) {
+        this.frame = new Frame("Rule based genetic classifier");
+
+        JPanel imagePanel = new JPanel();
+
+        JPanel rulePanel = new JPanel(new GridLayout(rules.size(), 1));
+
+        JPanel ee = new JPanel(new GridLayout(5, 1));
+
+        List<Operator> ops = getOperators();
+        JPanel ruleButtonPanel = new JPanel(new GridLayout(ops.size(), 1));
+        for (Operator o : ops) {
+            JButton b = new JButton(o.getSymbol());
+            b.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Rules.addOrder(o);
+                }
+            });
+            ruleButtonPanel.add(b);
+        }
+        for (Rules rule : rules) {
+            TextField tf = new TextField(rule.getString());
+        }
+
+        frame.setLayout(new BorderLayout());
+
+
     }
 
     private void createRules() {
@@ -124,23 +166,23 @@ public class Classifier implements IClassifier {
 
     @Override
     public void save(String path) throws IOException {
-        ClassChanger<Classifier> c;
+        ClassChanger<ClassifierWithRules> c;
         Class<?> d = null;
 
         d = this.getClass();//;Class.forName("sample.RuleSet");
 
-        c = new ClassChanger<Classifier>(d,this);
+        c = new ClassChanger<ClassifierWithRules>(d,this);
         c.save("default.clsf");
     }
 
     @Override
     public void load(String path) throws IOException {
-        ClassChanger<Classifier> c;
+        ClassChanger<ClassifierWithRules> c;
         Class<?> d = null;
 
         d = this.getClass();//;Class.forName("sample.RuleSet");
 
-        c = new ClassChanger<Classifier>(d,this);
+        c = new ClassChanger<ClassifierWithRules>(d,this);
         c.load("default.clsf");
     }
 
@@ -148,7 +190,6 @@ public class Classifier implements IClassifier {
         return operators;
     }
 
-    @Override
     public HashMap<ObjectType, Double> classify(double red, double green, double blue) {
         return null;
     }
@@ -158,8 +199,12 @@ public class Classifier implements IClassifier {
         return null;
     }
 
+    public void editFields(BufferedImage bi) {
 
-    public enum whyRuleSetChoises {PvEDefault}
+    }
+
+
+    public enum RuleSetChoises {PvEDefault}
 //https://lallafa.objecthunter.net/exp4j/#Custom_operators
 
     private class leadsToo extends Operator {
@@ -275,4 +320,6 @@ public class Classifier implements IClassifier {
             else return 0;
         }
     }
+
+
 }

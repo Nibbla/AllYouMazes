@@ -517,10 +517,10 @@ public class View implements IView {
                             cluster.add(pair);
 
                             if (pair.getKey() - 1 > 0 && pair.getKey() + 1 < m2.length && pair.getValue() - 1 > 0 && pair.getValue() + 1 < m2[0].length) {
-                                s.push(new Pair(pair.getKey(), pair.getValue() + 1));
-                                s.push(new Pair(pair.getKey(), pair.getValue() - 1));
-                                s.push(new Pair(pair.getKey() + 1, pair.getValue()));
-                                s.push(new Pair(pair.getKey() - 1, pair.getValue()));
+                                s.push(new Pair(pair.getKey(), pair.getValue() + numberOfPixelsToSkip));
+                                s.push(new Pair(pair.getKey(), pair.getValue() - numberOfPixelsToSkip));
+                                s.push(new Pair(pair.getKey() + numberOfPixelsToSkip, pair.getValue()));
+                                s.push(new Pair(pair.getKey() - numberOfPixelsToSkip, pair.getValue()));
                             }
 
                             //We can probably ignore all the other cases as the robot should be around the wall then, also we'd only miss a few pixels

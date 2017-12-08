@@ -64,11 +64,13 @@ public class ClassifierDeprecated implements Changeable<ClassifierDeprecated> {
     public ClassifierDeprecated() {
         ClassChanger<ClassifierDeprecated> c;
         Class<?> d = null;
-
         d = this.getClass();//;Class.forName("sample.RuleSet");
-
         c = new ClassChanger<ClassifierDeprecated>(d,this);
         c.load("default.clsf");
+
+
+
+
     }
 
 

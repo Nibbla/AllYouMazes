@@ -22,17 +22,24 @@ import java.util.Hashtable;
 public class ClassChanger<W> extends JFrame{
 
     private final Field[] fields;
-    private final Hashtable<String, Field> dictionary;
-    private final Hashtable<String, TextField> dictionary2;
-    private final Hashtable<String, JLabel> dictionary3Labels;
+
     private final W object;
     private int blocks;
-    private final ArrayList<String> blocknames;
-
+    Hashtable<String, Field> dictionary;
+    Hashtable<String, TextField> dictionary2;
+    Hashtable<String, JLabel> dictionary3Labels;
+    ArrayList<String> blocknames;
 
     public ClassChanger(Class<?> wClass, W object) {
         this.object = object;
         fields = wClass.getFields();
+        this.add(createClassicPanel());
+
+
+    }
+
+    public JPanel createClassicPanel(){
+
         dictionary = new Hashtable<>(fields.length);
         dictionary2 = new Hashtable<>(fields.length);
         dictionary3Labels = new Hashtable<>(fields.length);
@@ -42,11 +49,14 @@ public class ClassChanger<W> extends JFrame{
 
         JPanel namePanel = null;
         JPanel editPanel = null;
-         blocks = 0;
+        blocks = 0;
         blocknames = new ArrayList<>();
         for (Field field : fields) {
             try {
                 String value = field.get(object).toString();
+                if (field.get(object)instanceof ArrayList){
+                    //a hidden arraylist appears
+                }
                 double d = Double.parseDouble(value);
 
             } catch (IllegalAccessException e) {
@@ -60,10 +70,6 @@ public class ClassChanger<W> extends JFrame{
                 }
             }
         }
-
-
-
-
 
 
 
@@ -100,7 +106,8 @@ public class ClassChanger<W> extends JFrame{
             }
 
         }
-        this.addComponentListener(new ResizeListener(this));
+        JPanel centralPenal = new JPanel(new BorderLayout());
+        centralPenal.addComponentListener(new ResizeListener(this));
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         Button loadB = new Button("Load");
         loadB.addActionListener(e->load(null));
@@ -109,14 +116,14 @@ public class ClassChanger<W> extends JFrame{
         Button applyB = new Button("Apply");
         applyB.addActionListener(e->apply());
         buttonPanel.add(loadB);buttonPanel.add(saveB);buttonPanel.add(applyB);
-        this.add(buttonPanel,BorderLayout.SOUTH);
-        this.add(mainPanel,BorderLayout.CENTER);
+        centralPenal.add(buttonPanel,BorderLayout.SOUTH);
+        centralPenal.add(mainPanel,BorderLayout.CENTER);
+
         //this.add(namePanel,BorderLayout.WEST);
         addController();
 
         pack();
-
-
+       return centralPenal;
     }
 
     public void apply() {
@@ -134,7 +141,7 @@ public class ClassChanger<W> extends JFrame{
             try {
                 if (f.getName().contains("wRedOgreenLowBound")){
                     System.out.println(Classifier.wRedOgreenLowBound);}
-                f.set(object,Double.parseDouble(value));
+                    f.set(object,Double.parseDouble(value));
                 if (f.getName().contains("wRedOgreenLowBound")){
                 System.out.println(Classifier.wRedOgreenLowBound);}
             } catch (IllegalAccessException e) {

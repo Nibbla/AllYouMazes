@@ -3,6 +3,7 @@ import Control.RobotControl;
 import Interfaces.*;
 import Model.ModelDeprecated;
 import SpecialSettingsEtc.*;
+import net.objecthunter.exp4j.*;
 import view.Camera;
 import Model.*;
 import Model.DijkstraPathFinder;
@@ -53,7 +54,15 @@ public class Modul {
 
 
     public static void main(String[] args){
-
+        Classifier c = new Classifier();
+        Expression ex = new ExpressionBuilder("3 * sin(y) - 2 > (x - 2)")
+                .variables("x", "y")
+                .operator(c.getOperators())
+                .build()
+                .setVariable("x", 2.3)
+                .setVariable("y", 3.14);
+        double result = ex.evaluate();
+        System.out.println(result);
         try {
             Modul modul = new Modul(factoryView.getInstance(), factoryModelDeprecated.getInstance(),factoryControl.getInstance(), factoryCamera.getInstance());
 
@@ -81,7 +90,10 @@ public class Modul {
         int loop = -1;
         RoboPos lastPos = null;
         Classifier cl = new Classifier();
+        ClassifierWithRules clr = new ClassifierWithRules();
         cl.editFields();
+        BufferedImage bi2 = view.getCurrentShot();
+        clr.editFields(bi2);
 
         while (running){
             loop++;
@@ -96,6 +108,8 @@ public class Modul {
                 BufferedImage bi = view.getCurrentShot();
 
                 ObjectType[][] m2 = view.classify(bi, isWorkmode(Workmode.SHOWKLASSIFIED), cl);
+                ObjectType[][] m3 = view.classify(bi, isWorkmode(Workmode.SHOWKLASSIFIED), clr);
+
                 robotPos = view.getRobotCenter(m2, 4).get(0);
                 System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
                 if (g != null) g.setVisible(false);

@@ -6,6 +6,7 @@ import SpecialSettingsEtc.Settings;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 
 public class PixelObjectType {
 
@@ -31,6 +32,10 @@ public class PixelObjectType {
         red = c.getRed();
         green = c.getGreen();
         blue = c.getBlue();
+        //HashMap<ObjectType,Double> solution = cl.preclassify(red,green,blue);
+       // wallility += solution.get(ObjectType.wall);
+       // floorility += solution.get(ObjectType.floor);
+       // robotility += solution.get(ObjectType.robot);
 
         if (red/green>cl.wRedOgreenLowBound) wallility= wallility + cl.wRedOgreenLowBoundP;
         if (red/blue>cl.wRedOblueLowBound) wallility= wallility + cl.wRedOblueLowBoundP;
