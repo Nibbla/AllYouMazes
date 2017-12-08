@@ -5,12 +5,14 @@ public class Agent {
 
     private RoboPos currentPosition;
     private RoboPos lastPosition = new RoboPos(0,0,0,0);
+    private RoboPos estimatedPosition = new RoboPos(0,0,0,0);
+
     private TraversalHandler handler;
     private Node currentGoal;
     private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0;
 
-    private final double PROXIMITY = 50;
-    private final double ROTATIONERROR = 45;
+    private final double PROXIMITY = 25;
+    private final double ROTATIONERROR = 5;
 
     // TODO: make use of ROS_ID in controller. this is to anticipate multiple epucks.
     private int ROS_ID;
@@ -47,7 +49,7 @@ public class Agent {
         this.ROS_ID = ROS_ID;
     }
 
-    public void update(RoboPos newPosition, RoboPos rotationPoint){
+    public void update(RoboPos newPosition, RoboPos rotationPoint, double stepsize){
         needsToTurn = false;
         canMove = false;
 
@@ -60,11 +62,12 @@ public class Agent {
         lastPosition.setDirection(currentPosition.getDirection());
 
         prevRotationCoefficient = rotationCoefficient;
-		prevLinearCoefficient = linearCoefficient;
+        prevLinearCoefficient = linearCoefficient;
 
         currentPosition = newPosition;
         currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
 
+        determineChanges();
 
         Node currentPathPosition = handler.getLine(handler.getIndex()).getB();
 
@@ -76,17 +79,15 @@ public class Agent {
         // TODO: swap Y and X as soon as path returns X and Y
         while(Math.abs(currentPathPosition.getX() - y) <= (PROXIMITY) && Math.abs(x - currentPathPosition.getY()) <= (PROXIMITY)){
 
-			handler.step();
+            handler.step();
             currentPathPosition = handler.getLine(handler.getIndex()).getB();
         }
-
-        determineChanges();
 
         // TODO: swap Y and X as soon as path returns as X and Y
         double correctAngle = currentPosition.getAngleTo(new Node(currentPathPosition.getY(), currentPathPosition.getX()));
 
         // calculate the needed rotation-distance
-        double distance = (Math.toDegrees(correctAngle) - Math.toDegrees(currentPosition.getDirection())) % 360;
+        double distance = ((Math.toDegrees(correctAngle) % 360 ) - (Math.toDegrees(currentPosition.getDirection()) % 360));
 
         if (distance < -180) {
             distance += 360;
@@ -95,42 +96,42 @@ public class Agent {
         }
 
         // debug output for angle calculation
-                    /*
-					System.out.println("current angle: " + Math.toDegrees(this.getCurrentPosition().getDirection()));
-                    System.out.println("desired angle: " + Math.toDegrees(correctAngle));
-                    System.out.println("needed rotation: " + distance);
-                    System.out.println("robot position: " + this.getCurrentPosition().getX() + " | " + this.getCurrentPosition().getY());
-                    System.out.println("current goal: " + currentPathPosition.getY() + " | " + currentPathPosition.getX());
-                    System.out.println("----------");
-                    */
+        /*
+        System.out.println("current angle: " + Math.toDegrees(this.getCurrentPosition().getDirection()));
+        System.out.println("estimated angle: " + Math.toDegrees(this.estimatedPosition.getDirection()));
+        System.out.println("desired angle: " + Math.toDegrees(correctAngle));
+        System.out.println("needed rotation: " + distance);
+        System.out.println("robot position: " + this.getCurrentPosition().getX() + " | " + this.getCurrentPosition().getY());
+        System.out.println("current goal: " + currentPathPosition.getY() + " | " + currentPathPosition.getX());
+        */
 
         // check if needed angle is within allowed range (might depend on delay) and determine rotation direction.
         if (Math.abs(distance) >= ROTATIONERROR) {
             needsToTurn = true;
             canMove = false;
             if (distance > 0) {
-                rotationCoefficient = -1 * (Math.abs(distance) / 180);
-            	linearCoefficient = 0;
+                rotationCoefficient = -1;
+                linearCoefficient = 0;
             } else {
-                rotationCoefficient = 1 * (Math.abs(distance) / 180);
-				linearCoefficient = 0;
+                rotationCoefficient = 1;
+                linearCoefficient = 0;
             }
         } else {
             needsToTurn = false;
             canMove = true;
             rotationCoefficient = 0;
-            linearCoefficient = 0.7;
+            linearCoefficient = 1;
         }
 
     }
 
     private void determineChanges() {
-        if ((lastPosition.getX() == currentPosition.getX()) && (lastPosition.getY() == currentPosition.getY())){
+        if ((Math.abs(lastPosition.getX() - currentPosition.getX())) < 10 && Math.abs(lastPosition.getY() - currentPosition.getY()) < 10){
             isMoving = false;
         } else {
             isMoving = true;
         }
-        if (lastPosition.getDirection() == currentPosition.getDirection()){
+        if (Math.abs(lastPosition.getDirection() - currentPosition.getDirection()) < 0.02){
             isTurning = false;
         } else {
             isTurning = true;
@@ -165,11 +166,11 @@ public class Agent {
         return prevRotationCoefficient;
     }
 
-	public double getPrevLinearCoefficient() {
+    public double getPrevLinearCoefficient() {
         return prevLinearCoefficient;
     }
 
-	public boolean isStuck(){
-		return lastPosition.equals(currentPosition);
-	}
+    public boolean isStuck(){
+        return lastPosition.equals(currentPosition);
+    }
 }
