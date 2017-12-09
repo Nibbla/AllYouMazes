@@ -9,8 +9,9 @@ public class Agent {
     private Node currentGoal;
     private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0;
 
-    private final double PROXIMITY = 50;
+    private final double PROXIMITY = 15;
     private final double ROTATIONERROR = 45;
+	private final double DELAYANGLE = 0;
 
     // TODO: make use of ROS_ID in controller. this is to anticipate multiple epucks.
     private int ROS_ID;
@@ -59,14 +60,17 @@ public class Agent {
         lastPosition.setRadius(currentPosition.getRadius());
         lastPosition.setDirection(currentPosition.getDirection());
 
+	if (rotationCoefficient != 0){
         prevRotationCoefficient = rotationCoefficient;
-		prevLinearCoefficient = linearCoefficient;
+	}
+
+	prevLinearCoefficient = linearCoefficient;
 
         currentPosition = newPosition;
         currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
 
 
-        Node currentPathPosition = handler.getLine(handler.getIndex()).getB();
+        Node currentPathPosition = handler.getLine(handler.getIndex()).getA();
 
         int x = (int) (currentPosition.getX());
         int y = (int) (currentPosition.getY());
@@ -77,7 +81,7 @@ public class Agent {
         while(Math.abs(currentPathPosition.getX() - y) <= (PROXIMITY) && Math.abs(x - currentPathPosition.getY()) <= (PROXIMITY)){
 
 			handler.step();
-            currentPathPosition = handler.getLine(handler.getIndex()).getB();
+            currentPathPosition = handler.getLine(handler.getIndex()).getA();
         }
 
         determineChanges();
@@ -86,7 +90,7 @@ public class Agent {
         double correctAngle = currentPosition.getAngleTo(new Node(currentPathPosition.getY(), currentPathPosition.getX()));
 
         // calculate the needed rotation-distance
-        double distance = (Math.toDegrees(correctAngle) - Math.toDegrees(currentPosition.getDirection())) % 360;
+       double distance = ((Math.toDegrees(correctAngle) + (prevRotationCoefficient * DELAYANGLE)) - Math.toDegrees(currentPosition.getDirection()))%360;
 
         if (distance < -180) {
             distance += 360;
@@ -109,28 +113,28 @@ public class Agent {
             needsToTurn = true;
             canMove = false;
             if (distance > 0) {
-                rotationCoefficient = -1 * (Math.abs(distance) / 180);
+                rotationCoefficient = -1;
             	linearCoefficient = 0;
             } else {
-                rotationCoefficient = 1 * (Math.abs(distance) / 180);
+                rotationCoefficient = 1;
 				linearCoefficient = 0;
             }
         } else {
             needsToTurn = false;
             canMove = true;
             rotationCoefficient = 0;
-            linearCoefficient = 0.7;
+            linearCoefficient = 1;
         }
 
     }
 
     private void determineChanges() {
-        if ((lastPosition.getX() == currentPosition.getX()) && (lastPosition.getY() == currentPosition.getY())){
+        if (Math.abs(lastPosition.getX() - currentPosition.getX()) <= 2 && Math.abs(lastPosition.getY() - currentPosition.getY()) <= 2){
             isMoving = false;
         } else {
             isMoving = true;
         }
-        if (lastPosition.getDirection() == currentPosition.getDirection()){
+        if (Math.abs(lastPosition.getDirection() - currentPosition.getDirection()) <= 0.01){
             isTurning = false;
         } else {
             isTurning = true;

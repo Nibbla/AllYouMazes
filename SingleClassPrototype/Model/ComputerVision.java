@@ -57,7 +57,7 @@ public class ComputerVision {
     //TODO blob detection/background substraction
 
     public final static boolean DEBUG = false;
-    public static boolean CONTOUR_TEST = false;
+    public static boolean CONTOUR_TEST = true;
     public final static double SCALE_FACTOR = 0.5;
     public final static int STEP_SIZE = 4;
     public final static int PROXIMITY = (int) (2 * SCALE_FACTOR);

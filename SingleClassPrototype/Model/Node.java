@@ -70,6 +70,7 @@ public class Node{
             double right = (p3.x - p2.x) * (p2.y - p1.y);
 
             if (left == right) {
+                tmp = null;
             } else {
                 tmp = new Line(start, p2);
                 start = p2;
@@ -83,7 +84,9 @@ public class Node{
     }
 
     public LinkedList<Line> getShortestPathLines() {
+        //System.out.println("orig no of points: " + shortestPath.size());
         resolveShortestPathLines();
+        //System.out.println("no of lines: " + shortestPathLines.size());
         return shortestPathLines;
     }
 

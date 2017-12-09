@@ -2,8 +2,8 @@ package Model;
 
 import Util.ImgWindow;
 import org.opencv.core.*;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
@@ -93,24 +93,20 @@ public class ImageRecognition{
     }
 
     private void readNextFrame(){
-        try {
-            capture.read(frame);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("Error reading next frame");
-        }
+        capture.read(frame);
+
         if (croppingAreaKnown){
-            frame = frame.submat(croppedArea);
+           frame = frame.submat(croppedArea);
         } else {
             determineCroppedArea();
-            frame = frame.submat(croppedArea);
+          frame = frame.submat(croppedArea);
         }
 
         if (ComputerVision.DEBUG) {
             camWindow.setImage(frame);
         }
 
-        Imgcodecs.imwrite("ReallyNicePicture.jpg", frame);
+        //Imgcodecs.imwrite("ReallyNicePicture.jpg", frame);
     }
 
     private void determineCroppedArea(){
@@ -124,7 +120,7 @@ public class ImageRecognition{
     }
 
     private void determineRobotSearchArea(){
-        readNextFrame();
+        //readNextFrame();
 
         if (center != null && radius != null) {
             prev = center.clone();
@@ -143,7 +139,7 @@ public class ImageRecognition{
     }
 
     private void determineAngleSearchArea(){
-        readNextFrame();
+        //readNextFrame();
 
         if (center != null && radius != null) {
             prev = center.clone();
@@ -161,16 +157,17 @@ public class ImageRecognition{
         }
     }
 
-    private Rect backgroundRect(Mat fullimage){
+    public Rect backgroundRect(Mat fullimage){
         backgroundContour = null;
         Imgproc.cvtColor(fullimage, hsv, Imgproc.COLOR_BGR2HSV);
 
-        Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
+        Imgproc.GaussianBlur(hsv, hsv, new Size(9, 9), 2, 2);
 
-        Scalar low = new Scalar(0, 0, 0);
-        Scalar high = new Scalar(180, 255, 30);
-        Core.inRange(hsv, low, high, mask);
-        kernel = Mat.ones(17, 17, CvType.CV_8UC1);
+        Core.inRange(hsv, new Scalar(70, 10, 20), new Scalar(200, 150, 55), tmp_mask1);
+        Core.inRange(hsv, new Scalar(0, 10, 20), new Scalar(40, 150, 55), tmp_mask2);
+        Core.add(tmp_mask1, tmp_mask2, mask);
+
+        kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         contours.clear();
@@ -184,6 +181,13 @@ public class ImageRecognition{
                 biggestContourIndex = index;
             }
         }
+	
+	/*
+        Mat t = new Mat();
+        fullimage.copyTo(t);
+        Imgproc.drawContours(t, contours, -1, new Scalar(0, 255, 0), 2);
+        ImgWindow.newWindow(t);
+	*/
 
         hsv.release();
         mask.release();
@@ -239,11 +243,13 @@ public class ImageRecognition{
         mask.release();
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(cc, new Scalar(0, 150, 90), new Scalar(15, 240, 190), tmp_mask1);
-        Core.inRange(cc, new Scalar(170, 150, 90), new Scalar(180, 240, 190), tmp_mask2);
+        Core.inRange(cc, new Scalar(0, 90, 130), new Scalar(10, 200, 255), tmp_mask1);
+        Core.inRange(cc, new Scalar(170, 90, 130), new Scalar(180, 200, 255), tmp_mask2);
         Core.add(tmp_mask1, tmp_mask2, mask);
-        kernel = Mat.ones(5, 5, CvType.CV_8UC1);
+        kernel = Mat.ones(3, 3, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
+
+        //bgsWindow.setImage(mask);
 
         cc.release();
         tmp_mask1.release();
@@ -258,9 +264,9 @@ public class ImageRecognition{
         mask.release();
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(cc, new Scalar(40, 50, 35), new Scalar(80, 210, 140), mask);
-        kernel = Mat.ones(3, 3, CvType.CV_8UC1);
-        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
+        Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
+        kernel = Mat.ones(7, 7, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         cc.release();
         kernel.release();
@@ -271,37 +277,46 @@ public class ImageRecognition{
     private MatOfPoint contours(Mat img) {
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
 
-        Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
-        Core.inRange(hsv, new Scalar(15, 9, 50), new Scalar(50, 110, 150), mask);
+        Imgproc.GaussianBlur(hsv, hsv, new Size(15, 15), 2, 2);
+        Core.inRange(hsv, new Scalar(10, 20, 160), new Scalar(30, 165, 255), mask);
         //Core.inRange(hsv, new Scalar(165, 30, 50), new Scalar(180, 190, 230), tmp_mask2);
         //Core.add(tmp_mask1, tmp_mask2, mask);
-        kernel = Mat.ones(10, 10, CvType.CV_8UC1);
+        kernel = Mat.ones(14, 14, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         //Need to make sure that robot is removed.
         contours.clear();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+        //Imgproc.drawContours(img, contours, -1, new Scalar(255, 0, 0), 3);
 
-        for (int i = 0; i < contours.size(); i++) {
-            MatOfPoint contour = contours.get(i);
-            if (Imgproc.contourArea(contour) < 9000) {
-                Imgproc.fillConvexPoly(mask, contour, new Scalar(0));
+        while (contours.size() != 1) {
+            for (int i = 0; i < contours.size(); i++) {
+                MatOfPoint contour = contours.get(i);
+                if (Imgproc.contourArea(contour) < 10000) {
+                    Imgproc.fillConvexPoly(mask, contour, new Scalar(0));
+                }
             }
+            contours.clear();
+            hierarchy.release();
+            Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
         }
-
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 25);
-        hierarchy.release();
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 19);
         contours.clear();
+        hierarchy.release();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+//        hierarchy.release();
+//        contours.clear();
+//        Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        if (contours.size() == 1) {
-            mazeContour = contours.get(0);
-        } else {
-            if (contours.isEmpty()) System.out.println("No contours");
-            else System.out.println("Found multiple contours");
-        }
+
+//        if (contours.size() == 1) {
+//            mazeContour = contours.get(0);
+//        } else {
+//            if (contours.isEmpty()) System.out.println("No contours");
+//            else System.out.println("Found multiple contours");
+//        }
 
         if (ComputerVision.CONTOUR_TEST) {
             Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255), 2);
@@ -317,15 +332,34 @@ public class ImageRecognition{
         kernel.release();
         hierarchy.release();
 
-        return mazeContour;
+        return contours.get(0);
     }
 
-
-    public void initCamera(int width, int height, int startupTimeMS){
+    public void initCamera(int width, int height, int startupTimeMS, int skip){
         try {
             capture = new VideoCapture(0);
             capture.set(Videoio.CAP_PROP_FRAME_WIDTH, width);
             capture.set(Videoio.CAP_PROP_FRAME_HEIGHT, height);
+            //width
+            //capture.set(3, width);
+            //height
+            //capture.set(4, height);
+            //fps
+            //capture.set(5, 30);
+            //brightness
+            //capture.set(10, 0.5);
+            //contrast
+            //capture.set(11, 0.65);
+            //saturation
+            //capture.set(12, 0.7);
+            //convert to RGB
+            //capture.set(16, 1);
+			int i = 0;
+			while(i < skip){
+				capture.read(frame);
+				i++;
+			}
+
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Error initializing camera.");
@@ -340,7 +374,7 @@ public class ImageRecognition{
     }
 
     public void determineMazeContours(){
-        readNextFrame();
+        //readNextFrame();
         frame.copyTo(bg);
         currentContours = contours(bg);
         bg.release();
@@ -387,7 +421,7 @@ public class ImageRecognition{
             }
 
             hierarchy.release();
-            frame.release();
+            //frame.release();
             diff.release();
         }
 
@@ -435,7 +469,7 @@ public class ImageRecognition{
                             if (prev != null) {
                                 if (Math.abs(prev.x - center.x) > maxDiffPos || Math.abs(prev.y - center.y) > maxDiffPos || Math.abs(prevRadius - radius[0]) > maxDiffRad) {
                                     if (ComputerVision.DEBUG) {
-                                        System.out.println("Point INVALIDATED!");
+                                        //System.out.println("Point INVALIDATED!");
                                         invalid = true;
                                     }
                                 }
@@ -464,7 +498,7 @@ public class ImageRecognition{
 
 
             hierarchy.release();
-            frame.release();
+            //frame.release();
             diff.release();
 
         }
@@ -507,7 +541,12 @@ public class ImageRecognition{
         return frame;
     }
 
+    public void releaseFrame(){
+	frame.release();
+    }
+
     public Point getAngle() {
         return angle;
     }
+
 }
