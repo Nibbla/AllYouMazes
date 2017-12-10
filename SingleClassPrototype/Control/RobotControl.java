@@ -39,7 +39,7 @@ public class RobotControl implements IControl {
     private static RobotControl factoryControl = new RobotControl();
 
     // Values used for moving slowly either forward or angular
-    private final double MINFORWARDSPEED = 0.6;
+    private final double MINFORWARDSPEED = 0.65;
     private final double MAXFORWARDSPEED = 3.5;
     private final double MINANGULARSPEED = 0.13;
     private final double MAXANGULARSPEED = 1.5;

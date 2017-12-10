@@ -9,8 +9,8 @@ public class Agent {
     private Node currentGoal;
     private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0;
 
-    private final double PROXIMITY = 15;
-    private final double ROTATIONERROR = 45;
+    private final double PROXIMITY = 25;
+    private final double ROTATIONERROR = 50;
 	private final double DELAYANGLE = 0;
 
     // TODO: make use of ROS_ID in controller. this is to anticipate multiple epucks.

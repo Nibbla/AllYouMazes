@@ -302,7 +302,7 @@ public class ImageRecognition{
         }
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 19);
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 21);
         contours.clear();
         hierarchy.release();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);

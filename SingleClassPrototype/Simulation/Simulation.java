@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Simulation {
 
-    public final static int TIME_STEP = 100;
+    public final static int TIME_STEP = 70;
     private static final double ROTATIONERROR = 25;
 
     private Agent agent;
@@ -54,7 +54,7 @@ public class Simulation {
     private double LINEARSENSITIVITY = 0.1;
     private double ANGULARSENSITIVITY = 0.2;
 
-    //private ImgWindow pathWindow = ImgWindow.newWindow();
+    private ImgWindow pathWindow = ImgWindow.newWindow();
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -104,11 +104,12 @@ public class Simulation {
         shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
         //System.out.println(shortestPath.size());
         currentFrame = currentFrame.submat(cv.backgroundRect(currentFrame));
-        //for (Line no : shortestPath) {
+        for (Line no : shortestPath) {
             //System.out.println(no);
-            //Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
-        //}
-        //pathWindow.setImage(currentFrame);
+            Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
+        }
+        pathWindow.setImage(currentFrame);
+        Imgcodecs.imwrite("help2.jpg", currentFrame);
 	cv.releaseFrame();
         // init a traversalHandler based on the shortest path, to be passed to the agent
         TraversalHandler traversalHandler = new TraversalHandler(shortestPath, new Node((int) rp.getX(), (int) rp.getY()));
@@ -154,6 +155,7 @@ public class Simulation {
 		}catch (Exception e){
 			System.out.println("unable to wait, wtf");
 		}
+
 		start = System.currentTimeMillis();
 		end = 0;
 
