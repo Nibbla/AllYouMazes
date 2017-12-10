@@ -4,7 +4,7 @@ import Interfaces.IView;
 import Interfaces.ObjectType;
 import Model.DijkstraPathFinder;
 import SpecialSettingsEtc.Archivar;
-import SpecialSettingsEtc.Classifier;
+import view.classifier.Classifier;
 import SpecialSettingsEtc.Settings;
 import Model.ModelDeprecated;
 import Model.RoboPos;

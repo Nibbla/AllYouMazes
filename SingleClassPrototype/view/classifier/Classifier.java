@@ -1,7 +1,7 @@
-package SpecialSettingsEtc;
+package view.classifier;
 
 import Interfaces.ObjectType;
-import net.objecthunter.exp4j.*;
+import SpecialSettingsEtc.ClassChanger;
 import net.objecthunter.exp4j.operator.Operator;
 
 

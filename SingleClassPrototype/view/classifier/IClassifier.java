@@ -1,6 +1,7 @@
-package SpecialSettingsEtc;
+package view.classifier;
 
 import Interfaces.ObjectType;
+import SpecialSettingsEtc.Changeable;
 
 import java.io.IOException;
 import java.util.HashMap;

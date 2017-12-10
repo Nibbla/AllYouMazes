@@ -1,6 +1,8 @@
 package SpecialSettingsEtc;
 
 
+import view.classifier.Classifier;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentEvent;

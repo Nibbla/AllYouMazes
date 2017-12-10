@@ -1,4 +1,7 @@
-package SpecialSettingsEtc;
+package view.classifier;
+
+import SpecialSettingsEtc.Changeable;
+import SpecialSettingsEtc.ClassChanger;
 
 import java.io.IOException;
 

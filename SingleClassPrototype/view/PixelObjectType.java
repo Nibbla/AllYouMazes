@@ -1,12 +1,11 @@
 package view;
 
 import Interfaces.ObjectType;
-import SpecialSettingsEtc.Classifier;
+import view.classifier.Classifier;
 import SpecialSettingsEtc.Settings;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.HashMap;
 
 public class PixelObjectType {
 

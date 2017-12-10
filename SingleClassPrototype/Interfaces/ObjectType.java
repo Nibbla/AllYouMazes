@@ -7,7 +7,7 @@ import java.awt.*;
  * Created by Nibbla on 06.10.2017.
  */
 public enum ObjectType {
-    floor(Color.WHITE),wall(Color.MAGENTA), robot(Color.GREEN), goal1(Color.WHITE), goal2(Color.BLACK),placeholder(Color.YELLOW);;
+    floor(Color.WHITE),wall(Color.MAGENTA), robot(Color.GREEN),robot2(Color.BLUE), goal1(Color.WHITE), goal2(Color.BLACK),placeholder(Color.YELLOW);;
 
     private Color color;
 
@@ -17,5 +17,8 @@ public enum ObjectType {
 
     public int getColor() {
         return color.getRGB();
+    }
+    public Color getColorC() {
+        return color;
     }
 }

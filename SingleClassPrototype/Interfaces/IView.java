@@ -2,7 +2,7 @@ package Interfaces;
 
 
 import Model.*;
-import SpecialSettingsEtc.Classifier;
+import view.classifier.Classifier;
 
 
 import java.awt.image.BufferedImage;

@@ -14,6 +14,8 @@ import java.util.LinkedList;
 import java.util.Random;
 
 import Model.RoboPos;
+import view.classifier.Classifier;
+import view.classifier.ClassifierWithRules;
 
 
 /** This class defines the basic structure of our program
@@ -63,10 +65,13 @@ public class Modul {
                 .setVariable("y", 3.14);
         double result = ex.evaluate();
         System.out.println(result);
+
+
+
         try {
             Modul modul = new Modul(factoryView.getInstance(), factoryModelDeprecated.getInstance(),factoryControl.getInstance(), factoryCamera.getInstance());
 
-            modul.setWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE, true);
+            modul.setWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE, false);
             modul.setWorkmode(Workmode.JODISPECIALSAUCEANDNOTSIMPLECLASSIFICATOR, false);
             modul.setWorkmode(Workmode.SYSTEMOUT, true);
             modul.setWorkmode(Workmode.SYSTEMOUTARCHIVE, false);
@@ -90,12 +95,19 @@ public class Modul {
         int loop = -1;
         RoboPos lastPos = null;
         Classifier cl = new Classifier();
-        ClassifierWithRules clr = new ClassifierWithRules();
+
         cl.editFields();
         BufferedImage bi2 = view.getCurrentShot();
-        clr.editFields(bi2);
+        ClassifierWithRules clr = new ClassifierWithRules(true);
+        clr.updateImage(bi2);
+
 
         while (running){
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             loop++;
             long loopStart = System.currentTimeMillis();
             //something is happening
@@ -106,9 +118,9 @@ public class Modul {
             if (isWorkmode(Workmode.SIMPLECLASSIFICATORANDNOTJODISPECIALSAUCE)) {
                 //previous classifier approach below
                 BufferedImage bi = view.getCurrentShot();
-
+                //ObjectType[][] m2 = clr.classify();
                 ObjectType[][] m2 = view.classify(bi, isWorkmode(Workmode.SHOWKLASSIFIED), cl);
-                ObjectType[][] m3 = view.classify(bi, isWorkmode(Workmode.SHOWKLASSIFIED), clr);
+                // ObjectType[][] m3 = view.classify(bi, isWorkmode(Workmode.SHOWKLASSIFIED), clr);
 
                 robotPos = view.getRobotCenter(m2, 4).get(0);
                 System.out.println("Robot position is " + robotPos.getX() + ":" + robotPos.getY());
@@ -146,6 +158,7 @@ public class Modul {
             double timeHappend = (loopEnd - loopStart)/1000.;
             Archivar.shout("Loop: "+ loop + " took " + timeHappend + " seconds to complete");
         }
+
         System.out.println("Finished programm at " + System.currentTimeMillis());
     }
 
