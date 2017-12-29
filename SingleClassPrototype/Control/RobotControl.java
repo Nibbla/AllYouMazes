@@ -1,11 +1,9 @@
 package Control;
 
 import Interfaces.IControl;
-import Model.Node;
-import Model.RoboPos;
+import Simulation.Simulation;
 import SpecialSettingsEtc.Tangential;
 
-import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -13,38 +11,27 @@ import java.util.Map;
  */
 public class RobotControl implements IControl {
 
+    // Implementation of factory pattern
+    private static RobotControl factoryControl = new RobotControl();
     // Use this to dynamically change to another ROS-Version, i.e. Kinetic.
     private final String ROSversion = "kinetic";
-
     // Replace this with whatever username is valid for the current System.
     private final String username = "pi";
-
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
     private final int startUpSeconds = 20;
-
     // The basic structure of the startup command. The respective port and launchfile are specified here.
     private final String[] startCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/roslaunch -p 11311 -v --screen epuck_driver multi_epuck.launch"};
-
     // The basic structure of a movement command. For more information check the ROS documentation.
     private final String[] movementCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/rostopic pub -1 /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: 0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: 0.0}}\'"};
-
+    // Values used for moving either forward or angular
+    private final double FORWARDSPEED = 0.65; // with a max of 3.5
+    private final double ANGULARSPEED = 0.13; // with a max of 1.5
     // These are used to spawn the processes that Control the epuck.
     private ProcessBuilder processGenerator;
     private Process initRosProcess;
     private Process motorSpeedProcess;
     private boolean isRunning;
-	private boolean isSending;
-
-    // Implementation of factory pattern
-    private static RobotControl factoryControl = new RobotControl();
-
-    // Values used for moving slowly either forward or angular
-    private final double MINFORWARDSPEED = 0.65;
-    private final double MAXFORWARDSPEED = 3.5;
-    private final double MINANGULARSPEED = 0.13;
-    private final double MAXANGULARSPEED = 1.5;
-    private final double POSITIONERROR = 3;
-    private final double ROTATIONERROR = 3;
+    private boolean isSending;
 
 
     /**
@@ -58,6 +45,7 @@ public class RobotControl implements IControl {
 
     /**
      * Implementation of factory pattern
+     *
      * @return instance of RobotControl to be reused
      * @throws CloneNotSupportedException
      */
@@ -89,7 +77,7 @@ public class RobotControl implements IControl {
      */
     @Override
     public void closeConnection() {
-        if (isRunning){
+        if (isRunning) {
             this.initRosProcess.destroy();
             isRunning = false;
         }
@@ -103,130 +91,19 @@ public class RobotControl implements IControl {
      */
     @Override
     public void move(Tangential.Direction Direction) {
-        setMotorSpeed(Direction.linearSpeed * MINFORWARDSPEED, Direction.angularSpeed * MAXANGULARSPEED);
+        setMotorSpeed(Direction.linearSpeed * FORWARDSPEED, Direction.angularSpeed * ANGULARSPEED);
         issueMotorSpeed();
     }
 
     /**
-     * Used to test the connection and the commands.
-     * <p>
-     * This will make the robot:
-     * 1) move straight with speed 1 (see below) for 3 seconds.
-     * 2) stop for three seconds.
-     * 3) rotate counterclockwise with speed 1 (see below) for 3 seconds
-     * 4) stop.
+     * Method used to send a command to the robot. Currently only makes use of defined *SPEED in order to move with a stable speed
      *
-     * @throws *InterruptedException because there is a Thread.sleep() between the commands.
+     * @param linearSpeed  linear speed coefficient (between 0 and 1)
+     * @param angularSpeed angular speed coefficient (between 0 and 1)
      */
     @Override
-    public void testCommands(){
-        /*try {
-            this.moveStraight(1);
-            Thread.sleep(3000);
-            this.stop();
-            Thread.sleep(3000);
-            this.rotate(1);
-            Thread.sleep(3000);
-            this.stop();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }*/
-
-        System.out.println("test");
-    }
-
-    /**
-     * Takes as input raw data from the Modul and processes it into a command for the epuck
-     * @param width represents the width of the observable area in px, currently unnused
-     * @param height represents the height of the observable area in px, currently unused
-     * @param currentPosition current position of the robot in the above specified grid
-     * @param currentRotation current rotation in radians, with 0 facing 'north'
-     * @param pathway next coordinates along the way to the goal
-     */
-    @Override
-    public void sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, LinkedList<Node> pathway){
-        /**
-         * Initialization of some of the variables used in this method. They can probably be transferred as private fields for efficiency
-         */
-        double positionDistance = 0;
-        Node nextGoal = new Node(0,0);
-        boolean goalReached = false;
-
-        double rotationCoefficient = 0;
-        double linearCoefficient = 0;
-
-        /**
-         * get next node along the path. in case it's close enough (POSITIONERROR) take the next possible node.
-         */
-        do{
-            if(pathway.isEmpty()){
-                goalReached = true;
-            } else {
-                nextGoal = pathway.removeFirst();
-                positionDistance = Math.sqrt((Math.pow((currentPosition.getX() - nextGoal.getX()),2) + Math.pow((currentPosition.getY() - nextGoal.getY()),2)));
-            }
-        }while(positionDistance < POSITIONERROR && !goalReached);
-
-        /**
-         * In case there are still nodes in the path determine if a rotation is necessary to face towards it, otherwise move straight.
-         */
-        if(!goalReached){
-            double desiredRotation = currentPosition.getAngleTo(nextGoal);
-            double distance = (Math.toDegrees(desiredRotation) - Math.toDegrees(currentRotation)) % 360;
-
-            if (distance < -180) {
-                distance += 360;
-            } else if (distance > 179) {
-                distance -= 360;
-            }
-
-            if(Math.abs(distance) > ROTATIONERROR){
-                if (distance > 0){
-                    rotationCoefficient = -1;
-                    linearCoefficient = 1;
-                } else {
-                    rotationCoefficient = 1;
-                    linearCoefficient = 1;
-                }
-            } else {
-                linearCoefficient = 1;
-            }
-        }
-
-
-        /**
-         * set and issue the new speed depending on the above findings, i.e. issue rotation or issue forward-movement
-         */
-        double tmpLinearSpeed = 0;
-        double tmpAngularSpeed = 0;
-
-        if (linearCoefficient != 0){
-            tmpLinearSpeed = Math.max((linearCoefficient * MAXFORWARDSPEED),MINFORWARDSPEED);
-        }
-
-        if (rotationCoefficient != 0){
-            tmpAngularSpeed = Math.max((rotationCoefficient * MAXANGULARSPEED),MINANGULARSPEED);
-        }
-
-        setMotorSpeed(tmpLinearSpeed, tmpAngularSpeed);
-        issueMotorSpeed();
-    }
-
-    @Override
-    public void sendCommand(double linearSpeed, double angularSpeed){
-        double tmpLinearSpeed = 0;
-        double tmpAngularSpeed = 0;
-
-        if (linearSpeed != 0){
-            tmpLinearSpeed = Math.max((linearSpeed * MAXFORWARDSPEED),MINFORWARDSPEED);
-        }
-
-        if (angularSpeed != 0){
-            tmpAngularSpeed = Math.max((linearSpeed * MAXANGULARSPEED),MINANGULARSPEED);
-        }
-
-
-        setMotorSpeed(linearSpeed* MINFORWARDSPEED, angularSpeed * MINANGULARSPEED);
+    public void sendCommand(double linearSpeed, double angularSpeed) {
+        setMotorSpeed(linearSpeed * FORWARDSPEED, angularSpeed * ANGULARSPEED);
         issueMotorSpeed();
     }
 
@@ -280,16 +157,22 @@ public class RobotControl implements IControl {
     private void issueMotorSpeed() {
         try {
 
-            //System.out.println("Trying to send");
-			if (isSending){
-				motorSpeedProcess.destroyForcibly();
-				isSending = false;
-				initProcessBuilder();
-			}
+            if (Simulation.DEBUG_CONTROLLER) {
+                System.out.println("Trying to send");
+            }
+
+            if (isSending) {
+                motorSpeedProcess.destroyForcibly();
+                isSending = false;
+                initProcessBuilder();
+            }
             processGenerator.command(movementCommand);
             motorSpeedProcess = processGenerator.start();
-			isSending = true;
-            //System.out.println("Sending command: " + movementCommand);
+            isSending = true;
+
+            if (Simulation.DEBUG_CONTROLLER) {
+                System.out.println("Did send");
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

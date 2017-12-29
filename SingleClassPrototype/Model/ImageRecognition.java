@@ -1,53 +1,42 @@
 package Model;
 
+import Simulation.Simulation;
 import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class ImageRecognition{
+public class ImageRecognition {
+    ImgWindow camWindow = null;
+    ImgWindow bgsWindow = null;
     private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r;
-
     private VideoCapture capture;
-
     private int numberOfFrames;
-
     private List<MatOfPoint> contours;
-    private MatOfPoint currentContours, mazeContour, backgroundContour;
-
-
+    private MatOfPoint currentContours;
     private double area;
     private double[] h;
     private double ax, ay;
-
     private float prevRadius;
     private float[] radius;
-
     private Point prev;
     private Point center;
     private Point angle;
-
     private boolean found;
     private boolean croppingAreaKnown;
-
     private Rect croppedArea;
-    private Rect roi;
-
-    ImgWindow camWindow = null;
-    ImgWindow bgsWindow = null;
 
 
-    public ImageRecognition(){
+    public ImageRecognition() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
         initVars();
     }
 
-    private void initVars(){
+    private void initVars() {
         bg = new Mat();
         frame = new Mat();
         diff = new Mat();
@@ -63,8 +52,6 @@ public class ImageRecognition{
         numberOfFrames = 0;
 
         contours = new ArrayList<MatOfPoint>();
-        mazeContour = null;
-        backgroundContour = null;
 
         area = 0;
         h = new double[]{};
@@ -81,10 +68,9 @@ public class ImageRecognition{
         found = false;
         croppingAreaKnown = false;
 
-        roi = new Rect();
         croppedArea = new Rect();
 
-        if (ComputerVision.DEBUG) {
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
             camWindow = ImgWindow.newWindow();
             camWindow.setTitle("CAM");
             bgsWindow = ImgWindow.newWindow();
@@ -92,24 +78,23 @@ public class ImageRecognition{
         }
     }
 
-    private void readNextFrame(){
+    private void readNextFrame() {
         capture.read(frame);
 
-        if (croppingAreaKnown){
-           frame = frame.submat(croppedArea);
+        if (croppingAreaKnown) {
+            frame = frame.submat(croppedArea);
         } else {
             determineCroppedArea();
-          frame = frame.submat(croppedArea);
+            frame = frame.submat(croppedArea);
         }
 
-        if (ComputerVision.DEBUG) {
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
             camWindow.setImage(frame);
         }
 
-        //Imgcodecs.imwrite("ReallyNicePicture.jpg", frame);
     }
 
-    private void determineCroppedArea(){
+    private void determineCroppedArea() {
         try {
             croppedArea = backgroundRect(frame);
             croppingAreaKnown = true;
@@ -119,13 +104,12 @@ public class ImageRecognition{
         }
     }
 
-    private void determineRobotSearchArea(){
-        //readNextFrame();
+    private void determineRobotSearchArea() {
 
         if (center != null && radius != null) {
             prev = center.clone();
             prevRadius = radius[0];
-            Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*1.5));
+            Rect rect = rectSearch(frame, (int) center.x, (int) center.y, (int) (radius[0] * 1.5));
             r = frame.submat(rect);
             diff = bgs(r);
             r.release();
@@ -133,18 +117,17 @@ public class ImageRecognition{
             diff = bgs(frame);
         }
 
-        if (ComputerVision.DEBUG) {
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
             bgsWindow.setImage(diff);
         }
     }
 
-    private void determineAngleSearchArea(){
-        //readNextFrame();
+    private void determineAngleSearchArea() {
 
         if (center != null && radius != null) {
             prev = center.clone();
             prevRadius = radius[0];
-            Rect rect = rectSearch(frame, (int)center.x, (int)center.y, (int)(radius[0]*3));
+            Rect rect = rectSearch(frame, (int) center.x, (int) center.y, (int) (radius[0] * 3));
             r = frame.submat(rect);
             diff = bgsAngle(r);
             r.release();
@@ -152,13 +135,12 @@ public class ImageRecognition{
             diff = bgsAngle(frame);
         }
 
-        if (ComputerVision.DEBUG) {
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
             bgsWindow.setImage(diff);
         }
     }
 
-    public Rect backgroundRect(Mat fullimage){
-        backgroundContour = null;
+    public Rect backgroundRect(Mat fullimage) {
         Imgproc.cvtColor(fullimage, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(9, 9), 2, 2);
@@ -176,18 +158,11 @@ public class ImageRecognition{
         int biggestContourIndex = 0;
 
 
-        for(int index = 0; index < contours.size(); index++){
-            if (contours.get(index).size().area() >= contours.get(biggestContourIndex).size().area()){
+        for (int index = 0; index < contours.size(); index++) {
+            if (contours.get(index).size().area() >= contours.get(biggestContourIndex).size().area()) {
                 biggestContourIndex = index;
             }
         }
-	
-	/*
-        Mat t = new Mat();
-        fullimage.copyTo(t);
-        Imgproc.drawContours(t, contours, -1, new Scalar(0, 255, 0), 2);
-        ImgWindow.newWindow(t);
-	*/
 
         hsv.release();
         mask.release();
@@ -249,12 +224,11 @@ public class ImageRecognition{
         kernel = Mat.ones(3, 3, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
 
-        //bgsWindow.setImage(mask);
-
         cc.release();
         tmp_mask1.release();
         tmp_mask2.release();
         kernel.release();
+
         return mask;
     }
 
@@ -287,7 +261,6 @@ public class ImageRecognition{
         //Need to make sure that robot is removed.
         contours.clear();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-        //Imgproc.drawContours(img, contours, -1, new Scalar(255, 0, 0), 3);
 
         while (contours.size() != 1) {
             for (int i = 0; i < contours.size(); i++) {
@@ -306,22 +279,11 @@ public class ImageRecognition{
         contours.clear();
         hierarchy.release();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-//        hierarchy.release();
-//        contours.clear();
-//        Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
-
-//        if (contours.size() == 1) {
-//            mazeContour = contours.get(0);
-//        } else {
-//            if (contours.isEmpty()) System.out.println("No contours");
-//            else System.out.println("Found multiple contours");
-//        }
-
-        if (ComputerVision.CONTOUR_TEST) {
+        if (Simulation.DEBUG_CV_CONTOURS) {
             Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255), 2);
             ImgWindow w = ImgWindow.newWindow();
-            w.setTitle("contour v2");
+            w.setTitle("contours");
             w.setImage(img);
         }
 
@@ -335,7 +297,7 @@ public class ImageRecognition{
         return contours.get(0);
     }
 
-    public void initCamera(int width, int height, int startupTimeMS, int skip){
+    public void initCamera(int width, int height, int startupTimeMS, int skip) {
         try {
             capture = new VideoCapture(0);
             capture.set(Videoio.CAP_PROP_FRAME_WIDTH, width);
@@ -354,11 +316,11 @@ public class ImageRecognition{
             //capture.set(12, 0.7);
             //convert to RGB
             //capture.set(16, 1);
-			int i = 0;
-			while(i < skip){
-				capture.read(frame);
-				i++;
-			}
+            int i = 0;
+            while (i < skip) {
+                capture.read(frame);
+                i++;
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -373,15 +335,14 @@ public class ImageRecognition{
         }
     }
 
-    public void determineMazeContours(){
-        //readNextFrame();
+    public void determineMazeContours() {
         frame.copyTo(bg);
         currentContours = contours(bg);
         bg.release();
     }
 
-    public void findAnglePosition(){
-        if (found){
+    public void findAnglePosition() {
+        if (found) {
             determineAngleSearchArea();
             boolean foundPoint = false;
 
@@ -395,16 +356,16 @@ public class ImageRecognition{
 
             if (!contours.isEmpty() && !hierarchy.empty()) {
                 for (int j = 0; j < contours.size(); j++) {
-                    if (contours.get(j).size().area() >= contours.get(biggestContour).size().area()){
+                    if (contours.get(j).size().area() >= contours.get(biggestContour).size().area()) {
                         foundPoint = true;
                         biggestContour = j;
                     }
                 }
 
-                for (Point contourPoint: contours.get(biggestContour).toArray()) {
-                    double distance = Math.sqrt(Math.pow(((center.x - ax) - contourPoint.x),2) + Math.pow(((center.y - ay) - contourPoint.y),2));
+                for (Point contourPoint : contours.get(biggestContour).toArray()) {
+                    double distance = Math.sqrt(Math.pow(((center.x - ax) - contourPoint.x), 2) + Math.pow(((center.y - ay) - contourPoint.y), 2));
 
-                    if(distance >= furthestDistance){
+                    if (distance >= furthestDistance) {
                         furthestDistance = distance;
                         furthestPoint = contourPoint;
                     }
@@ -421,13 +382,12 @@ public class ImageRecognition{
             }
 
             hierarchy.release();
-            //frame.release();
             diff.release();
         }
 
     }
 
-    public void findRobotPosition(){
+    public void findRobotPosition() {
         determineRobotSearchArea();
 
         found = false;
@@ -450,7 +410,7 @@ public class ImageRecognition{
                         r.center.x += ax;
                         r.center.y += ay;
 
-                        if (ComputerVision.DEBUG) {
+                        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
                             Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
                         }
 
@@ -460,7 +420,7 @@ public class ImageRecognition{
                 } else if (h[2] != -1) {
                     area = Imgproc.contourArea(contours.get(j));
                     if (area > 200) {
-                        double kidArea = Imgproc.contourArea(contours.get((int)h[2]));
+                        double kidArea = Imgproc.contourArea(contours.get((int) h[2]));
                         if (kidArea > 20) {
 
                             boolean invalid = false;
@@ -468,7 +428,7 @@ public class ImageRecognition{
                             int maxDiffRad = 15;
                             if (prev != null) {
                                 if (Math.abs(prev.x - center.x) > maxDiffPos || Math.abs(prev.y - center.y) > maxDiffPos || Math.abs(prevRadius - radius[0]) > maxDiffRad) {
-                                    if (ComputerVision.DEBUG) {
+                                    if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
                                         //System.out.println("Point INVALIDATED!");
                                         invalid = true;
                                     }
@@ -485,7 +445,7 @@ public class ImageRecognition{
                                 r.center.y += ay;
 
                                 center = new Point(r.center.x, r.center.y);
-                                if (ComputerVision.DEBUG) {
+                                if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
                                     Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
                                 }
 
@@ -498,7 +458,6 @@ public class ImageRecognition{
 
 
             hierarchy.release();
-            //frame.release();
             diff.release();
 
         }
@@ -514,7 +473,7 @@ public class ImageRecognition{
 
     }
 
-    public void stopImagerecognition(){
+    public void stopImagerecognition() {
         capture.release();
     }
 
@@ -541,8 +500,8 @@ public class ImageRecognition{
         return frame;
     }
 
-    public void releaseFrame(){
-	frame.release();
+    public void releaseFrame() {
+        frame.release();
     }
 
     public Point getAngle() {

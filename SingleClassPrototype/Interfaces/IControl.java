@@ -11,13 +11,10 @@ import java.util.LinkedList;
  */
 public interface IControl extends Cloneable {
     void move(Tangential.Direction Direction);
-    void sendCommand(double width, double height, RoboPos currentPosition, double currentRotation, LinkedList<Node> pathway);
 
     void startConnection();
     void resetConnection();
     void closeConnection();
-
-    void testCommands();
 
     void sendCommand(double linearSpeed, double angularSpeed);
 }
