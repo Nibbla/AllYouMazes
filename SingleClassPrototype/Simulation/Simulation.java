@@ -96,7 +96,7 @@ public class Simulation {
         shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
 
         // draw the path to the goal on the initial frame
-        currentFrame = currentFrame.submat(cv.backgroundRect(currentFrame));
+        currentFrame = currentFrame.submat(Imgproc.boundingRect(cv.backgroundRect(currentFrame)));
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
