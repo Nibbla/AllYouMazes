@@ -14,14 +14,16 @@ import java.util.List;
 public class ImageRecognition {
     ImgWindow camWindow = null;
     ImgWindow bgsWindow = null;
-    private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r;
+    private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r, perspectiveTransform;
     private VideoCapture capture;
     private int numberOfFrames;
     private List<MatOfPoint> contours;
     private MatOfPoint currentContours;
+    private MatOfPoint backgroundContour;
     private double area;
     private double[] h;
     private double ax, ay;
+    private double perspectiveWidth, perspectiveHeight;
     private float prevRadius;
     private float[] radius;
     private Point prev;
@@ -86,49 +88,76 @@ public class ImageRecognition {
 		
         if (croppingAreaKnown) {
             frame = frame.submat(croppedArea);
+            applyPerspective();
         } else {
             determineCroppedArea();
             frame = frame.submat(croppedArea);
+            determinePerspective();
+            applyPerspective();
         }
 			
-		perspective();
-		System.out.println("test");
         if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
             camWindow.setImage(frame);
         }
 
     }
 
-	private void perspective(){
-		cornerTL = new Point(cornerTL.x - croppedArea.tl().x, cornerTL.y - croppedArea.tl().y);
-		cornerTR = new Point(cornerTR.x - croppedArea.tl().x, cornerTR.y - croppedArea.tl().y);
-		cornerBL = new Point(cornerBL.x - croppedArea.tl().x, cornerBL.y - croppedArea.tl().y);
-		cornerBR = new Point(cornerBR.x - croppedArea.tl().x, cornerBR.y - croppedArea.tl().y);
+    private void determinePerspective(){
+        Point[] matrix = backgroundContour.toArray();
 
+        Point topLeft = matrix[0];
+        Point topRight = matrix[0];
+        Point bottomLeft = matrix[0];
+        Point bottomRight = matrix[0];
 
-		MatOfPoint2f corners = new MatOfPoint2f(cornerTL, cornerTR, cornerBL, cornerBR);
+        Point topLeftOrig = new Point(0,0);
+        Point topRightOrig = new Point(400,0);
+        Point bottomLeftOrig = new Point(0,600);
+        Point bottomRightOrig = new Point(400,600);
 
-		double maxwidth = cornerBR.x - cornerBL.x;
-		double maxheight = cornerBR.y - cornerTL.y;
+        for (Point p:matrix) {
+            if (Math.sqrt(Math.pow((topLeftOrig.x - p.x),2) + Math.pow((topLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((topLeftOrig.x - topLeft.x),2) + Math.pow((topLeftOrig.y - topLeft.y),2))){
+                topLeft = p;
+            }
+            if (Math.sqrt(Math.pow((topRightOrig.x - p.x),2) + Math.pow((topRightOrig.y - p.y),2)) < Math.sqrt(Math.pow((topRightOrig.x - topRight.x),2) + Math.pow((topRightOrig.y - topRight.y),2))){
+                topRight = p;
+            }
+            if (Math.sqrt(Math.pow((bottomLeftOrig.x - p.x),2) + Math.pow((bottomLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((bottomLeftOrig.x - bottomLeft.x),2) + Math.pow((bottomLeftOrig.y - bottomLeft.y),2))){
+                bottomLeft = p;
+            }
+            if (Math.sqrt(Math.pow((bottomRightOrig.x - p.x),2) + Math.pow((bottomRightOrig.y - p.y),2)) < Math.sqrt(Math.pow((bottomRightOrig.x - bottomRight.x),2) + Math.pow((bottomRightOrig.y - bottomRight.y),2))){
+                bottomRight = p;
+            }
+        }
 
-		MatOfPoint2f target = new MatOfPoint2f(new Point(0,0),new Point(maxwidth-1,0),new Point(0,maxheight-1),new Point(maxwidth-1,maxheight-1));
-		
+        cornerTL = topLeft;
+        cornerTR = topRight;
+        cornerBL = bottomLeft;
+        cornerBR = bottomRight;
 
-		Mat trans = Imgproc.getPerspectiveTransform(Converters.vector_Point2f_to_Mat(corners.toList()), Converters.vector_Point2f_to_Mat(target.toList()));
-		
+        cornerTL = new Point(cornerTL.x - croppedArea.tl().x, cornerTL.y - croppedArea.tl().y);
+        cornerTR = new Point(cornerTR.x - croppedArea.tl().x, cornerTR.y - croppedArea.tl().y);
+        cornerBL = new Point(cornerBL.x - croppedArea.tl().x, cornerBL.y - croppedArea.tl().y);
+        cornerBR = new Point(cornerBR.x - croppedArea.tl().x, cornerBR.y - croppedArea.tl().y);
 
-		Mat tmpFrame = frame.clone();
-		//frame.release();
-		
-		Imgproc.warpPerspective(frame, frame, trans, new Size(maxwidth, maxheight));
+        MatOfPoint2f corners = new MatOfPoint2f(cornerTL, cornerTR, cornerBL, cornerBR);
 
-		//trans.release();
-		//tmpFrame.release();
-	}
+        perspectiveWidth = cornerBR.x - cornerBL.x;
+        perspectiveHeight = cornerBR.y - cornerTL.y;
+
+        MatOfPoint2f target = new MatOfPoint2f(new Point(0,0),new Point(perspectiveWidth-1,0),new Point(0,perspectiveHeight-1),new Point(perspectiveWidth-1,perspectiveHeight-1));
+
+        perspectiveTransform = Imgproc.getPerspectiveTransform(Converters.vector_Point2f_to_Mat(corners.toList()), Converters.vector_Point2f_to_Mat(target.toList()));
+    }
+
+    private void applyPerspective(){
+        Imgproc.warpPerspective(frame, frame, perspectiveTransform, new Size(perspectiveWidth, perspectiveHeight));
+    }
 
     private void determineCroppedArea() {
         try {
-            croppedArea = backgroundRect(frame);
+            backgroundContour = backgroundRect(frame);
+            croppedArea = Imgproc.boundingRect(backgroundContour);
             croppingAreaKnown = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -172,7 +201,7 @@ public class ImageRecognition {
         }
     }
 
-    public Rect backgroundRect(Mat fullimage) {
+    public MatOfPoint backgroundRect(Mat fullimage) {
         Imgproc.cvtColor(fullimage, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(9, 9), 2, 2);
@@ -205,43 +234,7 @@ public class ImageRecognition {
         hierarchy.release();
         kernel.release();
 
-		Point[] matrix = contours.get(biggestContourIndex).toArray();
-
-        Point topLeft = matrix[0];
-        Point topRight = matrix[0];
-        Point bottomLeft = matrix[0];
-        Point bottomRight = matrix[0];
-
-        Point topLeftOrig = new Point(0,0);
-        Point topRightOrig = new Point(400,0);
-        Point bottomLeftOrig = new Point(0,600);
-        Point bottomRightOrig = new Point(400,600);
-
-        for (Point p:matrix) {
-            if (Math.sqrt(Math.pow((topLeftOrig.x - p.x),2) + Math.pow((topLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((topLeftOrig.x - topLeft.x),2) + Math.pow((topLeftOrig.y - topLeft.y),2))){
-                topLeft = p;
-            }
-            if (Math.sqrt(Math.pow((topRightOrig.x - p.x),2) + Math.pow((topRightOrig.y - p.y),2)) < Math.sqrt(Math.pow((topRightOrig.x - topRight.x),2) + Math.pow((topRightOrig.y - topRight.y),2))){
-                topRight = p;
-            }
-            if (Math.sqrt(Math.pow((bottomLeftOrig.x - p.x),2) + Math.pow((bottomLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((bottomLeftOrig.x - bottomLeft.x),2) + Math.pow((bottomLeftOrig.y - bottomLeft.y),2))){
-                bottomLeft = p;
-            }
-            if (Math.sqrt(Math.pow((bottomRightOrig.x - p.x),2) + Math.pow((bottomRightOrig.y - p.y),2)) < Math.sqrt(Math.pow((bottomRightOrig.x - bottomRight.x),2) + Math.pow((bottomRightOrig.y - bottomRight.y),2))){
-                bottomRight = p;
-            }
-        }
-
-        System.out.println(topLeft + " " + topRight + " " +bottomLeft + " " + bottomRight);
-
-		cornerTL = topLeft;
-		cornerTR = topRight;
-		cornerBL = bottomLeft;
-		cornerBR = bottomRight;
-
-		
-
-        return Imgproc.boundingRect(contours.get(biggestContourIndex));
+        return contours.get(biggestContourIndex);
     }
 
     private Rect rectSearch(Mat img, int x, int y, int searchSpace) {
