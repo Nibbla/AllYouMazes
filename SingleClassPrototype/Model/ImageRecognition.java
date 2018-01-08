@@ -14,7 +14,7 @@ import java.util.List;
 public class ImageRecognition {
     ImgWindow camWindow = null;
     ImgWindow bgsWindow = null;
-    private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r, perspectiveTransform;
+    private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r, perspectiveTransform, transformation_x, transformation_y;
     private VideoCapture capture;
     private int numberOfFrames;
     private List<MatOfPoint> contours;
@@ -92,8 +92,18 @@ public class ImageRecognition {
         } else {
             determineCroppedArea();
             frame = frame.submat(croppedArea);
+            long start = System.currentTimeMillis(); 	
+
             determinePerspective();
+
+			long end = System.currentTimeMillis();
+            System.out.println("Transform1: " + (end - start) + " ms");
+			start = System.currentTimeMillis(); 	
+            
             applyPerspective();
+
+			end = System.currentTimeMillis();
+            System.out.println("Transform: " + (end - start) + " ms");
         }
 			
         if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
@@ -148,10 +158,60 @@ public class ImageRecognition {
         MatOfPoint2f target = new MatOfPoint2f(new Point(0,0),new Point(perspectiveWidth-1,0),new Point(0,perspectiveHeight-1),new Point(perspectiveWidth-1,perspectiveHeight-1));
 
         perspectiveTransform = Imgproc.getPerspectiveTransform(Converters.vector_Point2f_to_Mat(corners.toList()), Converters.vector_Point2f_to_Mat(target.toList()));
+
+
+        // Since the camera won't be moving, let's pregenerate the remap LUT
+        Mat inverseTransMatrix = perspectiveTransform.inv();
+
+        // Generate the warp matrix
+        Mat map_x = new Mat();
+        Mat map_y = new Mat();
+        Mat srcTM;
+        srcTM = inverseTransMatrix.clone(); // If WARP_INVERSE, set srcTM to transformationMatrix
+
+        map_x.create(frame.size(), CvType.CV_32FC1);
+        map_y.create(frame.size(), CvType.CV_32FC1);
+
+	
+        double M11, M12, M13, M21, M22, M23, M31, M32, M33;
+        M11 = srcTM.get(0,0)[0];
+        M12 = srcTM.get(0,1)[0];
+        M13 = srcTM.get(0,2)[0];
+        M21 = srcTM.get(1,0)[0];
+        M22 = srcTM.get(1,1)[0];
+        M23 = srcTM.get(1,2)[0];
+        M31 = srcTM.get(2,0)[0];
+        M32 = srcTM.get(2,1)[0];
+        M33 = srcTM.get(2,2)[0];
+
+        for (int y = 0; y < frame.rows(); y++) {
+            double fy = (double)y;
+            for (int x = 0; x < frame.cols(); x++) {
+                double fx = (double)x;
+                double w = ((M31 * fx) + (M32 * fy) + M33);
+                w = w != 0.0f ? 1.f / w : 0.0f;
+                float new_x = (float) (((M11 * fx) + (M12 * fy) + M13) * w);
+                float new_y = (float) (((M21 * fx) + (M22 * fy) + M23) * w);
+                map_x.put(y,x,new_x);
+                map_y.put(y,x,new_y);
+            }
+        }
+
+// This creates a fixed-point representation of the mapping resulting in ~4% CPU savings
+		transformation_x = new Mat();
+		transformation_y = new Mat();
+        transformation_x.create(frame.size(), CvType.CV_16SC2);
+        transformation_y.create(frame.size(), CvType.CV_16UC1);
+        Imgproc.convertMaps(map_x, map_y, transformation_x, transformation_y, CvType.CV_16SC2, false);
+
+// If the fixed-point representation causes issues, replace it with this code
+//transformation_x = map_x.clone();
+//transformation_y = map_y.clone();
     }
 
     private void applyPerspective(){
-        Imgproc.warpPerspective(frame, frame, perspectiveTransform, new Size(perspectiveWidth, perspectiveHeight));
+        //Imgproc.warpPerspective(frame, frame, perspectiveTransform, new Size(perspectiveWidth, perspectiveHeight));
+        Imgproc.remap(frame, frame, transformation_x, transformation_y, Imgproc.INTER_LINEAR);
     }
 
     private void determineCroppedArea() {
