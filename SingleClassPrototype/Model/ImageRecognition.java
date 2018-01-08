@@ -6,6 +6,7 @@ import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
+import org.opencv.utils.Converters;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,19 +14,22 @@ import java.util.List;
 public class ImageRecognition {
     ImgWindow camWindow = null;
     ImgWindow bgsWindow = null;
-    private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r;
+    private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r, perspectiveTransform;
     private VideoCapture capture;
     private int numberOfFrames;
     private List<MatOfPoint> contours;
     private MatOfPoint currentContours;
+    private MatOfPoint backgroundContour;
     private double area;
     private double[] h;
     private double ax, ay;
+    private double perspectiveWidth, perspectiveHeight;
     private float prevRadius;
     private float[] radius;
     private Point prev;
     private Point center;
     private Point angle;
+	private Point cornerTL, cornerTR, cornerBL, cornerBR;
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
@@ -81,22 +85,79 @@ public class ImageRecognition {
     private void readNextFrame() {
         capture.read(frame);
 
+		
         if (croppingAreaKnown) {
             frame = frame.submat(croppedArea);
+            applyPerspective();
         } else {
             determineCroppedArea();
             frame = frame.submat(croppedArea);
+            determinePerspective();
+            applyPerspective();
         }
-
+			
         if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
             camWindow.setImage(frame);
         }
 
     }
 
+    private void determinePerspective(){
+        Point[] matrix = backgroundContour.toArray();
+
+        Point topLeft = matrix[0];
+        Point topRight = matrix[0];
+        Point bottomLeft = matrix[0];
+        Point bottomRight = matrix[0];
+
+        Point topLeftOrig = new Point(0,0);
+        Point topRightOrig = new Point(400,0);
+        Point bottomLeftOrig = new Point(0,600);
+        Point bottomRightOrig = new Point(400,600);
+
+        for (Point p:matrix) {
+            if (Math.sqrt(Math.pow((topLeftOrig.x - p.x),2) + Math.pow((topLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((topLeftOrig.x - topLeft.x),2) + Math.pow((topLeftOrig.y - topLeft.y),2))){
+                topLeft = p;
+            }
+            if (Math.sqrt(Math.pow((topRightOrig.x - p.x),2) + Math.pow((topRightOrig.y - p.y),2)) < Math.sqrt(Math.pow((topRightOrig.x - topRight.x),2) + Math.pow((topRightOrig.y - topRight.y),2))){
+                topRight = p;
+            }
+            if (Math.sqrt(Math.pow((bottomLeftOrig.x - p.x),2) + Math.pow((bottomLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((bottomLeftOrig.x - bottomLeft.x),2) + Math.pow((bottomLeftOrig.y - bottomLeft.y),2))){
+                bottomLeft = p;
+            }
+            if (Math.sqrt(Math.pow((bottomRightOrig.x - p.x),2) + Math.pow((bottomRightOrig.y - p.y),2)) < Math.sqrt(Math.pow((bottomRightOrig.x - bottomRight.x),2) + Math.pow((bottomRightOrig.y - bottomRight.y),2))){
+                bottomRight = p;
+            }
+        }
+
+        cornerTL = topLeft;
+        cornerTR = topRight;
+        cornerBL = bottomLeft;
+        cornerBR = bottomRight;
+
+        cornerTL = new Point(cornerTL.x - croppedArea.tl().x, cornerTL.y - croppedArea.tl().y);
+        cornerTR = new Point(cornerTR.x - croppedArea.tl().x, cornerTR.y - croppedArea.tl().y);
+        cornerBL = new Point(cornerBL.x - croppedArea.tl().x, cornerBL.y - croppedArea.tl().y);
+        cornerBR = new Point(cornerBR.x - croppedArea.tl().x, cornerBR.y - croppedArea.tl().y);
+
+        MatOfPoint2f corners = new MatOfPoint2f(cornerTL, cornerTR, cornerBL, cornerBR);
+
+        perspectiveWidth = cornerBR.x - cornerBL.x;
+        perspectiveHeight = cornerBR.y - cornerTL.y;
+
+        MatOfPoint2f target = new MatOfPoint2f(new Point(0,0),new Point(perspectiveWidth-1,0),new Point(0,perspectiveHeight-1),new Point(perspectiveWidth-1,perspectiveHeight-1));
+
+        perspectiveTransform = Imgproc.getPerspectiveTransform(Converters.vector_Point2f_to_Mat(corners.toList()), Converters.vector_Point2f_to_Mat(target.toList()));
+    }
+
+    private void applyPerspective(){
+        Imgproc.warpPerspective(frame, frame, perspectiveTransform, new Size(perspectiveWidth, perspectiveHeight));
+    }
+
     private void determineCroppedArea() {
         try {
-            croppedArea = backgroundRect(frame);
+            backgroundContour = backgroundRect(frame);
+            croppedArea = Imgproc.boundingRect(backgroundContour);
             croppingAreaKnown = true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -140,13 +201,17 @@ public class ImageRecognition {
         }
     }
 
-    public Rect backgroundRect(Mat fullimage) {
+    public MatOfPoint backgroundRect(Mat fullimage) {
         Imgproc.cvtColor(fullimage, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(9, 9), 2, 2);
 
-        Core.inRange(hsv, new Scalar(70, 10, 20), new Scalar(200, 150, 55), tmp_mask1);
-        Core.inRange(hsv, new Scalar(0, 10, 20), new Scalar(40, 150, 55), tmp_mask2);
+        //Core.inRange(hsv, new Scalar(70, 10, 20), new Scalar(200, 150, 55), tmp_mask1);
+        //Core.inRange(hsv, new Scalar(0, 10, 20), new Scalar(40, 150, 55), tmp_mask2);
+
+        Core.inRange(hsv, new Scalar(0, 10, 0), new Scalar(125, 255, 20), tmp_mask1);
+        Core.inRange(hsv, new Scalar(0, 10, 0), new Scalar(125, 255, 20), tmp_mask2);
+
         Core.add(tmp_mask1, tmp_mask2, mask);
 
         kernel = Mat.ones(7, 7, CvType.CV_8UC1);
@@ -169,7 +234,7 @@ public class ImageRecognition {
         hierarchy.release();
         kernel.release();
 
-        return Imgproc.boundingRect(contours.get(biggestContourIndex));
+        return contours.get(biggestContourIndex);
     }
 
     private Rect rectSearch(Mat img, int x, int y, int searchSpace) {
@@ -218,8 +283,13 @@ public class ImageRecognition {
         mask.release();
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(cc, new Scalar(0, 90, 130), new Scalar(10, 200, 255), tmp_mask1);
-        Core.inRange(cc, new Scalar(170, 90, 130), new Scalar(180, 200, 255), tmp_mask2);
+
+        Core.inRange(cc, new Scalar(0, 90, 100), new Scalar(10, 200, 210), tmp_mask1);
+        Core.inRange(cc, new Scalar(170, 90, 100), new Scalar(180, 200, 210), tmp_mask2);
+
+		//Core.inRange(cc, new Scalar(0, 90, 130), new Scalar(10, 200, 255), tmp_mask1);
+        //Core.inRange(cc, new Scalar(170, 90, 130), new Scalar(180, 200, 255), tmp_mask2);
+
         Core.add(tmp_mask1, tmp_mask2, mask);
         kernel = Mat.ones(3, 3, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
@@ -238,7 +308,10 @@ public class ImageRecognition {
         mask.release();
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
-        Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
+
+        //Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
+		Core.inRange(cc, new Scalar(100, 25, 50), new Scalar(170, 105, 105), mask);
+
         kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 

@@ -19,8 +19,8 @@ public class Simulation {
     public final static boolean DEBUG_DURATION = false;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = false;
-    public final static boolean DEBUG_CV_CONTOURS = false;
-    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
+    public final static boolean DEBUG_CV_CONTOURS = true;
+    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
 
     public final static int TIME_STEP = 70;
 
@@ -54,6 +54,9 @@ public class Simulation {
         // storing the current frame for later use
         Mat currentFrame = cv.getFrame();
 
+        // store current frame (e.g. for inspection)
+        Imgcodecs.imwrite("currentInitialImage.jpg", currentFrame);
+
         // determine the current position of the robot
         cv.findRobotPosition();
         Point currentPosition = cv.getCenter();
@@ -78,9 +81,6 @@ public class Simulation {
         Point anglePosition = cv.getAngle();
         RoboPos ap = new RoboPos(anglePosition.x, anglePosition.y, 0);
         rp.setDirection(ap.getAngleTo(new Node((int) (rp.getX()), (int) (rp.getY()))));
-
-        // store current frame (e.g. for inspection)
-        Imgcodecs.imwrite("currentInitialImage.jpg", currentFrame);
 
         // scan contours of the maze
         contour = cv.getCurrentContours();
