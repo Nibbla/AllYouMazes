@@ -347,6 +347,7 @@ public class ImageRecognition {
         Core.inRange(cc, new Scalar(0, 90, 100), new Scalar(10, 200, 210), tmp_mask1);
         Core.inRange(cc, new Scalar(170, 90, 100), new Scalar(180, 200, 210), tmp_mask2);
 
+		// values for jordys place
 		//Core.inRange(cc, new Scalar(0, 90, 130), new Scalar(10, 200, 255), tmp_mask1);
         //Core.inRange(cc, new Scalar(170, 90, 130), new Scalar(180, 200, 255), tmp_mask2);
 
@@ -369,8 +370,10 @@ public class ImageRecognition {
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
 
+		// values for jordys place
         //Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
-		Core.inRange(cc, new Scalar(100, 25, 50), new Scalar(170, 105, 105), mask);
+		
+		Core.inRange(cc, new Scalar(110, 50, 50), new Scalar(140, 115, 115), mask);
 
         kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
@@ -385,7 +388,13 @@ public class ImageRecognition {
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(15, 15), 2, 2);
-        Core.inRange(hsv, new Scalar(10, 20, 160), new Scalar(30, 165, 255), mask);
+
+        Core.inRange(hsv, new Scalar(7, 25, 100), new Scalar(25, 130, 180), mask);
+
+		// values for jordys place
+        //Core.inRange(hsv, new Scalar(10, 20, 160), new Scalar(30, 165, 255), mask);
+
+		// old second range
         //Core.inRange(hsv, new Scalar(165, 30, 50), new Scalar(180, 190, 230), tmp_mask2);
         //Core.add(tmp_mask1, tmp_mask2, mask);
         kernel = Mat.ones(14, 14, CvType.CV_8UC1);

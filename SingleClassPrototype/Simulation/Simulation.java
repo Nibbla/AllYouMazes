@@ -16,7 +16,7 @@ import java.util.LinkedList;
 
 public class Simulation {
 
-    public final static boolean DEBUG_DURATION = false;
+    public final static boolean DEBUG_DURATION = true;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = false;
     public final static boolean DEBUG_CV_CONTOURS = true;
@@ -124,7 +124,7 @@ public class Simulation {
             System.out.println("null pointer constructing simulation");
 
         // start connection to the epuck (init ROS)
-        connect();
+        // connect();
 
         // start controlling thread
         startSimulation();
@@ -275,7 +275,7 @@ public class Simulation {
                     }
 
                     // sending command and storing it for comparison in next frame
-                    control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
+                    //control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
                     lastSendLinearSpeed = agent.getLinearCoefficient();
                     lastSentAngularSpeed = agent.getRotationCoefficient();
                 }
