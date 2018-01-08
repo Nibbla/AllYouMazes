@@ -35,7 +35,8 @@ public class ImgWindow extends JPanel {
     Graphics2D graphics;
     volatile BufferedImage img = null;
     volatile boolean clicked;
-    volatile public int mouseX, mouseY;
+    volatile public int mouseX =-1;
+    volatile public int mouseY = -1;
     volatile public boolean closed;
     volatile EventQueue eventQueue = new EventQueue();
 

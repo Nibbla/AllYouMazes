@@ -35,12 +35,12 @@ public class ImageRecognition {
     private Rect croppedArea;
 
 
-    public ImageRecognition() {
+    public ImageRecognition(boolean debug) {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        initVars();
+        initVars(debug);
     }
 
-    private void initVars() {
+    private void initVars(boolean debug) {
         bg = new Mat();
         frame = new Mat();
         diff = new Mat();
@@ -74,7 +74,7 @@ public class ImageRecognition {
 
         croppedArea = new Rect();
 
-        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
             camWindow = ImgWindow.newWindow();
             camWindow.setTitle("CAM");
             bgsWindow = ImgWindow.newWindow();
@@ -210,8 +210,8 @@ public class ImageRecognition {
     }
 
     private void applyPerspective(){
-        //Imgproc.warpPerspective(frame, frame, perspectiveTransform, new Size(perspectiveWidth, perspectiveHeight));
-        Imgproc.remap(frame, frame, transformation_x, transformation_y, Imgproc.INTER_LINEAR);
+        Imgproc.warpPerspective(frame, frame, perspectiveTransform, new Size(perspectiveWidth, perspectiveHeight));
+        //Imgproc.remap(frame, frame, transformation_x, transformation_y, Imgproc.INTER_LINEAR);
     }
 
     private void determineCroppedArea() {
@@ -225,7 +225,7 @@ public class ImageRecognition {
         }
     }
 
-    private void determineRobotSearchArea() {
+    private void determineRobotSearchArea(boolean debug) {
 
         if (center != null && radius != null) {
             prev = center.clone();
@@ -238,12 +238,12 @@ public class ImageRecognition {
             diff = bgs(frame);
         }
 
-        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
             bgsWindow.setImage(diff);
         }
     }
 
-    private void determineAngleSearchArea() {
+    private void determineAngleSearchArea(boolean debug) {
 
         if (center != null && radius != null) {
             prev = center.clone();
@@ -256,7 +256,7 @@ public class ImageRecognition {
             diff = bgsAngle(frame);
         }
 
-        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
             bgsWindow.setImage(diff);
         }
     }
@@ -483,9 +483,9 @@ public class ImageRecognition {
         bg.release();
     }
 
-    public void findAnglePosition() {
+    public void findAnglePosition(boolean debug) {
         if (found) {
-            determineAngleSearchArea();
+            determineAngleSearchArea(debug);
             boolean foundPoint = false;
 
             contours.clear();
@@ -529,8 +529,8 @@ public class ImageRecognition {
 
     }
 
-    public void findRobotPosition() {
-        determineRobotSearchArea();
+    public void findRobotPosition(boolean debug) {
+        determineRobotSearchArea(debug);
 
         found = false;
         area = 0;

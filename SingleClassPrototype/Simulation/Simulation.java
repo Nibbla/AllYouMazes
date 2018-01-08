@@ -18,9 +18,9 @@ public class Simulation {
 
     public final static boolean DEBUG_DURATION = true;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
-    public final static boolean DEBUG_CONTROLLER = false;
-    public final static boolean DEBUG_CV_CONTOURS = true;
-    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
+    public final static boolean DEBUG_CONTROLLER = true;
+    public final static boolean DEBUG_CV_CONTOURS = false;
+    public static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
 
     public final static int TIME_STEP = 70;
 
@@ -34,13 +34,15 @@ public class Simulation {
 
     private boolean detected;
 
-    private ImageRecognition cv = new ImageRecognition();
+    private ImageRecognition cv = new ImageRecognition(true);
 
     private double lastSendLinearSpeed = 0;
-    private double lastSentAngularSpeed = 0;
+    private double lastSentAngularSpeed = 0;    
+
+    private ImgWindow pickWindow = ImgWindow.newWindow();
 
 
-    private ImgWindow pathWindow = ImgWindow.newWindow();
+    private ImgWindow pathWindow;
     private ImgWindow debugWindow;
 
     /**
@@ -53,12 +55,13 @@ public class Simulation {
 
         // storing the current frame for later use
         Mat currentFrame = cv.getFrame();
+        currentFrame = currentFrame.submat(Imgproc.boundingRect(cv.backgroundRect(currentFrame)));
 
         // store current frame (e.g. for inspection)
         Imgcodecs.imwrite("currentInitialImage.jpg", currentFrame);
 
         // determine the current position of the robot
-        cv.findRobotPosition();
+        cv.findRobotPosition(false);
         Point currentPosition = cv.getCenter();
 
         if (currentPosition == null) {
@@ -77,7 +80,7 @@ public class Simulation {
         RoboPos rp = new RoboPos(robotX, robotY, robotR);
 
         // determine the current position of the angle and calculate rotation
-        cv.findAnglePosition();
+        cv.findAnglePosition(false);
         Point anglePosition = cv.getAngle();
         RoboPos ap = new RoboPos(anglePosition.x, anglePosition.y, 0);
         rp.setDirection(ap.getAngleTo(new Node((int) (rp.getX()), (int) (rp.getY()))));
@@ -85,21 +88,29 @@ public class Simulation {
         // scan contours of the maze
         contour = cv.getCurrentContours();
 
+	pickWindow.setImage(currentFrame);
+	
+	while(!pickWindow.isClicked()){
+	    
+	}
+	System.out.println("X: " + pickWindow.mouseX + " | Y: " + pickWindow.mouseY);
+
         // TODO: around here the contours should be displayed in a window as well, s.t. a goal position can be extracted via click and passed as goalX, goalY below. Note that they have to be scaled onto the 'stepsize' grid,
 
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
 
         System.out.println("Calculate Path...");
-        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), 0, 0, stepsize);
+        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), pickWindow.mouseX, pickWindow.mouseY, stepsize);
         shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(rp.getY(), rp.getX(), 0, 0), stepsize);
         shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
 
         // draw the path to the goal on the initial frame
-        currentFrame = currentFrame.submat(Imgproc.boundingRect(cv.backgroundRect(currentFrame)));
+
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
+	pathWindow = ImgWindow.newWindow();
         pathWindow.setImage(currentFrame);
 
         // store the edited frame (e.g for inspection)
@@ -124,7 +135,7 @@ public class Simulation {
             System.out.println("null pointer constructing simulation");
 
         // start connection to the epuck (init ROS)
-        // connect();
+        connect();
 
         // start controlling thread
         startSimulation();
@@ -138,6 +149,9 @@ public class Simulation {
      * Method used to manage the execution of the Simulation.
      */
     private void startSimulation() {
+		int counter = 0;
+		boolean debug = false;
+
         if (DEBUG_REAL_TIME_POSITION) {
             debugWindow = ImgWindow.newWindow();
         }
@@ -153,6 +167,10 @@ public class Simulation {
 
         // TODO: Implement end-condition, e.g. check if the robot has reached the goal. This should be placed in the while loop instead of 'true'.
         while (true) {
+
+			if(counter % 10 == 0){
+				debug = true;
+			}
 
             // calculate how long the thread needs to wait to reach the desired delay in execution-time.
             diff = (end - start);
@@ -177,7 +195,7 @@ public class Simulation {
             }
 
             // find the position of the robot
-            cv.findRobotPosition();
+            cv.findRobotPosition(debug);
             Point currentPosition = cv.getCenter();
 
             if (DEBUG_DURATION) {
@@ -186,7 +204,7 @@ public class Simulation {
             }
 
             // find the angle-position of the robot
-            cv.findAnglePosition();
+            cv.findAnglePosition(debug);
             Point anglePosition = cv.getAngle();
 
             if (DEBUG_DURATION) {
@@ -228,6 +246,8 @@ public class Simulation {
 
                 // update representation of the agent, new position, new rotation.
                 agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
+		
+		System.out.println(agent.getCurrentPosition());
 
                 if (DEBUG_DURATION) {
                     System.out.println("Updating robot took" + (System.currentTimeMillis() - end) + " ms");
@@ -275,7 +295,7 @@ public class Simulation {
                     }
 
                     // sending command and storing it for comparison in next frame
-                    //control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
+                    control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
                     lastSendLinearSpeed = agent.getLinearCoefficient();
                     lastSentAngularSpeed = agent.getRotationCoefficient();
                 }
@@ -290,6 +310,8 @@ public class Simulation {
                 end = System.currentTimeMillis();
                 System.out.println("Complete update took " + (end - start) + " ms");
             }
+
+		debug = false;
         }
     }
 

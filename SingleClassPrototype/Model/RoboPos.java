@@ -73,4 +73,9 @@ public class RoboPos{
     public boolean equals(Object other){
         return (((RoboPos) other).x == this.x && ((RoboPos) other).y == this.y && ((RoboPos) other).direction == this.direction && ((RoboPos) other).radius == this.radius);
     }
+
+	@Override
+	public String toString(){
+		return "X: " + this.x + " | " + "Y: " + this.y + " | " + "radius: " + this.radius + " | " + "direction: " + this.direction; 
+	}
 }
