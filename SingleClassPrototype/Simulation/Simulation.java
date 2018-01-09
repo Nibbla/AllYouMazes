@@ -170,58 +170,47 @@ public class Simulation {
 
 			if(counter % 10 == 0){
 				debug = true;
-			}
+			}else debug = false;
 
             // calculate how long the thread needs to wait to reach the desired delay in execution-time.
             diff = (end - start);
 
-            try {
-                if (diff < TIME_STEP) {
-                    Thread.sleep((TIME_STEP - diff));
-                }
-            } catch (Exception e) {
-                System.out.println("unable to wait");
-            }
+			waitMinimumTime(diff);
+
 
             // used to measure execution time
             start = System.currentTimeMillis();
-
             // CV frame used during each simulation step
             currentFrame = cv.getFrame();
 
-            if (DEBUG_DURATION) {
-                end = System.currentTimeMillis();
-                System.out.println("Taking picture took " + (end - start) + " ms");
-            }
+            end = outputPictureTakingTime(start,end);
+
 
             // find the position of the robot
             cv.findRobotPosition(debug);
             Point currentPosition = cv.getCenter();
 
-            if (DEBUG_DURATION) {
-                System.out.println("Determining Robot " + (System.currentTimeMillis() - end) + " ms");
-                end = System.currentTimeMillis();
-            }
+            end = outputRobotDetectionTime(end);
+
 
             // find the angle-position of the robot
             cv.findAnglePosition(debug);
             Point anglePosition = cv.getAngle();
 
-            if (DEBUG_DURATION) {
-                System.out.println("Determining Rotation " + (System.currentTimeMillis() - end) + " ms");
-                end = System.currentTimeMillis();
-            }
+            end = outputRotationDetectionTime(end);
+
 
             // check if the robot has been found
-            if (currentPosition == null) {
-                System.out.println("Robot position not found, will skip frame.");
-                detected = false;
-            } else {
-                detected = true;
+            checkIfRobtoHasBeenFoundAndSetDetected(currentPosition);
+
+
+
+            if (!detected) { //robot has not been detected, start a new loop
+                outputWholeLoopDuration(start);
+                continue;
             }
 
-            // if robot has been found, perform further steps
-            if (detected) {
+                // if robot has been found, perform further steps
 
                 boolean needToSend = false;
 
@@ -231,28 +220,19 @@ public class Simulation {
                 int robotR = (int) (cv.getRadius() / 2);
 
                 // retrieve the newest shortest path from the grid and pass it to the handler
-                try {
-                    shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, 0, 0), stepsize);
-                    shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
-                    agent.getHandler().changePath(shortestPath, 0);
-                } catch (Exception e) {
-                    System.out.println("No path retrievable. Robot possibly within Contours");
-                }
+                retrieveNewestShortestPath(robotX,robotY,0);
 
-                if (DEBUG_DURATION) {
-                    System.out.println("Changing path took " + (System.currentTimeMillis() - end) + " ms");
-                    end = System.currentTimeMillis();
-                }
+
+                end = outputChangingPathDuration(end);
+
 
                 // update representation of the agent, new position, new rotation.
                 agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
 		
-		System.out.println(agent.getCurrentPosition());
+		        System.out.println(agent.getCurrentPosition());
 
-                if (DEBUG_DURATION) {
-                    System.out.println("Updating robot took" + (System.currentTimeMillis() - end) + " ms");
-                    end = System.currentTimeMillis();
-                }
+		        end = outputUpdateRobotDuration(end);
+
 
 
                 if (DEBUG_REAL_TIME_POSITION) {
@@ -288,30 +268,113 @@ public class Simulation {
                     needToSend = true;
                 }
 
+                 sendCommands(needToSend);
 
-                if (needToSend) {
-                    if (DEBUG_CONTROLLER) {
-                        System.out.println("Sending command: " + agent.getLinearCoefficient() + " | " + agent.getRotationCoefficient());
-                    }
 
-                    // sending command and storing it for comparison in next frame
-                    control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
-                    lastSendLinearSpeed = agent.getLinearCoefficient();
-                    lastSentAngularSpeed = agent.getRotationCoefficient();
-                }
+                end = outputCommandSendingDuration(end);
 
-                if (DEBUG_DURATION) {
-                    System.out.println("Sending command took " + (System.currentTimeMillis() - end) + " ms");
-                    end = System.currentTimeMillis();
-                }
+
+                outputWholeLoopDuration(start);
+
+
+        }
+    }
+
+    private void sendCommands(boolean needToSend) {
+        if (needToSend) {
+
+            if (DEBUG_CONTROLLER) {
+                System.out.println("Sending command: " + agent.getLinearCoefficient() + " | " + agent.getRotationCoefficient());
             }
 
-            if (DEBUG_DURATION) {
-                end = System.currentTimeMillis();
-                System.out.println("Complete update took " + (end - start) + " ms");
-            }
+            // sending command and storing it for comparison in next frame
+            control.sendCommand(agent.getLinearCoefficient(), agent.getRotationCoefficient());
+            lastSendLinearSpeed = agent.getLinearCoefficient();
+            lastSentAngularSpeed = agent.getRotationCoefficient();
+        }
+    }
 
-		debug = false;
+    private long outputUpdateRobotDuration(long end) {
+        if (DEBUG_DURATION) {
+            System.out.println("Updating robot took" + (System.currentTimeMillis() - end) + " ms");
+            end = System.currentTimeMillis();
+        }
+        return end;
+    }
+
+    private void retrieveNewestShortestPath(int robotX, int robotY, int robotR) {
+        try {
+            shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, robotR, 0), stepsize);
+            shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
+            agent.getHandler().changePath(shortestPath, 0);
+        } catch (Exception e) {
+            System.out.println("No path retrievable. Robot possibly within Contours");
+        }
+    }
+
+    private long outputChangingPathDuration(long end) {
+        if (DEBUG_DURATION) {
+            System.out.println("Changing path took " + (System.currentTimeMillis() - end) + " ms");
+            end = System.currentTimeMillis();
+        }
+        return end;
+    }
+
+    private long outputCommandSendingDuration(long end) {
+        if (DEBUG_DURATION) {
+            System.out.println("Sending command took " + (System.currentTimeMillis() - end) + " ms");
+            end = System.currentTimeMillis();
+        }
+        return end;
+    }
+
+    private void outputWholeLoopDuration(long start) {
+        if (DEBUG_DURATION) {
+            long end = System.currentTimeMillis();
+            System.out.println("Complete update took " + (end - start) + " ms");
+        }
+    }
+
+    private void checkIfRobtoHasBeenFoundAndSetDetected(Point currentPosition) {
+        if (currentPosition == null) {
+            System.out.println("Robot position not found, will skip frame.");
+            detected = false;
+        } else {
+            detected = true;
+        }
+    }
+
+    private long outputRotationDetectionTime(long end) {
+        if (DEBUG_DURATION) {
+            System.out.println("Determining Rotation " + (System.currentTimeMillis() - end) + " ms");
+            end = System.currentTimeMillis();
+        }
+        return end;
+    }
+
+    private long outputRobotDetectionTime(long end) {
+        if (DEBUG_DURATION) {
+            System.out.println("Determining Robot " + (System.currentTimeMillis() - end) + " ms");
+            end = System.currentTimeMillis();
+        }
+        return end;
+    }
+
+    private long outputPictureTakingTime(long start, long end) {
+        if (DEBUG_DURATION) {
+            end = System.currentTimeMillis();
+            System.out.println("Taking picture took " + (end - start) + " ms");
+        }
+        return end;
+    }
+
+    private void waitMinimumTime(long diff) {
+        try {
+            if (diff < TIME_STEP) {
+                Thread.sleep((TIME_STEP - diff));
+            }
+        } catch (Exception e) {
+            System.out.println("unable to wait");
         }
     }
 
