@@ -1,5 +1,7 @@
 package Model;
 
+import org.opencv.core.Point;
+
 public class RoboPos{
 
     private double x;
@@ -78,4 +80,9 @@ public class RoboPos{
 	public String toString(){
 		return "X: " + this.x + " | " + "Y: " + this.y + " | " + "radius: " + this.radius + " | " + "direction: " + this.direction; 
 	}
+
+    public void setDirection(Point anglePosition) {
+        RoboPos ap = new RoboPos(anglePosition.x, anglePosition.y, 0);
+        setDirection(ap.getAngleTo(new Node((int) (getX()), (int) (getY()))));
+    }
 }

@@ -54,67 +54,42 @@ public class Simulation {
         cv.initCamera(400, 600, 1000, 300);
 
         // storing the current frame for later use
-        Mat currentFrame = cv.getFrame();
-        currentFrame = currentFrame.submat(Imgproc.boundingRect(cv.backgroundRect(currentFrame)));
+        Mat currentFrame = cv.getSubFrame();
+
 
         // store current frame (e.g. for inspection)
         Imgcodecs.imwrite("currentInitialImage.jpg", currentFrame);
 
         // determine the current position of the robot
         cv.findRobotPosition(false);
-        Point currentPosition = cv.getCenter();
-
-        if (currentPosition == null) {
-            System.out.println("Robot not found in initial frame, program will crash.");
-            detected = false;
-        } else {
-            detected = true;
-        }
+        //cv.findObjectPostion(false);
+        detected = cv.isRobotDetected();
 
         // extract robot position and radius from computervision
-        int robotX = (int) (currentPosition.x);
-        int robotY = (int) (currentPosition.y);
-        int robotR = (int) (cv.getRadius() / 2);
-
         // create RoboPos vaiable to be passed to the angent
-        RoboPos rp = new RoboPos(robotX, robotY, robotR);
+        RoboPos rp = cv.getRoboPosFromCurrentPossitionAndSetAngle();
 
-        // determine the current position of the angle and calculate rotation
-        cv.findAnglePosition(false);
-        Point anglePosition = cv.getAngle();
-        RoboPos ap = new RoboPos(anglePosition.x, anglePosition.y, 0);
-        rp.setDirection(ap.getAngleTo(new Node((int) (rp.getX()), (int) (rp.getY()))));
 
         // scan contours of the maze
         contour = cv.getCurrentContours();
 
-	pickWindow.setImage(currentFrame);
+	    pickWindow.setImage(currentFrame);
 	
-	while(!pickWindow.isClicked()){
-	    
-	}
-	System.out.println("X: " + pickWindow.mouseX + " | Y: " + pickWindow.mouseY);
+	    while(!pickWindow.isClicked()){ }
+	    System.out.println("X: " + pickWindow.mouseX + " | Y: " + pickWindow.mouseY);
 
         // TODO: around here the contours should be displayed in a window as well, s.t. a goal position can be extracted via click and passed as goalX, goalY below. Note that they have to be scaled onto the 'stepsize' grid,
 
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
 
-        System.out.println("Calculate Path...");
-        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), pickWindow.mouseX, pickWindow.mouseY, stepsize);
-        shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(rp.getY(), rp.getX(), 0, 0), stepsize);
-        shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
+
+        setGridAndShortestPath(rp,currentFrame);
 
         // draw the path to the goal on the initial frame
+        drawPathOnWindowAndStoreFrame(currentFrame);
 
-        for (Line no : shortestPath) {
-            Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
-        }
-	pathWindow = ImgWindow.newWindow();
-        pathWindow.setImage(currentFrame);
 
-        // store the edited frame (e.g for inspection)
-        Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
 
         // free all memory used by CV as soon as all information (contours, position, rotation) is extracted
         cv.releaseFrame();
@@ -125,14 +100,14 @@ public class Simulation {
         // create an agent with ROS_ID, roboPos and handler. TODO: implement ROS_ID in RobotControl to send commands to different robots
         this.agent = new Agent(0, rp, traversalHandler);
 
-        try {
-            this.control = factoryControl.getInstance();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
-        if (agent == null || contour == null || shortestPath == null)
+        this.control = factoryControl.getInstance();
+
+
+        if (agent == null || contour == null || shortestPath == null) {
             System.out.println("null pointer constructing simulation");
+            return;
+        }
 
         // start connection to the epuck (init ROS)
         connect();
@@ -140,6 +115,26 @@ public class Simulation {
         // start controlling thread
         startSimulation();
     }
+
+    private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
+        for (Line no : shortestPath) {
+            Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
+        }
+        pathWindow = ImgWindow.newWindow();
+        pathWindow.setImage(currentFrame);
+
+        // store the edited frame (e.g for inspection)
+        Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
+    }
+
+    private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
+        System.out.println("Calculate Path...");
+        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), pickWindow.mouseX, pickWindow.mouseY, stepsize);
+        shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(rp.getY(), rp.getX(), 0, 0), stepsize);
+        shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
+
+    }
+
 
     private void connect() {
         control.startConnection();
@@ -150,7 +145,7 @@ public class Simulation {
      */
     private void startSimulation() {
 		int counter = 0;
-		boolean debug = false;
+		boolean debug=false;
 
         if (DEBUG_REAL_TIME_POSITION) {
             debugWindow = ImgWindow.newWindow();
@@ -187,16 +182,16 @@ public class Simulation {
 
 
             // find the position of the robot
+
             cv.findRobotPosition(debug);
             Point currentPosition = cv.getCenter();
-
             end = outputRobotDetectionTime(end);
+
 
 
             // find the angle-position of the robot
             cv.findAnglePosition(debug);
             Point anglePosition = cv.getAngle();
-
             end = outputRotationDetectionTime(end);
 
 
@@ -381,4 +376,6 @@ public class Simulation {
     public static void main(String[] args) {
         Simulation sim = new Simulation();
     }
+
+
 }

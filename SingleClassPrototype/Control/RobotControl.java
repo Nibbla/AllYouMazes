@@ -49,8 +49,13 @@ public class RobotControl implements IControl {
      * @return instance of RobotControl to be reused
      * @throws CloneNotSupportedException
      */
-    public RobotControl getInstance() throws CloneNotSupportedException {
-        return (RobotControl) factoryControl.clone();
+    public RobotControl getInstance()  {
+        try {
+            return (RobotControl) factoryControl.clone();
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     /**
