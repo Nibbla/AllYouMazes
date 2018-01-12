@@ -325,7 +325,7 @@ public class Simulation {
                     Line line = new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA());
 
                 //check if flip of x and y nexxessary
-                if (shortestPathToObject==null||doesHitWall(grid,shortestPathToObject.getLast().getB().getX(),shortestPathToObject.getLast().getB().getY(),shortestPathFromObject.getFirst().getA().getX(), shortestPathFromObject.getFirst().getA().getY())){
+                if (shortestPathToObject==null||doesHitWall(grid,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize)){
                         possibleWayPoints.remove(i);
                         possibleWayPointsLengths.remove(i);
                         possibleWayPointsAngleToObjectCenter.remove(i);
