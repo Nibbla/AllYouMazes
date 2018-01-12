@@ -738,7 +738,7 @@ public class ImageRecognition {
 
     public boolean isRobotDetected() {
 
-            Point currentPosition = getCenter();
+            Point currentPosition = center;
             boolean detected;
             if (currentPosition == null) {
                 System.out.println("Robot not found in initial frame, program will crash.");
@@ -760,7 +760,7 @@ public class ImageRecognition {
 
             // determine the current position of the angle and calculate rotation
             findAnglePosition(debug);
-            rp.setDirection(getAngle());
+            rp.setDirection(angle);
 
             return rp;
 
