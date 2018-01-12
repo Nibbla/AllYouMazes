@@ -86,7 +86,7 @@ public class Simulation {
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
 
-
+        cv.findObjectPostion(false);
         setGridAndShortestPath(rp,currentFrame);
 
         // draw the path to the goal on the initial frame

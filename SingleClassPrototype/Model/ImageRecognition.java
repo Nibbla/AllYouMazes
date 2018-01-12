@@ -46,8 +46,8 @@ public class ImageRecognition {
     private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
-    private Scalar objectBgs1_1 = new Scalar(0, 90, 100);
-    private Scalar objectBgs1_2 =new Scalar(10, 200, 210);
+    private Scalar objectBgs1_1 = new Scalar(110, 50, 50);
+    private Scalar objectBgs1_2 =new Scalar(140, 115, 115);
 
 
     public ImageRecognition(boolean debug) {
@@ -279,12 +279,12 @@ public class ImageRecognition {
 
     private void determineObjectSearchArea(boolean debug) {
 
-        if (center != null && radius != null) {
+        if (object != null && radius != null) {
             prev = object.clone();
             prevRadius = radius[0];
             Rect rect = rectSearch(frame, (int) prev.x, (int) prev.y, (int) (radius[0] * 3));
             r = frame.submat(rect);
-            diff = bgsAngle(r);
+            diff = bgsObject(r);//bgsAngle(r);
             r.release();
         } else {
             diff = bgsObject(frame);
@@ -303,8 +303,8 @@ public class ImageRecognition {
         //Core.inRange(hsv, new Scalar(70, 10, 20), new Scalar(200, 150, 55), tmp_mask1);
         //Core.inRange(hsv, new Scalar(0, 10, 20), new Scalar(40, 150, 55), tmp_mask2);
 
-        Core.inRange(hsv, new Scalar(0, 10, 0), new Scalar(125, 255, 20), tmp_mask1);
-        Core.inRange(hsv, new Scalar(0, 10, 0), new Scalar(125, 255, 20), tmp_mask2);
+        Core.inRange(hsv, backgroundScalar1,backgroundScalar2, tmp_mask1);
+        Core.inRange(hsv, backgroundScalar1, backgroundScalar2, tmp_mask2);
 
         Core.add(tmp_mask1, tmp_mask2, mask);
 
@@ -428,7 +428,7 @@ public class ImageRecognition {
         // values for jordys place
         //Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
 
-        Core.inRange(cc, new Scalar(110, 50, 50), new Scalar(140, 115, 115), mask);
+        Core.inRange(cc, objectBgs1_1, objectBgs1_2, mask);
 
         kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
