@@ -34,20 +34,20 @@ public class ImageRecognition {
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
-    private Scalar angleScalar1 = new Scalar(110, 50, 50);
-    private Scalar angleScalar2 = new Scalar(140, 115, 115);
-    private Scalar contourScalar1 =  new Scalar(7, 25, 100);
-    private Scalar contourScalar2 = new Scalar(25, 130, 180);
-    private Scalar backgroundScalar1 =new Scalar(0, 10, 0);
-    private Scalar backgroundScalar2 = new Scalar(125, 255, 20);
+    private Scalar angleScalar1 = new Scalar(110, 40, 50);
+    private Scalar angleScalar2 = new Scalar(170, 115, 115);
+    private Scalar contourScalar1 =  new Scalar(15, 35, 75);
+    private Scalar contourScalar2 = new Scalar(35, 145, 165);
+    private Scalar backgroundScalar1 =new Scalar(10, 10, 0);
+    private Scalar backgroundScalar2 = new Scalar(125, 255, 15);
 
     private Scalar robotBgs1_1 = new Scalar(0, 90, 100);
     private Scalar robotBgs1_2 = new Scalar(10, 200, 210);
     private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
-    private Scalar objectBgs1_1 = new Scalar(110, 50, 50);
-    private Scalar objectBgs1_2 =new Scalar(140, 115, 115);
+    private Scalar objectBgs1_1 = new Scalar(95, 100, 50);
+    private Scalar objectBgs1_2 =new Scalar(105, 240, 110);
 
 
     public ImageRecognition(boolean debug) {
@@ -137,9 +137,9 @@ public class ImageRecognition {
         Point bottomRight = matrix[0];
 
         Point topLeftOrig = new Point(0,0);
-        Point topRightOrig = new Point(400,0);
-        Point bottomLeftOrig = new Point(0,600);
-        Point bottomRightOrig = new Point(400,600);
+        Point topRightOrig = new Point(600,0);
+        Point bottomLeftOrig = new Point(0,400);
+        Point bottomRightOrig = new Point(600,400);
 
         for (Point p:matrix) {
             if (Math.sqrt(Math.pow((topLeftOrig.x - p.x),2) + Math.pow((topLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((topLeftOrig.x - topLeft.x),2) + Math.pow((topLeftOrig.y - topLeft.y),2))){
@@ -279,7 +279,7 @@ public class ImageRecognition {
 
     private void determineObjectSearchArea(boolean debug) {
 
-        if (object != null && radius != null) {
+        if (object != null) {
             prev = object.clone();
             prevRadius = radius[0];
             Rect rect = rectSearch(frame, (int) prev.x, (int) prev.y, (int) (radius[0] * 3));
@@ -303,10 +303,10 @@ public class ImageRecognition {
         //Core.inRange(hsv, new Scalar(70, 10, 20), new Scalar(200, 150, 55), tmp_mask1);
         //Core.inRange(hsv, new Scalar(0, 10, 20), new Scalar(40, 150, 55), tmp_mask2);
 
-        Core.inRange(hsv, backgroundScalar1,backgroundScalar2, tmp_mask1);
-        Core.inRange(hsv, backgroundScalar1, backgroundScalar2, tmp_mask2);
+        Core.inRange(hsv, backgroundScalar1,backgroundScalar2, mask);
+        //Core.inRange(hsv, backgroundScalar1, backgroundScalar2, tmp_mask2);
 
-        Core.add(tmp_mask1, tmp_mask2, mask);
+        //Core.add(tmp_mask1, tmp_mask2, mask);
 
         kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
@@ -316,9 +316,8 @@ public class ImageRecognition {
 
         int biggestContourIndex = 0;
 
-
         for (int index = 0; index < contours.size(); index++) {
-            if (contours.get(index).size().area() >= contours.get(biggestContourIndex).size().area()) {
+            if (Imgproc.contourArea(contours.get(index)) >= Imgproc.contourArea(contours.get(biggestContourIndex))) {
                 biggestContourIndex = index;
             }
         }
@@ -386,8 +385,8 @@ public class ImageRecognition {
         //Core.inRange(cc, new Scalar(170, 90, 130), new Scalar(180, 200, 255), tmp_mask2);
 
         Core.add(tmp_mask1, tmp_mask2, mask);
-        kernel = Mat.ones(3, 3, CvType.CV_8UC1);
-        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
+        kernel = Mat.ones(5, 5, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         cc.release();
         tmp_mask1.release();
@@ -442,8 +441,6 @@ public class ImageRecognition {
     private MatOfPoint contours(Mat img) {
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
 
-        Imgproc.GaussianBlur(hsv, hsv, new Size(15, 15), 2, 2);
-
         Core.inRange(hsv, contourScalar1, contourScalar2, mask);
 
 		// values for jordys place
@@ -453,6 +450,8 @@ public class ImageRecognition {
         //Core.inRange(hsv, new Scalar(165, 30, 50), new Scalar(180, 190, 230), tmp_mask2);
         //Core.add(tmp_mask1, tmp_mask2, mask);
         kernel = Mat.ones(14, 14, CvType.CV_8UC1);
+        Imgproc.GaussianBlur(hsv, hsv, new Size(5, 5), 2, 2);
+
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         //Need to make sure that robot is removed.
@@ -472,7 +471,7 @@ public class ImageRecognition {
         }
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 21);
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 17);
         contours.clear();
         hierarchy.release();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);

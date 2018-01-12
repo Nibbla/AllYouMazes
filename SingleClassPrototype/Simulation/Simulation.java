@@ -16,7 +16,7 @@ import java.util.LinkedList;
 
 public class Simulation {
 
-    public final static boolean DEBUG_DURATION = true;
+    public final static boolean DEBUG_DURATION = false;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = true;
     public final static boolean DEBUG_CV_CONTOURS = false;
@@ -41,6 +41,8 @@ public class Simulation {
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
+	private boolean justSent = false;
+
 
     private ImgWindow pickWindow = ImgWindow.newWindow();
 
@@ -54,7 +56,7 @@ public class Simulation {
     public Simulation() {
         // One-time initialization of camera
         System.out.println("Init Camera...");
-        cv.initCamera(400, 600, 1000, 300);
+        cv.initCamera(600, 400, 1000, 300);
 
         // storing the current frame for later use
         Mat currentFrame = cv.getSubFrame();
@@ -86,7 +88,7 @@ public class Simulation {
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
 
-        cv.findObjectPostion(false);
+        //cv.findObjectPostion(false);
         setGridAndShortestPath(rp,currentFrame);
 
         // draw the path to the goal on the initial frame
@@ -197,7 +199,7 @@ public class Simulation {
             Point anglePosition = cv.getAngle();
             end = outputRotationDetectionTime(end);
 
-            cv.findObjectPostion(debug);
+            //cv.findObjectPostion(debug);
 
 
             // check if the robot has been found
@@ -207,6 +209,7 @@ public class Simulation {
 
             if (!detected) { //robot has not been detected, start a new loop
                 outputWholeLoopDuration(start);
+            	end = System.currentTimeMillis();
                 continue;
             }
 
@@ -229,7 +232,7 @@ public class Simulation {
             // update representation of the agent, new position, new rotation.
             agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
 
-            System.out.println(agent.getCurrentPosition());
+            //System.out.println(agent.getCurrentPosition());
 
             end = outputUpdateRobotDuration(end);
 
@@ -252,7 +255,7 @@ public class Simulation {
             cv.releaseFrame();
 
             // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
-            if (agent.canMove() && lastSendLinearSpeed != agent.getLinearCoefficient()) {
+            if (agent.canMove() && lastSendLinearSpeed != 1) {
 
                 if (DEBUG_CONTROLLER) {
                     System.out.println("needs to move");
@@ -276,7 +279,7 @@ public class Simulation {
 
             outputWholeLoopDuration(start);
 
-
+            end = System.currentTimeMillis();
         }
     }
 

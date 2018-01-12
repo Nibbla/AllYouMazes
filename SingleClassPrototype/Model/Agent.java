@@ -7,7 +7,7 @@ public class Agent {
     private RoboPos lastPosition = new RoboPos(0,0,0,0);
     private TraversalHandler handler;
     private Node currentGoal;
-    private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0;
+    private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0, lastSentDirection = 0;
 
     private final double PROXIMITY = 25;
     private final double ROTATIONERROR = 50;
@@ -48,23 +48,21 @@ public class Agent {
         this.ROS_ID = ROS_ID;
     }
 
-    public void update(RoboPos newPosition, RoboPos rotationPoint){
-        needsToTurn = false;
-        canMove = false;
+	public void setLastDirection(double dir){
+		lastSentDirection = dir;
+	}
 
-        isTurning = false;
-        isMoving = false;
+    public void update(RoboPos newPosition, RoboPos rotationPoint){
 
 
         lastPosition.setPosition(currentPosition.getX(), currentPosition.getY());
         lastPosition.setRadius(currentPosition.getRadius());
         lastPosition.setDirection(currentPosition.getDirection());
 
-	if (rotationCoefficient != 0){
+		
         prevRotationCoefficient = rotationCoefficient;
-	}
 
-	prevLinearCoefficient = linearCoefficient;
+		prevLinearCoefficient = linearCoefficient;
 
         currentPosition = newPosition;
         currentPosition.setDirection(rotationPoint.getAngleTo(new Node((int)(currentPosition.getX()), (int)(currentPosition.getY()))));
@@ -84,6 +82,11 @@ public class Agent {
             currentPathPosition = handler.getLine(handler.getIndex()).getA();
         }
 
+        needsToTurn = false;
+        canMove = false;
+        isTurning = false;
+        isMoving = false;
+
         determineChanges();
 
         // TODO: swap Y and X as soon as path returns as X and Y
@@ -98,18 +101,26 @@ public class Agent {
             distance -= 360;
         }
 
+     
         // debug output for angle calculation
-                    /*
+                    
 					System.out.println("current angle: " + Math.toDegrees(this.getCurrentPosition().getDirection()));
                     System.out.println("desired angle: " + Math.toDegrees(correctAngle));
                     System.out.println("needed rotation: " + distance);
                     System.out.println("robot position: " + this.getCurrentPosition().getX() + " | " + this.getCurrentPosition().getY());
                     System.out.println("current goal: " + currentPathPosition.getY() + " | " + currentPathPosition.getX());
                     System.out.println("----------");
-                    */
+                    
 
         // check if needed angle is within allowed range (might depend on delay) and determine rotation direction.
-        if (Math.abs(distance) >= ROTATIONERROR) {
+		double tmpError = ROTATIONERROR;
+
+		if (isMoving){
+			tmpError = 50;
+		}
+
+
+        if (Math.abs(distance) >= tmpError) {
             needsToTurn = true;
             canMove = false;
             if (distance > 0) {
