@@ -34,6 +34,20 @@ public class ImageRecognition {
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
+    private Scalar angleScalar1 = new Scalar(110, 50, 50);
+    private Scalar angleScalar2 = new Scalar(140, 115, 115);
+    private Scalar contourScalar1 =  new Scalar(7, 25, 100);
+    private Scalar contourScalar2 = new Scalar(25, 130, 180);
+    private Scalar backgroundScalar1 =new Scalar(0, 10, 0);
+    private Scalar backgroundScalar2 = new Scalar(125, 255, 20);
+
+    private Scalar robotBgs1_1 = new Scalar(0, 90, 100);
+    private Scalar robotBgs1_2 = new Scalar(10, 200, 210);
+    private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
+    private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
+
+    private Scalar objectBgs1_1 = new Scalar(0, 90, 100);
+    private Scalar objectBgs1_2 =new Scalar(10, 200, 210);
 
 
     public ImageRecognition(boolean debug) {
@@ -364,8 +378,8 @@ public class ImageRecognition {
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
 
-        Core.inRange(cc, new Scalar(0, 90, 100), new Scalar(10, 200, 210), tmp_mask1);
-        Core.inRange(cc, new Scalar(170, 90, 100), new Scalar(180, 200, 210), tmp_mask2);
+        Core.inRange(cc, robotBgs1_1, robotBgs1_2, tmp_mask1);
+        Core.inRange(cc, robotBgs2_1, robotBgs2_2, tmp_mask2);
 
 		// values for jordys place
 		//Core.inRange(cc, new Scalar(0, 90, 130), new Scalar(10, 200, 255), tmp_mask1);
@@ -393,7 +407,7 @@ public class ImageRecognition {
 		// values for jordys place
         //Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
 		
-		Core.inRange(cc, new Scalar(110, 50, 50), new Scalar(140, 115, 115), mask);
+		Core.inRange(cc, angleScalar1, angleScalar2, mask);
 
         kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
@@ -430,7 +444,7 @@ public class ImageRecognition {
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(15, 15), 2, 2);
 
-        Core.inRange(hsv, new Scalar(7, 25, 100), new Scalar(25, 130, 180), mask);
+        Core.inRange(hsv, contourScalar1, contourScalar2, mask);
 
 		// values for jordys place
         //Core.inRange(hsv, new Scalar(10, 20, 160), new Scalar(30, 165, 255), mask);

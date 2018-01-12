@@ -192,12 +192,12 @@ public class Simulation {
             Point currentPosition = cv.getCenter();
             end = outputRobotDetectionTime(end);
 
-
-
             // find the angle-position of the robot
             cv.findAnglePosition(debug);
             Point anglePosition = cv.getAngle();
             end = outputRotationDetectionTime(end);
+
+            cv.findObjectPostion(debug);
 
 
             // check if the robot has been found
