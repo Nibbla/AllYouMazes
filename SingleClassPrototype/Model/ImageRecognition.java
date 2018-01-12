@@ -29,6 +29,7 @@ public class ImageRecognition {
     private Point prev;
     private Point center;
     private Point angle;
+    private Point object;
 	private Point cornerTL, cornerTR, cornerBL, cornerBR;
     private boolean found;
     private boolean croppingAreaKnown;
@@ -68,6 +69,7 @@ public class ImageRecognition {
 
         prev = null;
         center = null;
+        object = null;
 
         found = false;
         croppingAreaKnown = false;
@@ -248,12 +250,30 @@ public class ImageRecognition {
         if (center != null && radius != null) {
             prev = center.clone();
             prevRadius = radius[0];
-            Rect rect = rectSearch(frame, (int) center.x, (int) center.y, (int) (radius[0] * 3));
+            Rect rect = rectSearch(frame, (int) prev.x, (int) prev.y, (int) (radius[0] * 3));
             r = frame.submat(rect);
             diff = bgsAngle(r);
             r.release();
         } else {
             diff = bgsAngle(frame);
+        }
+
+        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
+            bgsWindow.setImage(diff);
+        }
+    }
+
+    private void determineObjectSearchArea(boolean debug) {
+
+        if (center != null && radius != null) {
+            prev = object.clone();
+            prevRadius = radius[0];
+            Rect rect = rectSearch(frame, (int) prev.x, (int) prev.y, (int) (radius[0] * 3));
+            r = frame.submat(rect);
+            diff = bgsAngle(r);
+            r.release();
+        } else {
+            diff = bgsObject(frame);
         }
 
         if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
@@ -374,6 +394,27 @@ public class ImageRecognition {
         //Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
 		
 		Core.inRange(cc, new Scalar(110, 50, 50), new Scalar(140, 115, 115), mask);
+
+        kernel = Mat.ones(7, 7, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
+
+        cc.release();
+        kernel.release();
+
+        return mask;
+    }
+
+    private Mat bgsObject(Mat m1) {
+        //Format I encountered is 360 (degrees), 100 (percent), 100 (percent)
+        //HSV in OpenCV is 180, 255, 255 format.
+        mask.release();
+        m1.copyTo(cc);
+        Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
+
+        // values for jordys place
+        //Core.inRange(cc, new Scalar(120, 35, 120), new Scalar(170, 85, 180), mask);
+
+        Core.inRange(cc, new Scalar(110, 50, 50), new Scalar(140, 115, 115), mask);
 
         kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
@@ -530,88 +571,38 @@ public class ImageRecognition {
     }
 
     public void findObjectPostion(boolean debug) {
-        determineRobotSearchArea(debug);
+            determineObjectSearchArea(debug);
+            boolean foundPoint = false;
 
-        found = false;
-        area = 0;
+            contours.clear();
 
-        contours.clear();
+            Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
 
-        Imgproc.findContours(diff, contours, hierarchy, Imgproc.RETR_CCOMP, Imgproc.CHAIN_APPROX_SIMPLE);
+            int biggestContour = 0;
 
-        if (!contours.isEmpty() && !hierarchy.empty()) {
-            for (int j = 0; j < contours.size(); j++) {
-
-                h = hierarchy.get(0, j);
-                //if it has a parent
-                if (h[3] != -1) {
-                    area = Imgproc.contourArea(contours.get(j));
-                    if (area > 20) {
-                        //System.out.println("Angle (possibly) found");
-                        RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
-                        r.center.x += ax;
-                        r.center.y += ay;
-
-                        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
-                            Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
-                        }
-
-
-                    }
-                    //if it has a child
-                } else if (h[2] != -1) {
-                    area = Imgproc.contourArea(contours.get(j));
-                    if (area > 200) {
-                        double kidArea = Imgproc.contourArea(contours.get((int) h[2]));
-                        if (kidArea > 20) {
-
-                            boolean invalid = false;
-                            int maxDiffPos = 20;
-                            int maxDiffRad = 15;
-                            if (prev != null) {
-                                if (Math.abs(prev.x - center.x) > maxDiffPos || Math.abs(prev.y - center.y) > maxDiffPos || Math.abs(prevRadius - radius[0]) > maxDiffRad) {
-                                    if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
-                                        //System.out.println("Point INVALIDATED!");
-                                        invalid = true;
-                                    }
-                                }
-                            }
-
-                            if (!invalid) {
-                                //System.out.println("Robot (possibly) found");
-                                found = true;
-                                radius = new float[1];
-                                Imgproc.minEnclosingCircle(new MatOfPoint2f(contours.get(j).toArray()), null, radius);
-                                RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(j).toArray()));
-                                r.center.x += ax;
-                                r.center.y += ay;
-
-                                center = new Point(r.center.x, r.center.y);
-                                if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION) {
-                                    Imgproc.ellipse(frame, r, new Scalar(0, 255, 0), 1);
-                                }
-
-
-                            }
-                        }
+            if (!contours.isEmpty() && !hierarchy.empty()) {
+                for (int j = 0; j < contours.size(); j++) {
+                    if (contours.get(j).size().area() >= contours.get(biggestContour).size().area()) {
+                        foundPoint = true;
+                        biggestContour = j;
                     }
                 }
             }
 
+            if (!foundPoint) {
+                object = null;
+                ax = 0;
+                ay = 0;
+            } else {
+                RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(biggestContour).toArray()));
+                r.center.x += ax;
+                r.center.y += ay;
+
+                object = new Point(r.center.x, r.center.y);
+            }
 
             hierarchy.release();
             diff.release();
-
-        }
-
-        if (!found) {
-            prev = null;
-            prevRadius = 0;
-            radius = null;
-            center = null;
-            ax = 0;
-            ay = 0;
-        }
     }
 
     public void findRobotPosition(boolean debug) {
