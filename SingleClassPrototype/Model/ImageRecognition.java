@@ -528,6 +528,7 @@ public class ImageRecognition {
         }
 
     }
+
     public void findObjectPostion(boolean debug) {
         determineRobotSearchArea(debug);
 
@@ -612,6 +613,7 @@ public class ImageRecognition {
             ay = 0;
         }
     }
+
     public void findRobotPosition(boolean debug) {
         determineRobotSearchArea(debug);
 
@@ -747,17 +749,18 @@ public class ImageRecognition {
             return detected;
         }
 
-    public RoboPos getRoboPosFromCurrentPossitionAndSetAngle() {
+    public RoboPos getRoboPosFromCurrentPositionAndSetAngle(boolean debug) {
 
-            Point currentPosition = getCenter();
+            Point currentPosition = center;
             int robotX = (int) (currentPosition.x);
             int robotY = (int) (currentPosition.y);
             int robotR = (int) (getRadius() / 2);
 
             RoboPos rp = new RoboPos(robotX, robotY, robotR);
-        // determine the current position of the angle and calculate rotation
-        findAnglePosition(false);
-        rp.setDirection(getAngle());
+
+            // determine the current position of the angle and calculate rotation
+            findAnglePosition(debug);
+            rp.setDirection(getAngle());
 
             return rp;
 

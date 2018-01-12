@@ -20,7 +20,10 @@ public class Simulation {
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = true;
     public final static boolean DEBUG_CV_CONTOURS = false;
-    public static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
+    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
+
+    public boolean debugEveryXFrames = true;
+    public int debugFrames = 10;
 
     public final static int TIME_STEP = 70;
 
@@ -34,10 +37,10 @@ public class Simulation {
 
     private boolean detected;
 
-    private ImageRecognition cv = new ImageRecognition(true);
+    private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
 
     private double lastSendLinearSpeed = 0;
-    private double lastSentAngularSpeed = 0;    
+    private double lastSentAngularSpeed = 0;
 
     private ImgWindow pickWindow = ImgWindow.newWindow();
 
@@ -67,16 +70,16 @@ public class Simulation {
 
         // extract robot position and radius from computervision
         // create RoboPos vaiable to be passed to the angent
-        RoboPos rp = cv.getRoboPosFromCurrentPossitionAndSetAngle();
+        RoboPos rp = cv.getRoboPosFromCurrentPositionAndSetAngle(false);
 
 
         // scan contours of the maze
         contour = cv.getCurrentContours();
 
-	    pickWindow.setImage(currentFrame);
-	
-	    while(!pickWindow.isClicked()){ }
-	    System.out.println("X: " + pickWindow.mouseX + " | Y: " + pickWindow.mouseY);
+        pickWindow.setImage(currentFrame);
+
+        while(!pickWindow.isClicked()){ }
+        System.out.println("X: " + pickWindow.mouseX + " | Y: " + pickWindow.mouseY);
 
         // TODO: around here the contours should be displayed in a window as well, s.t. a goal position can be extracted via click and passed as goalX, goalY below. Note that they have to be scaled onto the 'stepsize' grid,
 
@@ -144,8 +147,8 @@ public class Simulation {
      * Method used to manage the execution of the Simulation.
      */
     private void startSimulation() {
-		int counter = 0;
-		boolean debug=false;
+        int counter = 0;
+        boolean debug=false;
 
         if (DEBUG_REAL_TIME_POSITION) {
             debugWindow = ImgWindow.newWindow();
@@ -163,14 +166,16 @@ public class Simulation {
         // TODO: Implement end-condition, e.g. check if the robot has reached the goal. This should be placed in the while loop instead of 'true'.
         while (true) {
 
-			if(counter % 10 == 0){
-				debug = true;
-			}else debug = false;
+            if(counter % debugFrames == 0 && debugEveryXFrames){
+                debug = true;
+            }else debug = false;
+
+            counter++;
 
             // calculate how long the thread needs to wait to reach the desired delay in execution-time.
             diff = (end - start);
 
-			waitMinimumTime(diff);
+            waitMinimumTime(diff);
 
 
             // used to measure execution time
@@ -196,7 +201,7 @@ public class Simulation {
 
 
             // check if the robot has been found
-            checkIfRobtoHasBeenFoundAndSetDetected(currentPosition);
+            checkIfRobotHasBeenFoundAndSetDetected(currentPosition);
 
 
 
@@ -205,71 +210,71 @@ public class Simulation {
                 continue;
             }
 
-                // if robot has been found, perform further steps
+            // if robot has been found, perform further steps
 
-                boolean needToSend = false;
+            boolean needToSend = false;
 
-                // extract the robots position and radius
-                int robotX = (int) (currentPosition.x);
-                int robotY = (int) (currentPosition.y);
-                int robotR = (int) (cv.getRadius() / 2);
+            // extract the robots position and radius
+            int robotX = (int) (currentPosition.x);
+            int robotY = (int) (currentPosition.y);
+            int robotR = (int) (cv.getRadius() / 2);
 
-                // retrieve the newest shortest path from the grid and pass it to the handler
-                retrieveNewestShortestPath(robotX,robotY,0);
-
-
-                end = outputChangingPathDuration(end);
+            // retrieve the newest shortest path from the grid and pass it to the handler
+            retrieveNewestShortestPath(robotX,robotY,0);
 
 
-                // update representation of the agent, new position, new rotation.
-                agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
-		
-		        System.out.println(agent.getCurrentPosition());
-
-		        end = outputUpdateRobotDuration(end);
+            end = outputChangingPathDuration(end);
 
 
+            // update representation of the agent, new position, new rotation.
+            agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
 
-                if (DEBUG_REAL_TIME_POSITION) {
-                    Imgproc.circle(currentFrame, currentPosition, 5, new Scalar(255, 0, 0), 3);
-                    Imgproc.circle(currentFrame, anglePosition, 5, new Scalar(255, 0, 0), 3);
-                    Imgproc.line(currentFrame, currentPosition, anglePosition, new Scalar(255, 0, 0), 3);
-                    Imgproc.circle(currentFrame, new Point(agent.getHandler().getLine(agent.getHandler().getIndex()).getA().getY(), agent.getHandler().getLine(agent.getHandler().getIndex()).getA().getX()), 5, new Scalar(255, 255, 255), 3);
+            System.out.println(agent.getCurrentPosition());
 
-                    debugWindow.setImage(currentFrame);
+            end = outputUpdateRobotDuration(end);
 
-                    System.out.println("Updating real-time debug window took " + (System.currentTimeMillis() - end) + " ms");
-                    end = System.currentTimeMillis();
+
+
+            if (DEBUG_REAL_TIME_POSITION) {
+                Imgproc.circle(currentFrame, currentPosition, 5, new Scalar(255, 0, 0), 3);
+                Imgproc.circle(currentFrame, anglePosition, 5, new Scalar(255, 0, 0), 3);
+                Imgproc.line(currentFrame, currentPosition, anglePosition, new Scalar(255, 0, 0), 3);
+                Imgproc.circle(currentFrame, new Point(agent.getHandler().getLine(agent.getHandler().getIndex()).getA().getY(), agent.getHandler().getLine(agent.getHandler().getIndex()).getA().getX()), 5, new Scalar(255, 255, 255), 3);
+
+                debugWindow.setImage(currentFrame);
+
+                System.out.println("Updating real-time debug window took " + (System.currentTimeMillis() - end) + " ms");
+                end = System.currentTimeMillis();
+            }
+
+            // release CV frame
+            currentFrame.release();
+            cv.releaseFrame();
+
+            // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
+            if (agent.canMove() && lastSendLinearSpeed != agent.getLinearCoefficient()) {
+
+                if (DEBUG_CONTROLLER) {
+                    System.out.println("needs to move");
                 }
 
-                // release CV frame
-                currentFrame.release();
-                cv.releaseFrame();
+                needToSend = true;
+            } else if (agent.needsToTurn() && lastSentAngularSpeed != agent.getRotationCoefficient()) {
 
-                // for switching between moving/turning. A new command will only be sent in case there was no previous command sent or the robot is not moving/rotating (due to no command being sent. it happens).
-                if (agent.canMove() && lastSendLinearSpeed != agent.getLinearCoefficient()) {
-
-                    if (DEBUG_CONTROLLER) {
-                        System.out.println("needs to move");
-                    }
-
-                    needToSend = true;
-                } else if (agent.needsToTurn() && lastSentAngularSpeed != agent.getRotationCoefficient()) {
-
-                    if (DEBUG_CONTROLLER) {
-                        System.out.println("needs to turn");
-                    }
-
-                    needToSend = true;
+                if (DEBUG_CONTROLLER) {
+                    System.out.println("needs to turn");
                 }
 
-                 sendCommands(needToSend);
+                needToSend = true;
+            }
+
+            sendCommands(needToSend);
 
 
-                end = outputCommandSendingDuration(end);
+            end = outputCommandSendingDuration(end);
 
 
-                outputWholeLoopDuration(start);
+            outputWholeLoopDuration(start);
 
 
         }
@@ -330,7 +335,7 @@ public class Simulation {
         }
     }
 
-    private void checkIfRobtoHasBeenFoundAndSetDetected(Point currentPosition) {
+    private void checkIfRobotHasBeenFoundAndSetDetected(Point currentPosition) {
         if (currentPosition == null) {
             System.out.println("Robot position not found, will skip frame.");
             detected = false;
