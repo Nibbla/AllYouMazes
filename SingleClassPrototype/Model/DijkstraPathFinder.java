@@ -2,7 +2,6 @@ package Model;
 
 import Interfaces.ObjectType;
 
-import Util.ImgWindow;
 import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 import view.View;
@@ -96,15 +95,17 @@ public class DijkstraPathFinder {
 
     }
 
+
+
     //This method is a total mess and will be cleaned up soon
-    public static  Node[][] retrieveDijcstraGrid(Mat gray, MatOfPoint2f contour, double goalX, double goalY, int stepSize) {
+    public static  Node[][] retrieveDijcstraGrid(Mat gray, MatOfPoint2f contour, double goalX, double goalY, int stepSize, org.opencv.core.Point[] optionalTabooAreaCenter, double[] optionalTabooAreaRadiusSquared, Rect[] optionalTabooArea) {
         int sRows = gray.rows() / stepSize;
         int sCols = gray.cols() / stepSize;
         Node[][] grid = new Node[sRows][sCols];
 
         for (int x = 0; x < sRows; x++) {
             for (int y = 0; y < sCols; y++) {
-
+                //test the flipping of x and y one day
                 double t = Imgproc.pointPolygonTest(contour, new org.opencv.core.Point(y * stepSize, x * stepSize), false);
                 if (t == 0 || t == -1) {
                     grid[x][y] = new Node(x * stepSize, y * stepSize);
@@ -115,7 +116,7 @@ public class DijkstraPathFinder {
         for (int x = 0; x < sRows; x++) {
             for (int y = 0; y < sCols; y++) {
                 if (grid[x][y] == null) continue;
-
+                if (optionalTabooAreaCenter!=null) {if (insideTabooArea(x,y,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared,optionalTabooArea,stepSize))continue;}
                 for (int dx = x - 1; dx <= x + 1; dx += 1) {
                     for (int dy = y - 1; dy <= y + 1; dy += 1) {
                         if (dx < 0 || dx >= sRows || dy < 0 || dy >= sCols) continue;
@@ -147,6 +148,8 @@ public class DijkstraPathFinder {
         }
 
         if (grid[sY][sX] == null) System.out.println("No pathway possible");
+
+
 
         for (int x = 0; x < sRows; x++) {
             for (int y = 0; y < sCols; y++) {
@@ -204,6 +207,27 @@ public class DijkstraPathFinder {
 
         return grid;
     }
+
+    public static boolean insideTabooArea(int x, int y, org.opencv.core.Point[] optionalTabooAreaCenter, double[] optionalTabooAreaRadiusSquared, Rect[] optionalTabooArea, int stepSize) {
+        //the x y exchange shouldnt make a differenz as we handle a square and a circle
+        for (int i = 0; i < optionalTabooAreaCenter.length; i++) {
+            Rect r = optionalTabooArea[i];
+
+            if (x >= r.x && x <= r.x+r.width && y >= r.y && y <= r.y + r.height){
+                //check if inside circle
+                double d = (r.x - x)*(r.x - x)+(r.y-y)*(r.y-y);
+                if (d < optionalTabooAreaRadiusSquared[i]){
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+
+
 
     private void showPathway(ObjectType[][] source, int imageType, RoboPos roboPos, int graphSkip) {
 

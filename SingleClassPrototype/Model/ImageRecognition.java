@@ -713,6 +713,10 @@ public class ImageRecognition {
         return center;
     }
 
+    public Point getObject() {
+        return object;
+    }
+
     public Point getPrev() {
         return prev;
     }

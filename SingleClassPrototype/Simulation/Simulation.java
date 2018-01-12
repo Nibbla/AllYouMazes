@@ -5,9 +5,11 @@ import Interfaces.IControl;
 import Model.*;
 import Util.ImgWindow;
 import org.opencv.core.*;
+import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
@@ -47,6 +49,7 @@ public class Simulation {
 
     private ImgWindow pathWindow;
     private ImgWindow debugWindow;
+    private int objectRadius = 20;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -132,7 +135,7 @@ public class Simulation {
 
     private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
         System.out.println("Calculate Path...");
-        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), pickWindow.mouseX, pickWindow.mouseY, stepsize);
+        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), pickWindow.mouseX, pickWindow.mouseY, stepsize, null, null, null);
         shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(rp.getY(), rp.getX(), 0, 0), stepsize);
         shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
 
@@ -222,6 +225,8 @@ public class Simulation {
             // retrieve the newest shortest path from the grid and pass it to the handler
             retrieveNewestShortestPath(robotX,robotY,0);
 
+            //retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
+
 
             end = outputChangingPathDuration(end);
 
@@ -278,6 +283,149 @@ public class Simulation {
 
 
         }
+    }
+
+    private void retrieveObjectShortestPath(Mat currentFrame, int robotX, int robotY, int robotR) {
+        try {
+            Point object = cv.getObject();
+            LinkedList<Line> shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(object.y, object.x,  0), stepsize);
+            shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
+            //findNodeThatRobotGetsObject
+
+
+            //define Taboo Area which is around the object
+            Point[] optionalTabooAreaCenter = new Point[1];
+            double[] optionalTabooAreaRadiusSquared = new double[1];
+            Rect[] optionalTabooArea = new Rect[1];
+            for (int i = 0; i < optionalTabooAreaCenter.length; i++) {
+                optionalTabooAreaCenter[i] = new Point(object.x/stepsize,object.y/stepsize);
+                double radius= objectRadius/stepsize;
+                int left = (int) (optionalTabooAreaCenter[i].x-radius);
+                int up  = (int) (optionalTabooAreaCenter[i].y-radius);
+                int diameter = (int) (2*radius);
+
+                optionalTabooArea[i] = new Rect(left,up,diameter,diameter);
+                optionalTabooAreaRadiusSquared[i] = radius * radius;
+            }
+
+            ArrayList<java.awt.Point> possibleWayPoints;
+            possibleWayPoints = getTargetPoints((int)object.x/stepsize,(int)object.y/stepsize,(int)objectRadius/stepsize);
+            Point objectGridCenter = new Point(object.x/stepsize,object.y/stepsize);
+            Node selectedPoint = selectPoint(grid, possibleWayPoints,objectGridCenter);
+            //create Line From selected Point to Object
+            shortestPathFromObject.add(0,new Line(selectedPoint,shortestPathFromObject.getFirst().getA()));
+            //
+
+            Node[][] grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), selectedPoint.getX(), selectedPoint.getY(), stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared,optionalTabooArea);
+            LinkedList<Line> shortestPathToObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, robotR, 0), stepsize);
+            shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathToObject);
+
+            shortestPathFromObject.addAll(0,shortestPathFromObject);
+
+            agent.getHandler().changePath(shortestPath, 0);
+        } catch (Exception e) {
+            System.out.println("No path retrievable. Robot possibly within Contours");
+        }
+    }
+
+    private Node selectPoint(Node[][] grid,ArrayList<java.awt.Point> possibleWayPoints, Point center) {
+        sortTargetPointsByDistance(possibleWayPoints);
+        for (int i = possibleWayPoints.size()-1; i >= 0; i--) {
+           // doesNotHitWall
+
+
+        }
+
+        return null;
+    }
+
+    private void checkFeasability(ArrayList<Point> possibleWayPoints) {
+
+    }
+
+    private boolean doesNotHitWall(Node[][] grid, int x1, int y1, int x2, int y2) {
+        // delta of exact value and rounded value of the dependent variable
+        int d = 0;
+
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+
+        int dx2 = 2 * dx; // slope scaling factors to
+        int dy2 = 2 * dy; // avoid floating point
+
+        int ix = x1 < x2 ? 1 : -1; // increment direction
+        int iy = y1 < y2 ? 1 : -1;
+
+        int x = x1;
+        int y = y1;
+
+        if (dx >= dy) {
+            while (true) {
+                if (grid[x][y] == null) return false;
+                if (x == x2)
+                    break;
+                x += ix;
+                d += dy2;
+                if (d > dx) {
+                    y += iy;
+                    d -= dx2;
+                }
+            }
+        } else {
+            while (true) {
+                if (grid[x][y] == null) return false;
+                if (y == y2)
+                    break;
+                y += iy;
+                d += dx2;
+                if (d > dy) {
+                    x += ix;
+                    d -= dy2;
+                }
+            }
+        }
+        return true;
+    }
+
+    private void sortTargetPointsByDistance(ArrayList<java.awt.Point> possibleWayPoints) {
+
+    }
+
+    private ArrayList<java.awt.Point> getTargetPoints(int x0, int y0, int radius) {
+       ArrayList<java.awt.Point> points = new ArrayList<>(60);
+            int f = 1 - radius;
+            int ddF_x = 0;
+            int ddF_y = -2 * radius;
+            int x = 0;
+            int y = radius;
+
+            points.add(new java.awt.Point(x0, y0 + radius));
+            points.add(new java.awt.Point(x0, y0 - radius));
+            points.add(new java.awt.Point(x0 + radius, y0));
+            points.add(new java.awt.Point(x0 - radius, y0));
+
+            while(x < y)
+            {
+                if(f >= 0)
+                {
+                    y--;
+                    ddF_y += 2;
+                    f += ddF_y;
+                }
+                x++;
+                ddF_x += 2;
+                f += ddF_x + 1;
+
+                points.add(new java.awt.Point(x0 + x, y0 + y));
+                points.add(new java.awt.Point(x0 - x, y0 + y));
+                points.add(new java.awt.Point(x0 + x, y0 - y));
+                points.add(new java.awt.Point(x0 - x, y0 - y));
+                points.add(new java.awt.Point(x0 + y, y0 + x));
+                points.add(new java.awt.Point(x0 - y, y0 + x));
+                points.add(new java.awt.Point(0 + y, y0 - x));
+                points.add(new java.awt.Point(0 - y, y0 - x));
+            }
+        return points;
     }
 
     private void sendCommands(boolean needToSend) {
