@@ -230,7 +230,7 @@ public class Simulation {
 
 
             // update representation of the agent, new position, new rotation.
-            agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
+            agent.updateV2(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
 
             //System.out.println(agent.getCurrentPosition());
 

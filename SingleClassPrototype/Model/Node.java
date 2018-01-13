@@ -120,4 +120,13 @@ public class Node{
         System.out.println(e.getShortestPath());
         System.out.println(e.getShortestPathLines());
     }
+
+    @Override
+    public boolean equals(Object o){
+        return (this.x == ((Node)o).getX() && this.x == ((Node)o).getX());
+    }
+
+    public double getDistanceTo(Node o){
+        return Math.sqrt((Math.pow((this.x - o.x),2) + Math.pow((this.y - o.y),2)));
+    }
 }
