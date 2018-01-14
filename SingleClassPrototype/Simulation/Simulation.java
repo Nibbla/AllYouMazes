@@ -284,8 +284,30 @@ public class Simulation {
         }
     }
 
+    /**
+     * this method generates a complete path from robot, to object, to exit.
+     *
+     * Hereby first the path from object to exit will be generated
+     *
+     * then around the object (on the surface of a circle) several pick up points
+     * will be generated. these pick up points will be evaluated if possible (i.e.
+     * no wall between object and pick up point), by angle between point and object
+     * in relation to first line of the object_to_exit path, and by distance to robot.
+     *
+     * after a pick up point is selected, the path from robot to pickup point,
+     * will be generated. this path will be concatinated with the line between
+     * pickup point and object. Finally this resulting path will be concatinated
+     * with the original path
+     *
+     * @param currentFrame
+     * @param robotX
+     * @param robotY
+     * @param robotR
+     */
     private void retrieveObjectShortestPath(Mat currentFrame, int robotX, int robotY, int robotR) {
         try {
+
+            //pfad vom object zum ausgang
             Point object = cv.getObject();
             LinkedList<Line> shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(object.y, object.x, 0), stepsize);
             shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
@@ -296,16 +318,7 @@ public class Simulation {
             Point[] optionalTabooAreaCenter = new Point[1];
             double[] optionalTabooAreaRadiusSquared = new double[1];
             Rect[] optionalTabooArea = new Rect[1];
-            for (int i = 0; i < optionalTabooAreaCenter.length; i++) {
-                optionalTabooAreaCenter[i] = new Point(object.x / stepsize, object.y / stepsize);
-                double radius = objectRadius / stepsize;
-                int left = (int) (optionalTabooAreaCenter[i].x - radius);
-                int up = (int) (optionalTabooAreaCenter[i].y - radius);
-                int diameter = (int) (2 * radius);
-
-                optionalTabooArea[i] = new Rect(left, up, diameter, diameter);
-                optionalTabooAreaRadiusSquared[i] = radius * radius;
-            }
+            createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
 
             Node[][] gridToRobotNoInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
 
@@ -322,7 +335,7 @@ public class Simulation {
                     java.awt.Point pointSelected = null;
                     pointSelected = possibleWayPoints.get(i);
                     shortestPathToObject = DijkstraPathFinder.getShortestPathFromGridLine(gridToRobotNoInvertingNeeded, new RoboPos(pointSelected.getY(), pointSelected.getX(), 0, 0), stepsize);
-                    Line line = new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA());
+                    //Line line = new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA());
 
                 //check if flip of x and y nexxessary
                 if (shortestPathToObject==null||doesHitWall(grid,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize)){
@@ -349,6 +362,19 @@ public class Simulation {
         }
     }
 
+    private void createTabooAreaFromObject(Point object, Rect[] optionalTabooArea, Point[] optionalTabooAreaCenter, double[] optionalTabooAreaRadiusSquared) {
+        for (int i = 0; i < optionalTabooAreaCenter.length; i++) {
+            optionalTabooAreaCenter[i] = new Point(object.x / stepsize, object.y / stepsize);
+            double radius = objectRadius / stepsize;
+            int left = (int) (optionalTabooAreaCenter[i].x - radius);
+            int up = (int) (optionalTabooAreaCenter[i].y - radius);
+            int diameter = (int) (2 * radius);
+
+            optionalTabooArea[i] = new Rect(left, up, diameter, diameter);
+            optionalTabooAreaRadiusSquared[i] = radius * radius;
+        }
+
+    }
 
 
     private ArrayList<Double> settleScore(ArrayList<java.awt.Point> possibleWayPoints, ArrayList<Double> possibleWayPointsLengths, LinkedList<Double> possibleWayPointsAngleToObjectCenter) {
