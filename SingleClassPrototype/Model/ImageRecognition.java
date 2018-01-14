@@ -8,6 +8,10 @@ import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 import org.opencv.utils.Converters;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,6 +52,10 @@ public class ImageRecognition {
 
     private Scalar objectBgs1_1 = new Scalar(110, 50, 50);
     private Scalar objectBgs1_2 =new Scalar(140, 115, 115);
+
+    private Mat[] byPassImages = null;
+    private boolean byPassCamera = false;
+    private long byPassCount = 0;
 
 
     public ImageRecognition(boolean debug) {
@@ -99,8 +107,12 @@ public class ImageRecognition {
     }
 
     private void readNextFrame() {
-        capture.read(frame);
-
+        if (byPassCamera){
+            byPassCount= (byPassCount+1)%byPassImages.length;
+            frame = byPassImages[(int) byPassCount].clone();
+        }else {
+            capture.read(frame);
+        }
 		
         if (croppingAreaKnown) {
             frame = frame.submat(croppedArea);
@@ -785,6 +797,22 @@ public class ImageRecognition {
         currentFrame = currentFrame.submat(Imgproc.boundingRect(backgroundRect(currentFrame)));
 
         return currentFrame;
+    }
+
+    public void setByPass(boolean byPassCamera, File[] files) {
+        BufferedImage[] imaages = new BufferedImage[files.length];
+        Mat[] images = new Mat[files.length];
+        for (int i = 0; i < files.length; i++) {
+            try {
+                imaages[i] = ImageIO.read(files[i]);
+                images[i] = ImgWindow.bufferedImmageToMat(imaages[i]);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        this.byPassImages = images;
+        this.byPassCamera = byPassCamera;
+
     }
 }
 

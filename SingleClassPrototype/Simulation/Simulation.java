@@ -9,6 +9,8 @@ import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import javax.swing.*;
+import java.io.File;
 import java.util.*;
 
 /**
@@ -30,6 +32,7 @@ public class Simulation {
 
     public static Node[][] grid;
     private static RobotControl factoryControl = new RobotControl();
+
     public IControl control;
     private LinkedList<Line> shortestPath;
     private int stepsize = 4;
@@ -39,6 +42,8 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+                                           //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
@@ -56,7 +61,14 @@ public class Simulation {
     public Simulation() {
         // One-time initialization of camera
         System.out.println("Init Camera...");
-        cv.initCamera(400, 600, 1000, 300);
+        if (byPassCamera){
+            File[] files = getCammeraByPassImages();
+            cv.setByPass(byPassCamera,files);
+
+        }else {
+            cv.initCamera(400, 600, 1000, 300);
+        }
+
 
         // storing the current frame for later use
         Mat currentFrame = cv.getSubFrame();
@@ -121,6 +133,13 @@ public class Simulation {
         startSimulation();
     }
 
+    private File[] getCammeraByPassImages() {
+        JFileChooser chooser = new JFileChooser();
+        chooser.setMultiSelectionEnabled(true);
+        chooser.showOpenDialog(null);
+        return chooser.getSelectedFiles();
+    }
+
     private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
@@ -183,6 +202,7 @@ public class Simulation {
             // used to measure execution time
             start = System.currentTimeMillis();
             // CV frame used during each simulation step
+
             currentFrame = cv.getFrame();
 
             end = outputPictureTakingTime(start,end);
