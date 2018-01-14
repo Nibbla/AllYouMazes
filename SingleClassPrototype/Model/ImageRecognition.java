@@ -740,7 +740,12 @@ public class ImageRecognition {
         frame.release();
     }
 
-    public Point getAngle() {
+
+    /**
+     * the position of the tip of the triangle on top of the epuc
+     * @return
+     */
+    public Point getAnglePoint() {
         return angle;
     }
 

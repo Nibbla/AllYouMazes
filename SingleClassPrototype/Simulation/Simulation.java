@@ -196,7 +196,7 @@ public class Simulation {
 
             // find the angle-position of the robot
             cv.findAnglePosition(debug);
-            Point anglePosition = cv.getAngle();
+            Point anglePosition = cv.getAnglePoint();
             end = outputRotationDetectionTime(end);
 
             cv.findObjectPostion(debug);
@@ -295,8 +295,8 @@ public class Simulation {
      * in relation to first line of the object_to_exit path, and by distance to robot.
      *
      * after a pick up point is selected, the path from robot to pickup point,
-     * will be generated. this path will be concatinated with the line between
-     * pickup point and object. Finally this resulting path will be concatinated
+     * will be generated. this path will be concatenated with the line between
+     * pickup point and object. Finally this resulting path will be concatenated
      * with the original path
      *
      * @param currentFrame
@@ -322,32 +322,16 @@ public class Simulation {
 
             Node[][] gridToRobotNoInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
 
-            ArrayList<java.awt.Point> possibleWayPoints;
-            possibleWayPoints = getTargetPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) objectRadius / stepsize);
-                System.out.println("Possible way Points: " + possibleWayPoints.size());
-                LinkedList<Double> possibleWayPointsAngleToObjectCenter =  createPossibleWayPointsAngles(possibleWayPoints, shortestPathFromObject.getFirst());
-                ArrayList<Double> possibleWayPointsLengths =  createPossibleWayPointsLengths(possibleWayPoints, gridToRobotNoInvertingNeeded);
-                ArrayList<Double> possibleScores  = settleScore(possibleWayPoints,possibleWayPointsLengths,possibleWayPointsAngleToObjectCenter);
+            ArrayList<java.awt.Point> possiblePickUpPoints;
+            possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) ((cv.getRadius()+objectRadius)*1.1 / stepsize));
+                System.out.println("Possible way Points: " + possiblePickUpPoints.size());
+                LinkedList<Double> possibleWayPointsAngleToObjectCenter =  createPossibleWayPointsAngles(possiblePickUpPoints, shortestPathFromObject.getFirst());
+                ArrayList<Double> possibleWayPointsLengths =  createPossibleWayPointsLengths(possiblePickUpPoints, gridToRobotNoInvertingNeeded);
+                ArrayList<Double> possibleScores  = settleScore(possiblePickUpPoints,possibleWayPointsLengths,possibleWayPointsAngleToObjectCenter);
                 LinkedList<Line> shortestPathToObject = null;
-                while(possibleWayPoints.size()>0){
-                    int i = getBest(possibleScores,possibleWayPoints);
-                    shortestPathToObject = null;
-                    java.awt.Point pointSelected = null;
-                    pointSelected = possibleWayPoints.get(i);
-                    shortestPathToObject = DijkstraPathFinder.getShortestPathFromGridLine(gridToRobotNoInvertingNeeded, new RoboPos(pointSelected.getY(), pointSelected.getX(), 0, 0), stepsize);
-                    //Line line = new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA());
 
-                //check if flip of x and y nexxessary
-                if (shortestPathToObject==null||doesHitWall(grid,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize)){
-                        possibleWayPoints.remove(i);
-                        possibleWayPointsLengths.remove(i);
-                        possibleWayPointsAngleToObjectCenter.remove(i);
-                     continue;
-                }else{
-                    shortestPathFromObject.add(0, new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA()));
-                        break;
-                    }
-                }
+                boolean solutionfound = false;
+                shortestPathToObject = selectBestPickupPointAndAddToPath(shortestPathFromObject, gridToRobotNoInvertingNeeded, possiblePickUpPoints, possibleWayPointsAngleToObjectCenter, possibleWayPointsLengths, possibleScores, shortestPathToObject, solutionfound);
 
                 if (shortestPathToObject == null) throw new Exception("No feasable path found");
                  //create Line From selected Point to Object
@@ -360,6 +344,31 @@ public class Simulation {
         } catch (Exception e) {
             System.out.println("No path retrievable. Robot possibly within Contours");
         }
+    }
+
+    private LinkedList<Line> selectBestPickupPointAndAddToPath(LinkedList<Line> shortestPathFromObject, Node[][] gridToRobotNoInvertingNeeded, ArrayList<java.awt.Point> possiblePickUpPoints, LinkedList<Double> possibleWayPointsAngleToObjectCenter, ArrayList<Double> possibleWayPointsLengths, ArrayList<Double> possibleScores, LinkedList<Line> shortestPathToObject, boolean solutionfound) {
+        while(possiblePickUpPoints.size()>0&& solutionfound == false){
+            int i = getBest(possibleScores,possiblePickUpPoints);
+
+            java.awt.Point pointSelected = null;
+            pointSelected = possiblePickUpPoints.get(i);
+            shortestPathToObject = DijkstraPathFinder.getShortestPathFromGridLine(gridToRobotNoInvertingNeeded, new RoboPos(pointSelected.getY(), pointSelected.getX(), 0, 0), stepsize);
+            //Line line = new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA());
+
+        //check if flip of x and y nexxessary
+
+            if (shortestPathToObject==null||doesHitWall(grid,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize)){
+                possiblePickUpPoints.remove(i);
+                possibleWayPointsLengths.remove(i);
+                possibleWayPointsAngleToObjectCenter.remove(i);
+                solutionfound = false;
+        }else{
+            shortestPathFromObject.add(0, new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA()));
+
+                solutionfound = true;
+            }
+        }
+        return shortestPathToObject;
     }
 
     private void createTabooAreaFromObject(Point object, Rect[] optionalTabooArea, Point[] optionalTabooAreaCenter, double[] optionalTabooAreaRadiusSquared) {
@@ -376,7 +385,17 @@ public class Simulation {
 
     }
 
-
+    /**
+     * goes through all pick up points and assignes them two respectivly normalised scores between 0 and 1.
+     * The first score is depending on the path length between robot and pick up point
+     * the second score is depending on the angle between the line (pickuppoint, object) and the line (object, first step)
+     * the smaller the path or the angle the better
+     *
+     * @param possibleWayPoints
+     * @param possibleWayPointsLengths
+     * @param possibleWayPointsAngleToObjectCenter
+     * @return
+     */
     private ArrayList<Double> settleScore(ArrayList<java.awt.Point> possibleWayPoints, ArrayList<Double> possibleWayPointsLengths, LinkedList<Double> possibleWayPointsAngleToObjectCenter) {
         //quick and dirty
         int i = -1;
@@ -421,7 +440,13 @@ public class Simulation {
         return bestIndex;
     }
 
-
+    /**
+     * retrieves for every path from robot to pickupPoint the length
+     * and stores it into an array
+     * @param possibleWayPoints
+     * @param gridToRobotNoInvertingNeeded
+     * @return
+     */
     private ArrayList<Double> createPossibleWayPointsLengths(ArrayList<java.awt.Point> possibleWayPoints, Node[][] gridToRobotNoInvertingNeeded) {
         ArrayList<Double> possibleWayPointsLengths = new ArrayList<>(possibleWayPoints.size());
         int size = possibleWayPoints.size();
@@ -439,14 +464,16 @@ public class Simulation {
       //  LinkedList<Node>
         int maxI = possibleWayPoints.size();
         LinkedList<Double> possibleWayPointsAngleToObjectCenter = new LinkedList<>();
-        double angleFromObject = Math.atan2(objectFirstDirection.getB().getY()-objectFirstDirection.getA().getY(),objectFirstDirection.getB().getX()-objectFirstDirection.getA().getX());
+       // double angleFromObject = Math.atan2(objectFirstDirection.getB().getY()-objectFirstDirection.getA().getY(),objectFirstDirection.getB().getX()-objectFirstDirection.getA().getX());
         int ofday = objectFirstDirection.getA().getY();
         int ofdax = objectFirstDirection.getA().getX();
 
         for (int i = maxI-1; i >= 0; i--) {
             java.awt.Point pwp = possibleWayPoints.get(i);
             if (grid[pwp.x][pwp.y] == null) possibleWayPoints.remove(i);
-            possibleWayPointsAngleToObjectCenter.add(0,Math.atan2(ofday,ofdax-pwp.getX()));
+            double calculatedAngleBetweenObjects = Math.atan2(ofday-pwp.getY(),ofdax-pwp.getX());
+            possibleWayPointsAngleToObjectCenter.add(0,calculatedAngleBetweenObjects);
+            System.out.println("Angle between pickupPoint and path from object calculated: " + calculatedAngleBetweenObjects);
         }
 
        // Collections.sort(possibleWayPoints,c);
@@ -455,7 +482,63 @@ public class Simulation {
     }
 
     private boolean distanceAndAngleToObjectIsWrong() {
-        return true;
+        Point object = cv.getObject();
+        Point center = cv.getCenter();
+        if (object == null) return false; //object is invsibile, therefore hidden in the epucs mouth (if that is still our scenerio)
+
+        //uses https://de.wikipedia.org/wiki/Skalarprodukt
+        //uses M  of coordinates (x,y) is inside the rectangle iff
+        //https://math.stackexchange.com/questions/190111/how-to-check-if-a-point-is-inside-a-rectangle
+        //(0<AM⋅AB<AB⋅AB)∧(0<AM⋅AD<AD⋅AD)
+        //(scalar product of vectors)
+
+        //we create a rectangle, where the base is the epuc diameter orientatiet ortoganal to the movement axis
+        //the left point is A the right point is B
+        //the left point far side of the rectangle is D
+        Point triangleTip = cv.getAnglePoint();
+
+        double deltaTipToCenterX = center.x - triangleTip.x;
+        double deltaTipToCenterY = center.y - triangleTip.y;
+
+        double normOfTriangleTip = Math.sqrt(deltaTipToCenterX*deltaTipToCenterX+ deltaTipToCenterY*deltaTipToCenterY);
+        double centerNormedDirectionX = deltaTipToCenterX/ normOfTriangleTip;
+        double centerNormedDirectionY = deltaTipToCenterY/ normOfTriangleTip;
+
+        double radius = cv.getRadius();
+        double pauerFactor = 1.12;
+
+        double aX = radius * centerNormedDirectionY;
+        double aY = -radius * centerNormedDirectionX;
+
+        double bX = -radius * centerNormedDirectionY;
+        double bY = radius * centerNormedDirectionX;
+
+
+        double dX = aX + centerNormedDirectionX * pauerFactor * radius;
+        double dY = aY + centerNormedDirectionY * pauerFactor * radius;
+
+        double mX =  object.x;
+        double mY =  object.y;
+
+        //(0<AM⋅AB<AB⋅AB)∧(0<AM⋅AD<AD⋅AD)
+        double deltaAM_x = mX-aX;
+        double deltaAM_y = mY-aY;
+        double deltaAB_x = bX - aX;
+        double deltaAB_y = bY - aY;
+        double deltaAD_x = dX - aX;
+        double deltaAD_y = dY - aY;
+
+        double scalarAMAB = deltaAM_x*deltaAB_x+deltaAM_y*deltaAB_y;
+        double scalarABAB = deltaAB_x*deltaAB_x+deltaAB_y*deltaAB_y;
+        double scalarAMAD = deltaAM_x*deltaAD_x+deltaAM_y*deltaAD_y;
+        double scalarADAD = deltaAD_x*deltaAD_x+deltaAD_y*deltaAD_y;
+        if (scalarAMAB>=0)return true;
+        if (scalarABAB>=scalarAMAB) return true;
+        if (scalarAMAB>=0)return true;
+        if (scalarADAD>=scalarAMAD) return true;
+
+
+        return false;
     }
 
 
@@ -509,7 +592,7 @@ public class Simulation {
 
     }
 
-    private ArrayList<java.awt.Point> getTargetPoints(int x0, int y0, int radius) {
+    private ArrayList<java.awt.Point> getPickUpPoints(int x0, int y0, int radius) {
        ArrayList<java.awt.Point> points = new ArrayList<>(60);
             int f = 1 - radius;
             int ddF_x = 0;
