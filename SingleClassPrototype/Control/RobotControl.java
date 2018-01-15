@@ -5,6 +5,7 @@ import Simulation.Simulation;
 import SpecialSettingsEtc.Tangential;
 
 import java.util.Map;
+import java.io.PrintWriter;
 
 /**
  * This class is used to Control the epuck robot
@@ -18,20 +19,21 @@ public class RobotControl implements IControl {
     // Replace this with whatever username is valid for the current System.
     private final String username = "pi";
     // The amount of seconds that will be waited after starting to connect to the epuck via bluetooth.
-    private final int startUpSeconds = 20;
+    private final int startUpSeconds = 10;
     // The basic structure of the startup command. The respective port and launchfile are specified here.
-    private final String[] startCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/roslaunch -p 11311 -v --screen epuck_driver multi_epuck.launch"};
+    private final String[] startCommand = {"python","/home/" + username + "/catkin_ws/src/epuck_driver/src/epuck/ePuck.py"};
     // The basic structure of a movement command. For more information check the ROS documentation.
-    private final String[] movementCommand = {"bash", "-c", "/opt/ros/" + ROSversion + "/bin/rostopic pub -1 /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: 0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: 0.0}}\'"};
+    private final double[] movementCommand = {0,0};
     // Values used for moving either forward or angular
-    private final double FORWARDSPEED = 0.65; // with a max of 3.5
-    private final double ANGULARSPEED = 0.13; // with a max of 1.5
+    private final double FORWARDSPEED = 550; // with a max of 3.5
+    private final double ANGULARSPEED = 250; // with a max of 1.5
     // These are used to spawn the processes that Control the epuck.
     private ProcessBuilder processGenerator;
     private Process initRosProcess;
     private Process motorSpeedProcess;
     private boolean isRunning;
-    private boolean isSending;
+    private boolean isSending; 
+    private PrintWriter out;
 
 
     /**
@@ -108,7 +110,15 @@ public class RobotControl implements IControl {
      */
     @Override
     public void sendCommand(double linearSpeed, double angularSpeed) {
-        setMotorSpeed(linearSpeed * FORWARDSPEED, angularSpeed * ANGULARSPEED);
+	if (linearSpeed == 1){
+        	setMotorSpeed(linearSpeed * FORWARDSPEED, linearSpeed * FORWARDSPEED);
+	} else if (angularSpeed == -1){
+		setMotorSpeed(-1 * angularSpeed * ANGULARSPEED, angularSpeed * ANGULARSPEED);
+	} else if (angularSpeed == 1){
+		setMotorSpeed(-1 * angularSpeed * ANGULARSPEED, angularSpeed * ANGULARSPEED);
+	} else if (linearSpeed == 0 && angularSpeed == 0){
+		setMotorSpeed(0,0);
+	}
         issueMotorSpeed();
     }
 
@@ -167,12 +177,17 @@ public class RobotControl implements IControl {
             }
 
             if (isSending) {
-                motorSpeedProcess.destroyForcibly();
-                isSending = false;
-                initProcessBuilder();
+                
             }
-            processGenerator.command(movementCommand);
-            motorSpeedProcess = processGenerator.start();
+		try{
+    out = new PrintWriter("/home/pi/Desktop/test.txt");
+    out.println( ((int)movementCommand[0]) + " " + ((int)movementCommand[1]));
+
+		}catch(Exception e){
+		
+}finally{
+    out.close();
+}
             isSending = true;
 
             if (Simulation.DEBUG_CONTROLLER) {
@@ -190,8 +205,9 @@ public class RobotControl implements IControl {
      * @param linear  a linear speed. a positive value is for forward, a negative value is for backward.
      * @param angular an anguar speed. a positive value is for counterclockwise, a negative value for clockwise.
      */
-    private void setMotorSpeed(double linear, double angular) {
-        movementCommand[2] = "/opt/ros/" + ROSversion + "/bin/rostopic pub -1 /epuck_robot_0/mobile_base/cmd_vel geometry_msgs/Twist \'{linear:  {x: " + linear + ", y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0,z: " + angular + "}}\'";
+    private void setMotorSpeed(double left, double right) {
+        movementCommand[0] = (int) left;
+	movementCommand[1] = (int) right;
     }
 
     /**

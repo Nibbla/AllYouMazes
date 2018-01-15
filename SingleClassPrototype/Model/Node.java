@@ -106,6 +106,15 @@ public class Node{
         return "[x: " + y + ", y: " + x + "]";
     }
 
+    /*@Override
+    public boolean equals(Object o){
+        return (this.x == ((Node)o).getX() && this.y == ((Node)o).getY());
+    }*/
+
+    public double getDistanceTo(Node o){
+        return Math.sqrt((Math.pow((this.x - o.x),2) + Math.pow((this.y - o.y),2)));
+    }
+
     public static void main(String[] args) {
         Node a = new Node(1, 1);
         Node b = new Node(2, 2);

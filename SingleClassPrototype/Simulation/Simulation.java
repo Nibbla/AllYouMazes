@@ -19,8 +19,8 @@ public class Simulation {
     public final static boolean DEBUG_DURATION = true;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = true;
-    public final static boolean DEBUG_CV_CONTOURS = false;
-    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
+    public final static boolean DEBUG_CV_CONTOURS = true;
+    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
 
     public boolean debugEveryXFrames = true;
     public int debugFrames = 10;
@@ -86,7 +86,7 @@ public class Simulation {
         // create shorted path based on contours (the underlaying method still has to pe improved)
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
 
-        cv.findObjectPostion(false);
+        //cv.findObjectPostion(false);
         setGridAndShortestPath(rp,currentFrame);
 
         // draw the path to the goal on the initial frame
@@ -197,7 +197,7 @@ public class Simulation {
             Point anglePosition = cv.getAngle();
             end = outputRotationDetectionTime(end);
 
-            cv.findObjectPostion(debug);
+            //cv.findObjectPostion(debug);
 
 
             // check if the robot has been found
@@ -227,7 +227,7 @@ public class Simulation {
 
 
             // update representation of the agent, new position, new rotation.
-            agent.update(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
+            agent.updateV2(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
 
             System.out.println(agent.getCurrentPosition());
 
