@@ -24,6 +24,7 @@ public class Simulation {
     public final static boolean DEBUG_CONTROLLER = true;
     public final static boolean DEBUG_CV_CONTOURS = true;
     public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
+    public final static boolean DEBUG_CV_OBJECT = true;
 
     public boolean debugEveryXFrames = true;
     public int debugFrames = 10;
@@ -42,7 +43,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -141,6 +142,8 @@ public class Simulation {
     }
 
     private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
+
+
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
@@ -219,7 +222,7 @@ public class Simulation {
             Point anglePosition = cv.getAnglePoint();
             end = outputRotationDetectionTime(end);
 
-            //cv.findObjectPostion(debug);
+            cv.findObjectPostion(debug);
 
 
             // check if the robot has been found
@@ -242,10 +245,10 @@ public class Simulation {
             int robotR = (int) (cv.getRadius() / 2);
 
             // retrieve the newest shortest path from the grid and pass it to the handler
-            retrieveNewestShortestPath(robotX,robotY,0);
+            //retrieveNewestShortestPath(robotX,robotY,0);
 
-            //retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
-
+            retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
+            drawPathOnWindowAndStoreFrame(currentFrame);
 
             end = outputChangingPathDuration(end);
 
@@ -291,6 +294,7 @@ public class Simulation {
 
                 needToSend = true;
             }
+
 
             sendCommands(needToSend);
 

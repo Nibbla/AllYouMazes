@@ -623,7 +623,9 @@ public class ImageRecognition {
                 RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(biggestContour).toArray()));
                 r.center.x += ax;
                 r.center.y += ay;
-
+                if (Simulation.DEBUG_CV_OBJECT) {
+                    Imgproc.ellipse(frame, r, new Scalar(0, 255, 255), 3);
+                }
                 object = new Point(r.center.x, r.center.y);
             }
 
