@@ -18,6 +18,7 @@ import java.util.List;
 public class ImageRecognition {
     ImgWindow camWindow = null;
     ImgWindow bgsWindow = null;
+
     private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r, perspectiveTransform, transformation_x, transformation_y;
     private VideoCapture capture;
     private int numberOfFrames;
@@ -50,8 +51,8 @@ public class ImageRecognition {
     private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
-    private Scalar objectBgs1_1 = new Scalar(122, 86./255.*100., 50./255.*100.);
-    private Scalar objectBgs1_2 =new Scalar(140, 115, 115);
+    private Scalar objectBgs1_1 = new Scalar(80, 70, 230);
+    private Scalar objectBgs1_2 =new Scalar(90., 85, 255);
 
     private Mat[] byPassImages = null;
     private boolean byPassCamera = false;
@@ -103,6 +104,7 @@ public class ImageRecognition {
             camWindow.setTitle("CAM");
             bgsWindow = ImgWindow.newWindow();
             bgsWindow.setTitle("BGS");
+
         }
     }
 
@@ -300,6 +302,8 @@ public class ImageRecognition {
             r.release();
         } else {
             diff = bgsObject(frame);
+            ax = 0;
+            ay = 0;
         }
 
         if (Simulation.DEBUG_CV_OBJECT || debug) {

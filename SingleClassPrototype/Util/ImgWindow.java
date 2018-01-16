@@ -56,6 +56,7 @@ public class ImgWindow extends JPanel {
                     clicked = true;
                     mouseX = e.getX();
                     mouseY = e.getY();
+                    outPutPixelValue(mouseX,mouseY);
                 }
             }
         });
@@ -73,6 +74,17 @@ public class ImgWindow extends JPanel {
                 mouseY = e.getY();
             }
         });
+    }
+
+    private void outPutPixelValue(int mouseX, int mouseY) {
+        if (img!=null){
+            Color c = new Color(img.getRGB(mouseX,mouseY));
+
+            float[] hsv = new float[3];
+            Color.RGBtoHSB(c.getRed(),c.getGreen(),c.getBlue(),hsv);
+            System.out.println("x: " + mouseX + " y: " + mouseY);
+            System.out.println("HSV: " + hsv[0]*180 + " " + hsv[1] * 255 + " " + hsv[2] * 255);
+        }
     }
 
     public void processEvents() {
