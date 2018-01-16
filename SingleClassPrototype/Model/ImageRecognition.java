@@ -50,7 +50,7 @@ public class ImageRecognition {
     private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
-    private Scalar objectBgs1_1 = new Scalar(110, 50, 50);
+    private Scalar objectBgs1_1 = new Scalar(122, 86./255.*100., 50./255.*100.);
     private Scalar objectBgs1_2 =new Scalar(140, 115, 115);
 
     private Mat[] byPassImages = null;
@@ -302,7 +302,7 @@ public class ImageRecognition {
             diff = bgsObject(frame);
         }
 
-        if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
+        if (Simulation.DEBUG_CV_OBJECT || debug) {
             bgsWindow.setImage(diff);
         }
     }
