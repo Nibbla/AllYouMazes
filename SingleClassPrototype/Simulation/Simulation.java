@@ -43,7 +43,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -252,7 +252,7 @@ public class Simulation {
             // retrieve the newest shortest path from the grid and pass it to the handler
             //retrieveNewestShortestPath(robotX,robotY,0);
             checkIfGoalChangedAndSetGridNew(currentFrame);
-            retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
+            if (cv.getObject()!=null)retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
             drawPathOnWindowAndStoreFrame(currentFrame);
 
             end = outputChangingPathDuration(end);
