@@ -106,6 +106,10 @@ public class DijkstraPathFinder {
         for (int x = 0; x < sRows; x++) {
             for (int y = 0; y < sCols; y++) {
                 //test the flipping of x and y one day
+                if (optionalTabooAreaCenter!=null) {if (insideTabooArea(y,x,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared,optionalTabooArea,stepSize)){
+
+                    continue;
+                }}
                 double t = Imgproc.pointPolygonTest(contour, new org.opencv.core.Point(y * stepSize, x * stepSize), false);
                 if (t == 0 || t == -1) {
                     grid[x][y] = new Node(x * stepSize, y * stepSize);
@@ -116,7 +120,7 @@ public class DijkstraPathFinder {
         for (int x = 0; x < sRows; x++) {
             for (int y = 0; y < sCols; y++) {
                 if (grid[x][y] == null) continue;
-                if (optionalTabooAreaCenter!=null) {if (insideTabooArea(x,y,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared,optionalTabooArea,stepSize))continue;}
+
                 for (int dx = x - 1; dx <= x + 1; dx += 1) {
                     for (int dy = y - 1; dy <= y + 1; dy += 1) {
                         if (dx < 0 || dx >= sRows || dy < 0 || dy >= sCols) continue;
@@ -212,11 +216,14 @@ public class DijkstraPathFinder {
         //the x y exchange shouldnt make a differenz as we handle a square and a circle
         for (int i = 0; i < optionalTabooAreaCenter.length; i++) {
             Rect r = optionalTabooArea[i];
-
+            org.opencv.core.Point center = optionalTabooAreaCenter[i];
             if (x >= r.x && x <= r.x+r.width && y >= r.y && y <= r.y + r.height){
+                //System.out.println(x+"_"+y + " is inside taboo sqaure");
                 //check if inside circle
-                double d = (r.x - x)*(r.x - x)+(r.y-y)*(r.y-y);
-                if (d < optionalTabooAreaRadiusSquared[i]){
+                double d = (center.x - x)*(center.x - x)+(center.y-y)*(center.y-y);
+
+                if (d <= optionalTabooAreaRadiusSquared[i]){
+                   //System.out.println(x+"_"+y + " is inside taboo area");
                     return true;
                 }
             }
@@ -469,5 +476,9 @@ public class DijkstraPathFinder {
     }
 
 
-
+    public static void invertAAndBs(LinkedList<Line> shortestPathToObject) {
+        for (Line l : shortestPathToObject){
+            l.reverseNodes();
+        }
+    }
 }

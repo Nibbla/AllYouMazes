@@ -23,4 +23,10 @@ public class Line {
     public String toString() {
         return "Line: [" + a + ", " + b + "]";
     }
+
+    public void reverseNodes() {
+        Node c = this.b;
+        this.b = this.a;
+        this.a = c;
+    }
 }

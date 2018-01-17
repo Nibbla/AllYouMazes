@@ -43,7 +43,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -55,6 +55,9 @@ public class Simulation {
     private ImgWindow pathWindow;
     private ImgWindow debugWindow;
     private int objectRadius = 20;
+    private int goalX = 0;
+    private int goalY = 0;
+    private ImgWindow gridWindow;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -147,7 +150,7 @@ public class Simulation {
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
-        pathWindow = ImgWindow.newWindow();
+        if (pathWindow == null) pathWindow = ImgWindow.newWindow();
         pathWindow.setImage(currentFrame);
 
         // store the edited frame (e.g for inspection)
@@ -156,7 +159,9 @@ public class Simulation {
 
     private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
         System.out.println("Calculate Path...");
-        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), pickWindow.mouseX, pickWindow.mouseY, stepsize, null, null, null);
+        goalX = pickWindow.mouseX;
+        goalY = pickWindow.mouseY;
+        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, null, null, null);
         shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(rp.getY(), rp.getX(), 0, 0), stepsize);
         shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);  //to not mess with code. it should now be upside down, as the dijkstra starts from the goal and not the robot.
 
@@ -246,8 +251,8 @@ public class Simulation {
 
             // retrieve the newest shortest path from the grid and pass it to the handler
             //retrieveNewestShortestPath(robotX,robotY,0);
-
-            //retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
+            checkIfGoalChangedAndSetGridNew(currentFrame);
+            retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
             drawPathOnWindowAndStoreFrame(currentFrame);
 
             end = outputChangingPathDuration(end);
@@ -308,6 +313,14 @@ public class Simulation {
         }
     }
 
+    private void checkIfGoalChangedAndSetGridNew(Mat currentFrame) {
+       if (goalX != pickWindow.mouseX || goalY != pickWindow.mouseY) {
+           goalX = pickWindow.mouseX;
+           goalY = pickWindow.mouseY;
+           grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, null, null, null);
+       }
+    }
+
     /**
      * this method generates a complete path from robot, to object, to exit.
      *
@@ -345,7 +358,7 @@ public class Simulation {
             createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
 
             Node[][] gridToRobotNoInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
-
+            drawGrid(gridToRobotNoInvertingNeeded,currentFrame,stepsize);
             ArrayList<java.awt.Point> possiblePickUpPoints;
             possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) ((cv.getRadius()+objectRadius)*1.1 / stepsize),grid.length,grid[0].length);
                 System.out.println("Possible way Points: " + possiblePickUpPoints.size());
@@ -371,6 +384,27 @@ public class Simulation {
         }
     }
 
+    private void drawGrid(Node[][] gridToDraw, Mat currentFrame, int stepSize) {
+        if (gridWindow== null) gridWindow  = ImgWindow.newWindow();
+        gridWindow.setTitle("GridWindow");
+        Mat f = currentFrame.clone();
+        Point object = cv.getObject();
+
+        Imgproc.circle( f, new Point( object.x, object.y ), objectRadius, new Scalar( 128, 0, 128 ), 2 );
+        for (int x = 0;x < gridToDraw.length; x++) {
+            for (int y = 0; y < gridToDraw[0].length; y++) {
+               if (gridToDraw[x][y] != null){
+                   Node n = gridToDraw[x][y];
+                   Imgproc.circle( f, new Point( n.getY(), n.getX() ), 1, new Scalar( 0, 0, 255 ), 1 );
+               }
+
+
+
+            }
+        }
+        gridWindow.setImage(f);
+    }
+
     private LinkedList<Line> selectBestPickupPointAndAddToPath(LinkedList<Line> shortestPathFromObject, Node[][] gridToRobotNoInvertingNeeded, ArrayList<java.awt.Point> possiblePickUpPoints, LinkedList<Double> possibleWayPointsAngleToObjectCenter, ArrayList<Double> possibleWayPointsLengths, ArrayList<Double> possibleScores, LinkedList<Line> shortestPathToObject, boolean solutionfound) {
         while(possiblePickUpPoints.size()>0&& solutionfound == false){
             int i = getBest(possibleScores,possiblePickUpPoints);
@@ -378,6 +412,7 @@ public class Simulation {
             java.awt.Point pointSelected = null;
             pointSelected = possiblePickUpPoints.get(i);
             shortestPathToObject = DijkstraPathFinder.getShortestPathFromGridLine(gridToRobotNoInvertingNeeded, new RoboPos(pointSelected.getY()*stepsize, pointSelected.getX()*stepsize, 0, 0), stepsize);
+            DijkstraPathFinder.invertAAndBs(shortestPathToObject);
             //Line line = new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA());
 
         //check if flip of x and y nexxessary
@@ -388,8 +423,8 @@ public class Simulation {
                 possibleWayPointsAngleToObjectCenter.remove(i);
                 solutionfound = false;
         }else{
-            shortestPathFromObject.add( new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getB()));
-
+             shortestPathFromObject.add( new Line(shortestPathToObject.getLast().getA(), shortestPathFromObject.getFirst().getB()));
+                System.out.println("Point Selected: x" + pointSelected.x + " y" + pointSelected.y + " i" + i);
                 solutionfound = true;
             }
         }
@@ -399,10 +434,10 @@ public class Simulation {
     private void createTabooAreaFromObject(Point object, Rect[] optionalTabooArea, Point[] optionalTabooAreaCenter, double[] optionalTabooAreaRadiusSquared) {
         for (int i = 0; i < optionalTabooAreaCenter.length; i++) {
             optionalTabooAreaCenter[i] = new Point(object.x / stepsize, object.y / stepsize);
-            double radius = objectRadius / stepsize;
+            double radius = 1* objectRadius / stepsize;
             int left = (int) (optionalTabooAreaCenter[i].x - radius);
             int up = (int) (optionalTabooAreaCenter[i].y - radius);
-            int diameter = (int) (2 * radius);
+            int diameter = (int) (2 * radius)+1;
 
             optionalTabooArea[i] = new Rect(left, up, diameter, diameter);
             optionalTabooAreaRadiusSquared[i] = radius * radius;
@@ -444,7 +479,8 @@ public class Simulation {
         for (int j = 0; j < size; j++) {
             double score1 =  1-( (angleIterator.next()-bestAngle)/ (worstAngle - bestAngle));
             double score2 =  1-( (possibleWayPointsLengths.get(j)-bestL)/ (worstL - bestL));
-            scoresOfPoints.add(score1+score2);
+           // scoresOfPoints.add(score1+2*score2);
+            scoresOfPoints.add(score1);
         }
 
        return scoresOfPoints;
@@ -452,11 +488,11 @@ public class Simulation {
     }
 
     private int getBest(ArrayList<Double> scoresOfPoints, ArrayList<java.awt.Point> possibleWayPoints) {
-        double best = Double.MAX_VALUE;
+        double best = 0;
         int size = possibleWayPoints.size();
         int bestIndex = -1;
         for (int j = 0; j < size; j++) {
-            if (best >= scoresOfPoints.get(j)){
+            if (best < scoresOfPoints.get(j)){
                 best = scoresOfPoints.get(j);
                 bestIndex = j;
             }
@@ -486,33 +522,56 @@ public class Simulation {
         return possibleWayPointsLengths;
     }
 
-    private LinkedList<Double> createPossibleWayPointsAngles(Point object, ArrayList<java.awt.Point> possibleWayPoints, Line objectFirstDirection) {
+    private LinkedList<Double> createPossibleWayPointsAngles(Point object, ArrayList<java.awt.Point> possibleWayPoints, Line objectFirstStep) {
         System.out.println("possibleWayPoints" + possibleWayPoints.size());
       //  LinkedList<Node>
         int maxI = possibleWayPoints.size();
         LinkedList<Double> possibleWayPointsAngleToObjectCenter = new LinkedList<>();
        // double angleFromObject = Math.atan2(objectFirstDirection.getB().getY()-objectFirstDirection.getA().getY(),objectFirstDirection.getB().getX()-objectFirstDirection.getA().getX());
-        int ofday = objectFirstDirection.getB().getY()-objectFirstDirection.getA().getY();
-        int ofdax = objectFirstDirection.getB().getX()-objectFirstDirection.getA().getX();;
+
+        //apereantly x and y are exchanged. again! so ofdayX and ofday are to be flipped flipped
+        //sensible
+        //int ofday = objectFirstStep.getA().getY() - objectFirstStep.getB().getY();
+        //int ofdax = objectFirstStep.getA().getX() - objectFirstStep.getB().getX();
+
+        //real
+        int ofdax = objectFirstStep.getA().getY() - objectFirstStep.getB().getY();
+        int ofday = objectFirstStep.getA().getX() - objectFirstStep.getB().getX();
+
+       // int ofday = objectFirstDirection.getA().getY() - objectFirstDirection.getB().getY(); a and b could be reversed
+       // int ofdax = objectFirstDirection.getA().getX() - objectFirstDirection.getB().getX();
+
+        int objecty = (int) (object.y/stepsize);
+        int objectx = (int) (object.x/stepsize);
 
 
+        System.out.println("objectXY_div_Stepsize: " + objectx+ " " + objecty);
 
+       // System.out.println("objectToGoal vector: " + ofdax+ " " + ofday);
+        double atan1 =  Math.atan2(ofday, ofdax);
         for (int i = maxI-1; i >= 0; i--) {
             java.awt.Point pwp = possibleWayPoints.get(i);
             if (grid[pwp.x][pwp.y] == null) {possibleWayPoints.remove(i);continue;}
 
-            int vectorFromPickUpToObjectY = (int) (object.y/stepsize-pwp.getY());
-            int vectorFromPickUpToObjectX = (int) (object.x/stepsize-pwp.getX());;
+            int vectorFromPickUpToObjectY = (int) (objecty-pwp.getY());
+            int vectorFromPickUpToObjectX = (int) (objectx-pwp.getX());;
 
-            double angle =  Math.atan2(ofday, ofdax) - Math.atan2(vectorFromPickUpToObjectY, vectorFromPickUpToObjectX);
-            if (angle > 2 * Math.PI) angle -= 2 * Math.PI;
-            if (angle > Math.PI)  angle = angle - Math.PI;
-           // if (angle < 0) angle += 2 * Math.PI;
+
+            double atan2 =  Math.atan2(vectorFromPickUpToObjectY, vectorFromPickUpToObjectX);
+
+            double angle = atan1  - atan2;
+            if (angle < 0) angle += 2 * Math.PI;
+            if (angle > Math.PI) angle = 2 * Math.PI-angle;
+
+           //  angle =Math.abs(   (angle %(2 * Math.PI)- 2 * Math.PI)  %(2 * Math.PI));
+
+            // if (angle < 0) angle += 2 * Math.PI;
 
 
             double calculatedAngleBetweenObjects = angle;
             possibleWayPointsAngleToObjectCenter.add(0,calculatedAngleBetweenObjects);
-            System.out.println("Angle between pickupPoint and path from object calculated: " + calculatedAngleBetweenObjects);
+        //    System.out.println("Angle between pickupPoint " +pwp.x + " " + pwp.y + " and path from object calculated: " + calculatedAngleBetweenObjects);
+        //    System.out.println("PickupToObject vector: " + vectorFromPickUpToObjectX+ " " + vectorFromPickUpToObjectY);
         }
 
        // Collections.sort(possibleWayPoints,c);
