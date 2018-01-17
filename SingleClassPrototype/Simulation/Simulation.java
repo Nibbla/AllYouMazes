@@ -349,7 +349,7 @@ public class Simulation {
             ArrayList<java.awt.Point> possiblePickUpPoints;
             possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) ((cv.getRadius()+objectRadius)*1.1 / stepsize),grid.length,grid[0].length);
                 System.out.println("Possible way Points: " + possiblePickUpPoints.size());
-                LinkedList<Double> possibleWayPointsAngleToObjectCenter =  createPossibleWayPointsAngles(possiblePickUpPoints, shortestPathFromObject.getFirst());
+                LinkedList<Double> possibleWayPointsAngleToObjectCenter =  createPossibleWayPointsAngles(object,possiblePickUpPoints, shortestPathFromObject.getFirst());
                 ArrayList<Double> possibleWayPointsLengths =  createPossibleWayPointsLengths(possiblePickUpPoints, gridToRobotNoInvertingNeeded);
                 ArrayList<Double> possibleScores  = settleScore(possiblePickUpPoints,possibleWayPointsLengths,possibleWayPointsAngleToObjectCenter);
                 LinkedList<Line> shortestPathToObject = null;
@@ -388,7 +388,7 @@ public class Simulation {
                 possibleWayPointsAngleToObjectCenter.remove(i);
                 solutionfound = false;
         }else{
-            shortestPathFromObject.add(0, new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getA()));
+            shortestPathFromObject.add( new Line(shortestPathToObject.getLast().getB(), shortestPathFromObject.getFirst().getB()));
 
                 solutionfound = true;
             }
@@ -486,19 +486,31 @@ public class Simulation {
         return possibleWayPointsLengths;
     }
 
-    private LinkedList<Double> createPossibleWayPointsAngles(ArrayList<java.awt.Point> possibleWayPoints, Line objectFirstDirection) {
+    private LinkedList<Double> createPossibleWayPointsAngles(Point object, ArrayList<java.awt.Point> possibleWayPoints, Line objectFirstDirection) {
         System.out.println("possibleWayPoints" + possibleWayPoints.size());
       //  LinkedList<Node>
         int maxI = possibleWayPoints.size();
         LinkedList<Double> possibleWayPointsAngleToObjectCenter = new LinkedList<>();
        // double angleFromObject = Math.atan2(objectFirstDirection.getB().getY()-objectFirstDirection.getA().getY(),objectFirstDirection.getB().getX()-objectFirstDirection.getA().getX());
-        int ofday = objectFirstDirection.getA().getY();
-        int ofdax = objectFirstDirection.getA().getX();
+        int ofday = objectFirstDirection.getB().getY()-objectFirstDirection.getA().getY();
+        int ofdax = objectFirstDirection.getB().getX()-objectFirstDirection.getA().getX();;
+
+
 
         for (int i = maxI-1; i >= 0; i--) {
             java.awt.Point pwp = possibleWayPoints.get(i);
             if (grid[pwp.x][pwp.y] == null) {possibleWayPoints.remove(i);continue;}
-            double calculatedAngleBetweenObjects = Math.atan2(ofday-pwp.getY(),ofdax-pwp.getX());
+
+            int vectorFromPickUpToObjectY = (int) (object.y/stepsize-pwp.getY());
+            int vectorFromPickUpToObjectX = (int) (object.x/stepsize-pwp.getX());;
+
+            double angle =  Math.atan2(ofday, ofdax) - Math.atan2(vectorFromPickUpToObjectY, vectorFromPickUpToObjectX);
+            if (angle > 2 * Math.PI) angle -= 2 * Math.PI;
+            if (angle > Math.PI)  angle = angle - Math.PI;
+           // if (angle < 0) angle += 2 * Math.PI;
+
+
+            double calculatedAngleBetweenObjects = angle;
             possibleWayPointsAngleToObjectCenter.add(0,calculatedAngleBetweenObjects);
             System.out.println("Angle between pickupPoint and path from object calculated: " + calculatedAngleBetweenObjects);
         }
