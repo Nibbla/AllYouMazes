@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -59,6 +59,18 @@ public class Simulation {
     private int goalX = 0;
     private int goalY = 0;
     private ImgWindow gridWindow;
+    private double mouthaX;
+    private double mouthaY;
+    private double mouthbX;
+    private double mouthbY;
+    private double mouthcX;
+    private double mouthcY;
+    private double mouthdX;
+    private double mouthdY;
+    private Node[][] gridToRobotNoInvertingNeeded;
+    private Point gridToRobotNoInvertingNeededObjectPosition;
+    private double minimalAbstand = 4;
+    private double minimalAbstandQuadrat = minimalAbstand*minimalAbstand;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -148,6 +160,9 @@ public class Simulation {
 
     private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
 
+        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthbX, mouthbY), new org.opencv.core.Point(mouthaX, mouthaY), new Scalar(128), 2);
+        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthbX, mouthbY), new org.opencv.core.Point(mouthcX, mouthcY), new Scalar(128), 2);
+        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthaX, mouthaY), new org.opencv.core.Point(mouthdX, mouthdY), new Scalar(128), 2);
 
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
@@ -359,10 +374,18 @@ public class Simulation {
             Point[] optionalTabooAreaCenter = new Point[1];
             double[] optionalTabooAreaRadiusSquared = new double[1];
             Rect[] optionalTabooArea = new Rect[1];
-            createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
 
-            Node[][] gridToRobotNoInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
-            drawGrid(gridToRobotNoInvertingNeeded,currentFrame,stepsize);
+             createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
+
+             if (gridToRobotNoInvertingNeeded == null || objectMoved()){
+                 System.out.println("Second Grid is new calculated");
+                 gridToRobotNoInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
+                 gridToRobotNoInvertingNeededObjectPosition = cv.getObject();
+                 drawGrid(gridToRobotNoInvertingNeeded,currentFrame,stepsize);
+             }
+
+
+
             ArrayList<java.awt.Point> possiblePickUpPoints;
             possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) ((cv.getRadius()+objectRadius)*1.1 / stepsize),grid.length,grid[0].length);
                 System.out.println("Possible way Points: " + possiblePickUpPoints.size());
@@ -386,6 +409,17 @@ public class Simulation {
             e.printStackTrace();
             System.out.println("No path retrievable. Robot possibly within Contours");
         }
+    }
+
+    private boolean objectMoved() {
+        double oldX =  gridToRobotNoInvertingNeededObjectPosition.x;
+        double oldY =  gridToRobotNoInvertingNeededObjectPosition.y;
+        double newX = cv.getObject().x;
+        double newY = cv.getObject().y;
+        if ((oldX-newX)*(oldX-newX)+(oldY-newY)*(oldY-newY) < minimalAbstandQuadrat){
+            return false;
+        }
+        return true;
     }
 
     private void drawGrid(Node[][] gridToDraw, Mat currentFrame, int stepSize) {
@@ -607,28 +641,42 @@ public class Simulation {
         double centerNormedDirectionY = deltaTipToCenterY/ normOfTriangleTip;
 
         double radius = cv.getRadius();
-        double pauerFactor = 1.12;
+        double pauerFactor = 1.82;
 
-        double aX = radius * centerNormedDirectionY;
-        double aY = -radius * centerNormedDirectionX;
+        double mouthaX = radius * centerNormedDirectionY;
+        double mouthaY = -radius * centerNormedDirectionX;
 
-        double bX = -radius * centerNormedDirectionY;
-        double bY = radius * centerNormedDirectionX;
+        double mouthbX = -radius * centerNormedDirectionY;
+        double mouthbY = radius * centerNormedDirectionX;
 
+        double mouthcX = mouthbX + centerNormedDirectionX * pauerFactor * radius;
+        double mouthcY = mouthbY + centerNormedDirectionY * pauerFactor * radius;
 
-        double dX = aX + centerNormedDirectionX * pauerFactor * radius;
-        double dY = aY + centerNormedDirectionY * pauerFactor * radius;
+        double mouthdX = mouthaX + centerNormedDirectionX * pauerFactor * radius;
+        double mouthdY = mouthaY + centerNormedDirectionY * pauerFactor * radius;
+
+        this.mouthaX = mouthaX + center.x;
+        this.mouthaY = mouthaY + center.y;
+
+        this.mouthbX = mouthbX +  center.x;
+        this.mouthbY = mouthbY  + center.y;
+
+        this.mouthcX = mouthcX + center.x;
+        this.mouthcY = mouthcY + center.y;
+
+        this.mouthdX = mouthdX + center.x;
+        this.mouthdY = mouthdY + center.y;
 
         double mX =  object.x;
         double mY =  object.y;
 
         //(0<AM⋅AB<AB⋅AB)∧(0<AM⋅AD<AD⋅AD)
-        double deltaAM_x = mX-aX;
-        double deltaAM_y = mY-aY;
-        double deltaAB_x = bX - aX;
-        double deltaAB_y = bY - aY;
-        double deltaAD_x = dX - aX;
-        double deltaAD_y = dY - aY;
+        double deltaAM_x = mX-mouthaX;
+        double deltaAM_y = mY-mouthaY;
+        double deltaAB_x = mouthbX - mouthaX;
+        double deltaAB_y = mouthbY - mouthaY;
+        double deltaAD_x = mouthdX - mouthaX;
+        double deltaAD_y = mouthdY - mouthaY;
 
         double scalarAMAB = deltaAM_x*deltaAB_x+deltaAM_y*deltaAB_y;
         double scalarABAB = deltaAB_x*deltaAB_x+deltaAB_y*deltaAB_y;
