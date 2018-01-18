@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -195,7 +195,7 @@ public class Simulation {
         Mat currentFrame;
 
         // TODO: Implement end-condition, e.g. check if the robot has reached the goal. This should be placed in the while loop instead of 'true'.
-        while (true) {
+        while (agent.getHandler().getState() != TraversalStatus.FINISH) {
 
             if(counter % debugFrames == 0 && debugEveryXFrames){
                 debug = true;
@@ -302,7 +302,15 @@ public class Simulation {
                 }
 
                 needToSend = true;
+            } else if (agent.getHandler().getState() == TraversalStatus.FINISH){
+
+                if (DEBUG_CONTROLLER) {
+                    System.out.println("goal reached");
+                }
+
+                needToSend = true;
             }
+
 
 
             sendCommands(needToSend);

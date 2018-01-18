@@ -39,20 +39,20 @@ public class ImageRecognition {
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
-    private Scalar angleScalar1 = new Scalar(100, 30, 30);
-    private Scalar angleScalar2 = new Scalar(150, 255, 255);
+    private Scalar angleScalar1 = new Scalar(70, 20, 40);
+    private Scalar angleScalar2 = new Scalar(85, 145, 110);
     private Scalar contourScalar1 =  new Scalar(7, 25, 100);
     private Scalar contourScalar2 = new Scalar(25, 130, 180);
     private Scalar backgroundScalar1 =new Scalar(0, 10, 0);
     private Scalar backgroundScalar2 = new Scalar(125, 255, 20);
 
-    private Scalar robotBgs1_1 = new Scalar(0, 90, 100);
-    private Scalar robotBgs1_2 = new Scalar(10, 200, 210);
-    private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
-    private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
+    private Scalar robotBgs1_1 = new Scalar(165, 40, 135);
+    private Scalar robotBgs1_2 = new Scalar(175, 115, 175);
+    //private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
+    //private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
-    private Scalar objectBgs1_1 = new Scalar(80, 70, 230);
-    private Scalar objectBgs1_2 =new Scalar(90., 85, 255);
+    private Scalar objectBgs1_1 = new Scalar(98, 45, 45);
+    private Scalar objectBgs1_2 =new Scalar(102, 220, 220);
 
     private Mat[] byPassImages = null;
     private boolean byPassCamera = false;
@@ -394,20 +394,20 @@ public class ImageRecognition {
         m1.copyTo(cc);
         Imgproc.cvtColor(cc, cc, Imgproc.COLOR_BGR2HSV);
 
-        Core.inRange(cc, robotBgs1_1, robotBgs1_2, tmp_mask1);
-        Core.inRange(cc, robotBgs2_1, robotBgs2_2, tmp_mask2);
+        Core.inRange(cc, robotBgs1_1, robotBgs1_2, mask);
+        //Core.inRange(cc, robotBgs2_1, robotBgs2_2, tmp_mask2);
 
 		// values for jordys place
 		//Core.inRange(cc, new Scalar(0, 90, 130), new Scalar(10, 200, 255), tmp_mask1);
         //Core.inRange(cc, new Scalar(170, 90, 130), new Scalar(180, 200, 255), tmp_mask2);
 
-        Core.add(tmp_mask1, tmp_mask2, mask);
+        //Core.add(tmp_mask1, tmp_mask2, mask);
         kernel = Mat.ones(3, 3, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
 
         cc.release();
-        tmp_mask1.release();
-        tmp_mask2.release();
+        //tmp_mask1.release();
+       // tmp_mask2.release();
         kernel.release();
 
         return mask;
