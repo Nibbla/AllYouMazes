@@ -66,7 +66,7 @@ public class Simulation {
             cv.setByPass(byPassCamera,files);
 
         }else {
-            cv.initCamera(400, 600, 1000, 300);
+            cv.initCamera(600, 400, 1000, 300);
         }
 
 
@@ -103,6 +103,7 @@ public class Simulation {
         //cv.findObjectPostion(false);
         setGridAndShortestPath(rp,currentFrame);
 
+        pathWindow = ImgWindow.newWindow();
         // draw the path to the goal on the initial frame
         drawPathOnWindowAndStoreFrame(currentFrame);
 
@@ -144,11 +145,10 @@ public class Simulation {
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
-        pathWindow = ImgWindow.newWindow();
         pathWindow.setImage(currentFrame);
 
         // store the edited frame (e.g for inspection)
-        Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
+        //Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
     }
 
     private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
@@ -248,6 +248,9 @@ public class Simulation {
 
 
             end = outputChangingPathDuration(end);
+			if (debug) {
+				drawPathOnWindowAndStoreFrame(currentFrame);
+			}
 
 
             // update representation of the agent, new position, new rotation.
@@ -677,7 +680,7 @@ public class Simulation {
             shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
             agent.getHandler().changePath(shortestPath, 0);
         } catch (Exception e) {
-            System.out.println("No path retrievable. Robot possibly within Contours");
+			//construct tmp path
         }
     }
 

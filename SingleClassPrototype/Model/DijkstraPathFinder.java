@@ -107,7 +107,7 @@ public class DijkstraPathFinder {
             for (int y = 0; y < sCols; y++) {
                 //test the flipping of x and y one day
                 double t = Imgproc.pointPolygonTest(contour, new org.opencv.core.Point(y * stepSize, x * stepSize), false);
-                if (t == 0 || t == -1) {
+                if (t == -1) {
                     grid[x][y] = new Node(x * stepSize, y * stepSize);
                 }
             }
