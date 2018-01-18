@@ -13,7 +13,7 @@ public class Agent {
     private Node prevGoalB;
     private double rotationCoefficient = 0, linearCoefficient = 0,prevLinearCoefficient = 0, prevRotationCoefficient = 0, lastSentDirection = 0, correctAngle = 0, distance = 0;
 
-    private final double PROXIMITY = 20;
+    private final double PROXIMITY = 10;
 
 
     private final double ROTATIONERROR = 20;

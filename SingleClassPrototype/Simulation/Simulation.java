@@ -43,7 +43,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -70,7 +70,7 @@ public class Simulation {
             cv.setByPass(byPassCamera,files);
 
         }else {
-            cv.initCamera(400, 600, 1000, 300);
+            cv.initCamera(600, 400, 1000, 300);
         }
 
 
@@ -107,6 +107,7 @@ public class Simulation {
         //cv.findObjectPostion(false);
         setGridAndShortestPath(rp,currentFrame);
 
+        pathWindow = ImgWindow.newWindow();
         // draw the path to the goal on the initial frame
         drawPathOnWindowAndStoreFrame(currentFrame);
 
@@ -154,7 +155,7 @@ public class Simulation {
         pathWindow.setImage(currentFrame);
 
         // store the edited frame (e.g for inspection)
-        Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
+        //Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
     }
 
     private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
@@ -256,6 +257,9 @@ public class Simulation {
             drawPathOnWindowAndStoreFrame(currentFrame);
 
             end = outputChangingPathDuration(end);
+			if (debug) {
+				drawPathOnWindowAndStoreFrame(currentFrame);
+			}
 
 
             // update representation of the agent, new position, new rotation.
@@ -761,6 +765,7 @@ public class Simulation {
             shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
             agent.getHandler().changePath(shortestPath, 0);
         } catch (Exception e) {
+            e.printStackTrace();
             System.out.println("No path retrievable. Robot possibly within Contours");
         }
     }
