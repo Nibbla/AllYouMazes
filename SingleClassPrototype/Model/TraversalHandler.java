@@ -39,7 +39,11 @@ public class TraversalHandler {
     }
 
     public void step() {
-        i++;
+        if (i < (this.path.size() - 1)){
+            i++;
+        }else{
+            setState(TraversalStatus.FINISH);
+        }
     }
 
     public int getIndex() {
@@ -54,8 +58,12 @@ public class TraversalHandler {
 		return path.size();
 	}
 
-    public String getState() {
+    public String getStateName() {
         return state.name();
+    }
+
+    public TraversalStatus getState(){
+        return state;
     }
     
     public void setState(TraversalStatus state) {

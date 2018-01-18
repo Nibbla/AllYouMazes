@@ -50,37 +50,44 @@ public class Node{
 
     private void resolveShortestPathLines() {
         if (!shortestPathLines.isEmpty()) shortestPathLines.clear();
-        if (shortestPath.size() < 3) System.out.println("Path too small");
+        if (shortestPath.size() < 3){
+            System.out.println("Path too small");
 
-        ArrayList<Node> aPath = new ArrayList<>(shortestPath);
+            Line tmp = new Line(shortestPath.get(0), shortestPath.get(1));
+            shortestPathLines.add(tmp);
 
-        Node start = null;
-        Line tmp = null;
+        } else {
+            ArrayList<Node> aPath = new ArrayList<>(shortestPath);
 
-        for (int i = 0; i < aPath.size() - 2; i++) {
-            Node p1 = aPath.get(i);
-            Node p2 = aPath.get(i+1);
-            Node p3 = aPath.get(i+2);
+            Node start = null;
+            Line tmp = null;
 
-            if (i == 0) start = p1;
+            for (int i = 0; i < aPath.size() - 2; i++) {
+                Node p1 = aPath.get(i);
+                Node p2 = aPath.get(i+1);
+                Node p3 = aPath.get(i+2);
 
-            //x, y interchanged
+                if (i == 0) start = p1;
 
-            double left = (p2.x - p1.x) * (p3.y - p2.y);
-            double right = (p3.x - p2.x) * (p2.y - p1.y);
+                //x, y interchanged
 
-            if (left == right) {
-                tmp = null;
-            } else {
-                tmp = new Line(start, p2);
-                start = p2;
+                double left = (p2.x - p1.x) * (p3.y - p2.y);
+                double right = (p3.x - p2.x) * (p2.y - p1.y);
+
+                if (left == right) {
+                    tmp = null;
+                } else {
+                    tmp = new Line(start, p2);
+                    start = p2;
+                }
+
+                if (tmp != null) shortestPathLines.add(tmp);
             }
 
-            if (tmp != null) shortestPathLines.add(tmp);
+            tmp = new Line(start, aPath.get(aPath.size() - 1));
+            shortestPathLines.add(tmp);
         }
 
-        tmp = new Line(start, aPath.get(aPath.size() - 1));
-        shortestPathLines.add(tmp);
     }
 
     public LinkedList<Line> getShortestPathLines() {
