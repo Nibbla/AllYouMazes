@@ -26,6 +26,7 @@ public class Simulation {
     public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
     public final static boolean DEBUG_CV_OBJECT = true;
 
+
     public boolean debugEveryXFrames = true;
     public int debugFrames = 10;
 
@@ -155,7 +156,7 @@ public class Simulation {
         pathWindow.setImage(currentFrame);
 
         // store the edited frame (e.g for inspection)
-        //Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
+        Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
     }
 
     private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
@@ -254,7 +255,6 @@ public class Simulation {
             //retrieveNewestShortestPath(robotX,robotY,0);
             checkIfGoalChangedAndSetGridNew(currentFrame);
             if (cv.getObject()!=null)retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
-            drawPathOnWindowAndStoreFrame(currentFrame);
 
             end = outputChangingPathDuration(end);
 			if (debug) {
