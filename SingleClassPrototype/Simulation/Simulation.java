@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -71,6 +71,7 @@ public class Simulation {
     private Point gridToRobotNoInvertingNeededObjectPosition;
     private double minimalAbstand = 4;
     private double minimalAbstandQuadrat = minimalAbstand*minimalAbstand;
+    private ArrayList<java.awt.Point> possiblePickUpPoints;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -381,13 +382,14 @@ public class Simulation {
                  System.out.println("Second Grid is new calculated");
                  gridToRobotNoInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
                  gridToRobotNoInvertingNeededObjectPosition = cv.getObject();
-                 drawGrid(gridToRobotNoInvertingNeeded,currentFrame,stepsize);
+
+                 possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) ((cv.getRadius()+objectRadius)*1.1 / stepsize),grid.length,grid[0].length);
+                 drawGrid(gridToRobotNoInvertingNeeded,possiblePickUpPoints,currentFrame,stepsize);
              }
 
 
 
-            ArrayList<java.awt.Point> possiblePickUpPoints;
-            possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) ((cv.getRadius()+objectRadius)*1.1 / stepsize),grid.length,grid[0].length);
+
                 System.out.println("Possible way Points: " + possiblePickUpPoints.size());
                 LinkedList<Double> possibleWayPointsAngleToObjectCenter =  createPossibleWayPointsAngles(object,possiblePickUpPoints, shortestPathFromObject.getFirst());
                 ArrayList<Double> possibleWayPointsLengths =  createPossibleWayPointsLengths(possiblePickUpPoints, gridToRobotNoInvertingNeeded);
@@ -422,13 +424,16 @@ public class Simulation {
         return true;
     }
 
-    private void drawGrid(Node[][] gridToDraw, Mat currentFrame, int stepSize) {
+    private void drawGrid(Node[][] gridToDraw, ArrayList<java.awt.Point> possiblePickUpPoints, Mat currentFrame, int stepSize) {
         if (gridWindow== null) gridWindow  = ImgWindow.newWindow();
         gridWindow.setTitle("GridWindow");
         Mat f = currentFrame.clone();
         Point object = cv.getObject();
 
         Imgproc.circle( f, new Point( object.x, object.y ), objectRadius, new Scalar( 128, 0, 128 ), 2 );
+        for (java.awt.Point p : possiblePickUpPoints){
+            Imgproc.circle( f, new Point( p.x*stepSize, p.y*stepSize ), 3, new Scalar( 90, 45, 128 ), 1 );
+        }
         for (int x = 0;x < gridToDraw.length; x++) {
             for (int y = 0; y < gridToDraw[0].length; y++) {
                if (gridToDraw[x][y] != null){
@@ -780,7 +785,10 @@ public class Simulation {
         for (int i = points.size()-1; i >= 0; i--) {
             int xCheck = points.get(i).x;
             int yCheck = points.get(i).y;
-            if ( xCheck<0 || xCheck>= maxX || yCheck<0 || yCheck >= maxY) points.remove(i);
+            if ( xCheck<0 || xCheck>= maxX || yCheck<0 || yCheck >= maxY||gridToRobotNoInvertingNeeded[yCheck][xCheck]==null) {
+                points.remove(i);
+            }
+
         }
         return points;
     }
