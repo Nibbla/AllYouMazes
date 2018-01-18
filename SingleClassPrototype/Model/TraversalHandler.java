@@ -50,6 +50,10 @@ public class TraversalHandler {
         return path.get(index);
     }
 
+	public int size() {
+		return path.size();
+	}
+
     public String getState() {
         return state.name();
     }

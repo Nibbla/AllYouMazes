@@ -26,6 +26,7 @@ public class Simulation {
     public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
     public final static boolean DEBUG_CV_OBJECT = true;
 
+
     public boolean debugEveryXFrames = true;
     public int debugFrames = 10;
 
@@ -70,7 +71,7 @@ public class Simulation {
             cv.setByPass(byPassCamera,files);
 
         }else {
-            cv.initCamera(400, 600, 1000, 300);
+            cv.initCamera(600, 400, 1000, 300);
         }
 
 
@@ -107,6 +108,7 @@ public class Simulation {
         //cv.findObjectPostion(false);
         setGridAndShortestPath(rp,currentFrame);
 
+        pathWindow = ImgWindow.newWindow();
         // draw the path to the goal on the initial frame
         drawPathOnWindowAndStoreFrame(currentFrame);
 
@@ -253,9 +255,11 @@ public class Simulation {
             //retrieveNewestShortestPath(robotX,robotY,0);
             checkIfGoalChangedAndSetGridNew(currentFrame);
             if (cv.getObject()!=null)retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
-            drawPathOnWindowAndStoreFrame(currentFrame);
 
             end = outputChangingPathDuration(end);
+			if (debug) {
+				drawPathOnWindowAndStoreFrame(currentFrame);
+			}
 
 
             // update representation of the agent, new position, new rotation.

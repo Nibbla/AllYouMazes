@@ -39,8 +39,8 @@ public class ImageRecognition {
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
-    private Scalar angleScalar1 = new Scalar(110, 50, 50);
-    private Scalar angleScalar2 = new Scalar(140, 115, 115);
+    private Scalar angleScalar1 = new Scalar(100, 30, 30);
+    private Scalar angleScalar2 = new Scalar(150, 255, 255);
     private Scalar contourScalar1 =  new Scalar(7, 25, 100);
     private Scalar contourScalar2 = new Scalar(25, 130, 180);
     private Scalar backgroundScalar1 =new Scalar(0, 10, 0);
@@ -151,9 +151,9 @@ public class ImageRecognition {
         Point bottomRight = matrix[0];
 
         Point topLeftOrig = new Point(0,0);
-        Point topRightOrig = new Point(400,0);
-        Point bottomLeftOrig = new Point(0,600);
-        Point bottomRightOrig = new Point(400,600);
+        Point topRightOrig = new Point(600,0);
+        Point bottomLeftOrig = new Point(0,400);
+        Point bottomRightOrig = new Point(600,400);
 
         for (Point p:matrix) {
             if (Math.sqrt(Math.pow((topLeftOrig.x - p.x),2) + Math.pow((topLeftOrig.y - p.y),2)) < Math.sqrt(Math.pow((topLeftOrig.x - topLeft.x),2) + Math.pow((topLeftOrig.y - topLeft.y),2))){
@@ -474,11 +474,12 @@ public class ImageRecognition {
         //Need to make sure that robot is removed.
         contours.clear();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+		ImgWindow.newWindow(mask);
 
         while (contours.size() != 1) {
             for (int i = 0; i < contours.size(); i++) {
                 MatOfPoint contour = contours.get(i);
-                if (Imgproc.contourArea(contour) < 10000) {
+                if (Imgproc.contourArea(contour) < 1000) {
                     Imgproc.fillConvexPoly(mask, contour, new Scalar(0));
                 }
             }
@@ -488,7 +489,7 @@ public class ImageRecognition {
         }
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 19);
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 21);
         contours.clear();
         hierarchy.release();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
