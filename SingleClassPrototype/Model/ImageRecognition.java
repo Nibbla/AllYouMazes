@@ -7,6 +7,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 import org.opencv.utils.Converters;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -39,14 +40,14 @@ public class ImageRecognition {
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
-    private Scalar angleScalar1 = new Scalar(70, 20, 40);
-    private Scalar angleScalar2 = new Scalar(85, 145, 110);
-    private Scalar contourScalar1 =  new Scalar(7, 25, 100);
-    private Scalar contourScalar2 = new Scalar(25, 130, 180);
-    private Scalar backgroundScalar1 =new Scalar(0, 10, 0);
-    private Scalar backgroundScalar2 = new Scalar(125, 255, 20);
+    private Scalar angleScalar1 = new Scalar(85, 35, 90);
+    private Scalar angleScalar2 = new Scalar(95, 145, 110);
+    private Scalar contourScalar1 =  new Scalar(7, 25, 70);
+    private Scalar contourScalar2 = new Scalar(40, 130, 180);
+    private Scalar backgroundScalar1 =new Scalar(0, 0, 0);
+    private Scalar backgroundScalar2 = new Scalar(180, 255, 20);
 
-    private Scalar robotBgs1_1 = new Scalar(165, 40, 135);
+    private Scalar robotBgs1_1 = new Scalar(155, 40, 75);
     private Scalar robotBgs1_2 = new Scalar(175, 115, 175);
     //private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     //private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
@@ -116,6 +117,8 @@ public class ImageRecognition {
             capture.read(frame);
         }
 		
+		Imgcodecs.imwrite("bigInitialImage.jpg", frame);
+
         if (croppingAreaKnown) {
             frame = frame.submat(croppedArea);
             applyPerspective();
@@ -468,7 +471,7 @@ public class ImageRecognition {
 		// old second range
         //Core.inRange(hsv, new Scalar(165, 30, 50), new Scalar(180, 190, 230), tmp_mask2);
         //Core.add(tmp_mask1, tmp_mask2, mask);
-        kernel = Mat.ones(14, 14, CvType.CV_8UC1);
+        kernel = Mat.ones(7, 7, CvType.CV_8UC1);
         Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         //Need to make sure that robot is removed.
@@ -489,7 +492,7 @@ public class ImageRecognition {
         }
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 21);
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 11);
         contours.clear();
         hierarchy.release();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
@@ -801,6 +804,7 @@ public class ImageRecognition {
 
     public Mat getSubFrame() {
         Mat currentFrame = getFrame();
+
         currentFrame = currentFrame.submat(Imgproc.boundingRect(backgroundRect(currentFrame)));
 
         return currentFrame;

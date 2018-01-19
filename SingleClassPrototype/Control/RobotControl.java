@@ -25,7 +25,7 @@ public class RobotControl implements IControl {
     // The basic structure of a movement command. For more information check the ROS documentation.
     private final double[] movementCommand = {0,0};
     // Values used for moving either forward or angular
-    private final double FORWARDSPEED = 1000; // with a max of 3.5
+    private final double FORWARDSPEED = 750; // with a max of 3.5
     private final double ANGULARSPEED = 250; // with a max of 1.5
     // These are used to spawn the processes that Control the epuck.
     private ProcessBuilder processGenerator;
