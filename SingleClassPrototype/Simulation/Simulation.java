@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -178,6 +178,11 @@ public class Simulation {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
         if (pathWindow == null) pathWindow = ImgWindow.newWindow();
+        if (!distanceAndAngleToObjectIsWrong(new Point(pathWindow.mouseX,pathWindow.mouseY))){
+            System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " are within robot mouth");
+        }else{
+            System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " not within robot mouth");
+        }
         pathWindow.setImage(currentFrame);
 
         // store the edited frame (e.g for inspection)
@@ -401,7 +406,7 @@ public class Simulation {
 
             //findNodeThatRobotGetsObject
 
-            if (distanceAndAngleToObjectIsWrong()){ //find path to object
+            if (distanceAndAngleToObjectIsWrong(cv.getObject())){ //find path to object
             //define Taboo Area which is around the object
            optionalTabooAreaCenter = new Point[1];
              optionalTabooAreaRadiusSquared = new double[1];
@@ -791,9 +796,10 @@ public class Simulation {
         return possibleWayPointsAngleToObjectCenter;
     }
 
-    private boolean distanceAndAngleToObjectIsWrong() {
-        Point object = cv.getObject();
+    public boolean distanceAndAngleToObjectIsWrong(Point object) {
+
         Point center = cv.getCenter();
+        if (center == null)return false;
         if (object == null) return false; //object is invsibile, therefore hidden in the epucs mouth (if that is still our scenerio)
 
         //uses https://de.wikipedia.org/wiki/Skalarprodukt
@@ -818,6 +824,7 @@ public class Simulation {
             maxRadius = cv.getRadius();
         };
         double radius = maxRadius;
+        double mouthBreite = radius*0.8;
         double pauerFactor = 1.82;
 
         double mouthaX = radius * centerNormedDirectionY;

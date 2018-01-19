@@ -26,6 +26,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import Simulation.Simulation;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
@@ -39,6 +40,7 @@ public class ImgWindow extends JPanel {
     volatile public int mouseY = -1;
     volatile public boolean closed;
     volatile EventQueue eventQueue = new EventQueue();
+    private Simulation sim;
 
     public ImgWindow (JFrame frame) {
         this.frame = frame;
@@ -85,6 +87,7 @@ public class ImgWindow extends JPanel {
             System.out.println("x: " + mouseX + " y: " + mouseY);
             System.out.println("xGrid: " + mouseX/4 + "yGrid: " + mouseY/4);
             System.out.println("HSV: " + hsv[0]*180 + " " + hsv[1] * 255 + " " + hsv[2] * 255);
+
         }
     }
 
