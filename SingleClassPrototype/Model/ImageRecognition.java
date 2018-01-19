@@ -627,7 +627,7 @@ public class ImageRecognition {
                 object = null;
                 ax = 0;
                 ay = 0;
-            } else {
+            } else if (contours.get(biggestContour).toArray().length >= 5){
                 RotatedRect r = Imgproc.fitEllipse(new MatOfPoint2f(contours.get(biggestContour).toArray()));
                 r.center.x += ax;
                 r.center.y += ay;
@@ -635,6 +635,14 @@ public class ImageRecognition {
                     Imgproc.ellipse(frame, r, new Scalar(0, 255, 255), 3);
                 }
                 object = new Point(r.center.x, r.center.y);
+            } else {
+                Point p = new Point(contours.get(biggestContour).toArray()[0].x, contours.get(biggestContour).toArray()[0].y);
+                p.x += ax;
+                p.y += ay;
+                if (Simulation.DEBUG_CV_OBJECT) {
+                    Imgproc.circle(frame, p, 3, new Scalar(0, 255, 255));
+                }
+                object = new Point(p.x, p.y);
             }
 
             hierarchy.release();
