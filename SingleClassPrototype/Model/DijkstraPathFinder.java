@@ -143,16 +143,18 @@ public class DijkstraPathFinder {
         int sX = (int) (goalX / stepSize);
         int sY = (int) (goalY / stepSize);
 
-        while (sX % stepSize != 0) {
-            sX++;
+       /*while (sX % stepSize != 0) {
+           sX++;
         }
 
-        while (sY % stepSize != 0) {
+       while (sY % stepSize != 0) {
             sY++;
-        }
+        }*/
 
         if (grid[sY][sX] == null) System.out.println("No pathway possible");
-
+        if (optionalTabooAreaCenter!=null) {if (insideTabooArea(sY,sX,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared,optionalTabooArea,stepSize)){
+            System.out.println("Goal Inside Taboo Area");
+        }}
 
 
         for (int x = 0; x < sRows; x++) {

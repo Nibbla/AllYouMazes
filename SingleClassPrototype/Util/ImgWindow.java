@@ -83,6 +83,7 @@ public class ImgWindow extends JPanel {
             float[] hsv = new float[3];
             Color.RGBtoHSB(c.getRed(),c.getGreen(),c.getBlue(),hsv);
             System.out.println("x: " + mouseX + " y: " + mouseY);
+            System.out.println("xGrid: " + mouseX/4 + "yGrid: " + mouseY/4);
             System.out.println("HSV: " + hsv[0]*180 + " " + hsv[1] * 255 + " " + hsv[2] * 255);
         }
     }
