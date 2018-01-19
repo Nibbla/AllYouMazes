@@ -52,8 +52,8 @@ public class ImageRecognition {
     //private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     //private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
-    private Scalar objectBgs1_1 = new Scalar(98, 45, 45);
-    private Scalar objectBgs1_2 =new Scalar(102, 220, 220);
+    private Scalar objectBgs1_1 = new Scalar(98, 100, 12);
+    private Scalar objectBgs1_2 =new Scalar(102, 220, 105);
 
     private Mat[] byPassImages = null;
     private boolean byPassCamera = false;

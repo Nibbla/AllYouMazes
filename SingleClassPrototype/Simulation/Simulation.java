@@ -451,6 +451,7 @@ public class Simulation {
                 if (grid[(int) (robotY/stepsize)][(int) (robotX/stepsize)] != null){
                     pathToPickup = DijkstraPathFinder.getShortestPathFromGridLine(gridToRobotInvertingNeeded, new RoboPos(robotY, robotX, 0), stepsize);
                 }else{
+ 					
                     java.awt.Point p = getAlternativeObjectPoint(cv.getCenter());
                     pathToPickup = gridToRobotInvertingNeeded[p.y][p.x].getShortestPathLines();
                 }
@@ -473,10 +474,24 @@ public class Simulation {
                 shortestPathFromObject.add(0,new Line(shortestPathFromObject.getFirst().getB(),pathToPickup.getLast().getA()));
                 shortestPathFromObject.addAll(0,pathToPickup);
                 // shortestPathFromObject.addAll(0, shortestPathToObject);
-             }
+             } else {
+				if (grid[(int) (robotY/stepsize)][(int) (robotX/stepsize)] != null){
+                    shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, 0), stepsize);
+                }else {
+                    createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
+                    java.awt.Point p = getAlternativeObjectPoint(cv.getCenter());
+                    shortestPathFromObject = gridToRobotInvertingNeeded[p.y][p.x].getShortestPathLines();
+                }
 
-            if (shortestPathFromObject!=null){ shortestPath = shortestPathFromObject;
-            agent.getHandler().changePath(shortestPath, 0);}
+                shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
+			}
+                System.out.println(shortestPath);
+            if (shortestPathFromObject!=null){ 
+				//shortestPath = shortestPathFromObject;
+                System.out.println(shortestPathFromObject);
+                agent.getHandler().changePath(shortestPathFromObject, 0);
+				System.out.println(shortestPathFromObject);
+			} 
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("No path retrievable. Robot possibly within Contours");
@@ -509,7 +524,7 @@ public class Simulation {
         Mat f = currentFrame.clone();
         Point object = cv.getObject();
 
-        Imgproc.circle( f, new Point( object.x, object.y ), objectRadius, new Scalar( 128, 0, 128 ), 2 );
+       // Imgproc.circle( f, new Point( object.x, object.y ), objectRadius, new Scalar( 128, 0, 128 ), 2 );
         for (java.awt.Point p : possiblePickUpPoints){
             Imgproc.circle( f, new Point( p.x*stepSize, p.y*stepSize ), 3, new Scalar( 90, 45, 128 ), 1 );
         }

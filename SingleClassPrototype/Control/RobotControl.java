@@ -156,9 +156,9 @@ public class RobotControl implements IControl {
         try {
             processGenerator.command(startCommand);
 
-            initRosProcess = processGenerator.start();
+            //initRosProcess = processGenerator.start();
             System.out.println("Starting ROS");
-            Thread.sleep(startUpSeconds * 1000);
+            //Thread.sleep(startUpSeconds * 1000);
             System.out.println("Connection established");
             isRunning = true;
         } catch (Exception e) {
