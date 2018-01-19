@@ -98,7 +98,7 @@ public class DijkstraPathFinder {
 
 
     //This method is a total mess and will be cleaned up soon
-    public static  Node[][] retrieveDijcstraGrid(Mat gray, MatOfPoint2f contour, double goalX, double goalY, int stepSize, org.opencv.core.Point[] optionalTabooAreaCenter, double[] optionalTabooAreaRadiusSquared, Rect[] optionalTabooArea) {
+    public static  Node[][] retrieveDijcstraGrid(Mat gray, MatOfPoint2f contour, double goalX, double goalY, int stepSize, boolean checkTabooArea, org.opencv.core.Point[] optionalTabooAreaCenter, double[] optionalTabooAreaRadiusSquared, Rect[] optionalTabooArea) {
         int sRows = gray.rows() / stepSize;
         int sCols = gray.cols() / stepSize;
         Node[][] grid = new Node[sRows][sCols];
@@ -106,7 +106,7 @@ public class DijkstraPathFinder {
         for (int x = 0; x < sRows; x++) {
             for (int y = 0; y < sCols; y++) {
                 //test the flipping of x and y one day
-                if (optionalTabooAreaCenter!=null) {if (insideTabooArea(y,x,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared,optionalTabooArea,stepSize)){
+                if (optionalTabooAreaCenter!=null) {if (checkTabooArea&&insideTabooArea(y,x,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared,optionalTabooArea,stepSize)){
 
                     continue;
                 }}
@@ -143,16 +143,18 @@ public class DijkstraPathFinder {
         int sX = (int) (goalX / stepSize);
         int sY = (int) (goalY / stepSize);
 
-        while (sX % stepSize != 0) {
-            sX++;
+       /*while (sX % stepSize != 0) {
+           sX++;
         }
 
-        while (sY % stepSize != 0) {
+       while (sY % stepSize != 0) {
             sY++;
-        }
+        }*/
 
         if (grid[sY][sX] == null) System.out.println("No pathway possible");
-
+        if (optionalTabooAreaCenter!=null) {if (insideTabooArea(sY,sX,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared,optionalTabooArea,stepSize)){
+            System.out.println("Goal Inside Taboo Area");
+        }}
 
 
         for (int x = 0; x < sRows; x++) {
