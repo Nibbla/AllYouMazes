@@ -29,10 +29,10 @@ public class TraversalHandler {
     }
 
     public void changePath(LinkedList<Line> path, int state) {
-        this.path.clear();
+        //this.path.clear();
         this.path = path;
 	
-		System.out.println("change: " + path);
+		//System.out.println("change: " + path);
 	System.out.println("change: " + this.path);
         setState(TraversalStatus.INIT);
         firstT = true;

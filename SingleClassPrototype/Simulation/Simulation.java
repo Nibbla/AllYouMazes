@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -80,6 +80,7 @@ public class Simulation {
     private double tabooRadius;
     private LinkedList<Line> shortestPathFromObject;
     private boolean goalChanged =false;
+    private double maxRadius;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -485,12 +486,13 @@ public class Simulation {
 
                 shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
 			}
-                System.out.println(shortestPath);
-            if (shortestPathFromObject!=null){ 
+
+            if (shortestPathFromObject!=null){
+                shortestPath = shortestPathFromObject;
 				//shortestPath = shortestPathFromObject;
                 System.out.println(shortestPathFromObject);
-                agent.getHandler().changePath(shortestPathFromObject, 0);
-				System.out.println(shortestPathFromObject);
+                agent.getHandler().changePath(shortestPath, 0);
+
 			} 
         } catch (Exception e) {
             e.printStackTrace();
@@ -812,7 +814,10 @@ public class Simulation {
         double centerNormedDirectionX = deltaTipToCenterX/ normOfTriangleTip;
         double centerNormedDirectionY = deltaTipToCenterY/ normOfTriangleTip;
 
-        double radius = cv.getRadius();
+        if (maxRadius < cv.getRadius()){
+            maxRadius = cv.getRadius();
+        };
+        double radius = maxRadius;
         double pauerFactor = 1.82;
 
         double mouthaX = radius * centerNormedDirectionY;
