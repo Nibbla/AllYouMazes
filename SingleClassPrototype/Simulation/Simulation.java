@@ -25,16 +25,11 @@ public class Simulation {
     public final static boolean DEBUG_CV_CONTOURS = true;
     public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
     public final static boolean DEBUG_CV_OBJECT = true;
-
-
-    public boolean debugEveryXFrames = true;
-    public int debugFrames = 10;
-
     public final static int TIME_STEP = 70;
-
     public static Node[][] grid;
     private static RobotControl factoryControl = new RobotControl();
-
+    public boolean debugEveryXFrames = true;
+    public int debugFrames = 10;
     public IControl control;
     private LinkedList<Line> shortestPath;
     private int stepsize = 4;
@@ -161,6 +156,10 @@ public class Simulation {
         startSimulation();
     }
 
+    public static void main(String[] args) {
+        Simulation sim = new Simulation();
+    }
+
     private File[] getCammeraByPassImages() {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
@@ -212,7 +211,6 @@ public class Simulation {
 
 
     }
-
 
     private void connect() {
         control.startConnection();
@@ -298,7 +296,8 @@ public class Simulation {
             // retrieve the newest shortest path from the grid and pass it to the handler
             //retrieveNewestShortestPath(robotX,robotY,0);
             checkIfGoalChangedAndSetGridNew(currentFrame);
-            if (cv.getObject()!=null)retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
+
+            retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
 
             end = outputChangingPathDuration(end);
 			if (debug) {
@@ -399,18 +398,15 @@ public class Simulation {
      * @param robotR
      */
     private void retrieveObjectShortestPath(Mat currentFrame, int robotX, int robotY, int robotR) {
-        try {
+        boolean objectCaptured = false;
+        Point object = cv.getObject();
 
-            //pfad vom object zum ausgang
-            Point object = cv.getObject();
-
-            //findNodeThatRobotGetsObject
-
-            if (distanceAndAngleToObjectIsWrong(cv.getObject())){ //find path to object
-            //define Taboo Area which is around the object
-           optionalTabooAreaCenter = new Point[1];
-             optionalTabooAreaRadiusSquared = new double[1];
-            optionalTabooArea = new Rect[1];
+        if (object != null) {
+            if (distanceAndAngleToObjectIsWrong(object)){ //find path to object
+                //define Taboo Area which is around the object
+                optionalTabooAreaCenter = new Point[1];
+                optionalTabooAreaRadiusSquared = new double[1];
+                optionalTabooArea = new Rect[1];
 
                 if (grid[(int) (object.y/stepsize)][(int) (object.x/stepsize)] != null){
                     shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(object.y, object.x, 0), stepsize);
@@ -422,42 +418,35 @@ public class Simulation {
 
                 shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
 
+                if (gridToRobotInvertingNeeded == null||goalChanged||shortestPathFromObject==null||objectMoved()){// || objectMoved()){
+                    goalChanged =false;
 
-             if (gridToRobotInvertingNeeded == null||goalChanged||shortestPathFromObject==null||objectMoved()){// || objectMoved()){
-                 goalChanged =false;
-
-
-
-
-                 createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
-                 System.out.println("Second Grid is new calculated");
+                    createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
+                    System.out.println("Second Grid is new calculated");
 
 
-                 possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) (tabooRadius-1),grid.length,grid[0].length, true);
-                 System.out.println("Possible pick up points");
-                 LinkedList<Double> possibleWayPointsAngleToObjectCenter =  createPossibleWayPointsAngles(object,possiblePickUpPoints, shortestPathFromObject.getFirst());
-                // ArrayList<Double> possibleWayPointsLengths =  createPossibleWayPointsLengths(possiblePickUpPoints, gridToRobotInvertingNeeded);
-                 ArrayList<Double> possibleScores  = settleScore(possiblePickUpPoints,possibleWayPointsAngleToObjectCenter);
-                 int i = getBest(possibleScores,possiblePickUpPoints);
-                 java.awt.Point selectedPickUpPoint = possiblePickUpPoints.get(i);
-                // gridToRobotInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
-                 gridToRobotInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), selectedPickUpPoint.x*stepsize, selectedPickUpPoint.y*stepsize, stepsize,true, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
+                    possiblePickUpPoints = getPickUpPoints((int) object.x / stepsize, (int) object.y / stepsize, (int) (tabooRadius-1),grid.length,grid[0].length, true);
+                    System.out.println("Possible pick up points");
+                    LinkedList<Double> possibleWayPointsAngleToObjectCenter =  createPossibleWayPointsAngles(object,possiblePickUpPoints, shortestPathFromObject.getFirst());
+                    // ArrayList<Double> possibleWayPointsLengths =  createPossibleWayPointsLengths(possiblePickUpPoints, gridToRobotInvertingNeeded);
+                    ArrayList<Double> possibleScores  = settleScore(possiblePickUpPoints,possibleWayPointsAngleToObjectCenter);
+                    int i = getBest(possibleScores,possiblePickUpPoints);
+                    java.awt.Point selectedPickUpPoint = possiblePickUpPoints.get(i);
+                    // gridToRobotInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), robotX, robotY, stepsize, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
+                    gridToRobotInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), selectedPickUpPoint.x*stepsize, selectedPickUpPoint.y*stepsize, stepsize,true, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
 
-                 drawGrid(gridToRobotInvertingNeeded,possiblePickUpPoints,currentFrame,stepsize);
-             }
+                    drawGrid(gridToRobotInvertingNeeded,possiblePickUpPoints,currentFrame,stepsize);
+                }
                 //grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, null, null, null);
                 //shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(rp.getY(), rp.getX(), 0, 0), stepsize);
                 //shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
 
 
-
-
-                gridToRobotNoInvertingNeededObjectPosition = cv.getObject();
+                gridToRobotNoInvertingNeededObjectPosition = object;
                 LinkedList<Line> pathToPickup;
                 if (grid[(int) (robotY/stepsize)][(int) (robotX/stepsize)] != null){
-                    pathToPickup = DijkstraPathFinder.getShortestPathFromGridLine(gridToRobotInvertingNeeded, new RoboPos(robotY, robotX, 0), stepsize);
+                    pathToPickup = DijkstraPathFinder.getShortestPathFromGridLine(gridToRobotInvertingNeeded, new RoboPos(robotY, robotX, robotR), stepsize);
                 }else{
- 					
                     java.awt.Point p = getAlternativeObjectPoint(cv.getCenter());
                     pathToPickup = gridToRobotInvertingNeeded[p.y][p.x].getShortestPathLines();
                 }
@@ -468,41 +457,47 @@ public class Simulation {
 
                 //shortestPathToObject = selectBestPickupPointAndAddToPath(shortestPathFromObject, gridToRobotInvertingNeeded, possiblePickUpPoints, possibleWayPointsAngleToObjectCenter, possibleWayPointsLengths, possibleScores, shortestPathToObject, solutionfound);
 
-               // System.out.println("Possible way Points: " + possiblePickUpPoints.size());
+                // System.out.println("Possible way Points: " + possiblePickUpPoints.size());
 
                 //LinkedList<Line> shortestPathToObject = null;
 
                 boolean solutionfound = false;
 
 
-               // if (shortestPathToObject == null) throw new Exception("No feasable path found");
-                 //create Line From selected Point to Object
+                // if (shortestPathToObject == null) throw new Exception("No feasable path found");
+                //create Line From selected Point to Object
                 shortestPathFromObject.add(0,new Line(shortestPathFromObject.getFirst().getB(),pathToPickup.getLast().getA()));
                 shortestPathFromObject.addAll(0,pathToPickup);
                 // shortestPathFromObject.addAll(0, shortestPathToObject);
-             } else {
-				if (grid[(int) (robotY/stepsize)][(int) (robotX/stepsize)] != null){
-                    shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, 0), stepsize);
-                }else {
-                    createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
-                    java.awt.Point p = getAlternativeObjectPoint(cv.getCenter());
-                    shortestPathFromObject = gridToRobotInvertingNeeded[p.y][p.x].getShortestPathLines();
-                }
 
-                shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
-			}
-
-            if (shortestPathFromObject!=null){
                 shortestPath = shortestPathFromObject;
-				//shortestPath = shortestPathFromObject;
-                System.out.println(shortestPathFromObject);
-                agent.getHandler().changePath(shortestPath, 0);
+            }
+        } else if (objectCaptured){
+            if (grid[(int) (robotY/stepsize)][(int) ( robotX/stepsize)] != null){
+                shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, robotR, 0), stepsize);
+            }else {
+                // createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
+                tabooRadius = (cv.getRadius()+objectRadius)*1.1/ stepsize;
+                java.awt.Point p = getAlternativeObjectPoint(cv.getCenter());
+                shortestPath = grid[p.y][p.x].getShortestPathLines();
+            }
 
-			} 
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.out.println("No path retrievable. Robot possibly within Contours");
+            shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
+        } else {
+            if (grid[(int) (robotY/stepsize)][(int) ( robotX/stepsize)] != null){
+                shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, robotR, 0), stepsize);
+            }else {
+                // createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
+                tabooRadius = (cv.getRadius()+objectRadius)*1.1/ stepsize;
+                java.awt.Point p = getAlternativeObjectPoint(cv.getCenter());
+                shortestPath = grid[p.y][p.x].getShortestPathLines();
+            }
+
+            shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
         }
+
+
+        agent.getHandler().changePath(shortestPath, 0);
     }
 
     private java.awt.Point getAlternativeObjectPoint(Point object) {
@@ -574,7 +569,6 @@ public class Simulation {
         }
         return shortestPathToObject;
     }
-
 
     private LinkedList<Line> selectBestPickupPointAndAddToPathOld(LinkedList<Line> shortestPathFromObject, Node[][] gridToRobotNoInvertingNeeded, ArrayList<java.awt.Point> possiblePickUpPoints, LinkedList<Double> possibleWayPointsAngleToObjectCenter, ArrayList<Double> possibleWayPointsLengths, ArrayList<Double> possibleScores, LinkedList<Line> shortestPathToObject, boolean solutionfound) {
         while(possiblePickUpPoints.size()>0&& solutionfound == false){
@@ -875,9 +869,6 @@ public class Simulation {
         return false;
     }
 
-
-
-
     private boolean doesHitWall(Node[][] grid, int x1, int y1, int x2, int y2) {
         // delta of exact value and rounded value of the dependent variable
         int d = 0;
@@ -1080,10 +1071,6 @@ public class Simulation {
         } catch (Exception e) {
             System.out.println("unable to wait");
         }
-    }
-
-    public static void main(String[] args) {
-        Simulation sim = new Simulation();
     }
 
 
