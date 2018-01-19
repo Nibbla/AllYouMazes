@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -384,7 +384,7 @@ public class Simulation {
 
 
 
-             if (gridToRobotInvertingNeeded == null||true||objectMoved()){// || objectMoved()){
+             if (gridToRobotInvertingNeeded == null||objectMoved()){// || objectMoved()){
                  createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
                  System.out.println("Second Grid is new calculated");
 
