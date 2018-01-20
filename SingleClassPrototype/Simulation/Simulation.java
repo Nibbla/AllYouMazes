@@ -425,8 +425,11 @@ public class Simulation {
             //findNodeThatRobotGetsObject
             boolean robotWihtinPickupRange = robotWihinPickupRange();
             boolean distanceAndAngleToObjectIsWrong= distanceAndAngleToObjectIsWrong(cv.getObject());
-            if (distanceAndAngleToObjectIsWrong&& !robotWihtinPickupRange) {
+            System.out.println("RobotWithinPickUpRange: " + robotWihtinPickupRange);
+            System.out.println("object in Pickup Mouth: " + !distanceAndAngleToObjectIsWrong);
 
+            if (distanceAndAngleToObjectIsWrong&& !robotWihtinPickupRange) {
+                System.out.println("Calculating Path To Pickup Point and from there to Goal");
 
                 //find path to object
                 //define Taboo Area which is around the object
@@ -448,7 +451,7 @@ public class Simulation {
                 if (gridToRobotInvertingNeeded == null || goalChanged || shortestPathFromObject == null || objectMoved()) {// || objectMoved()){
                     goalChanged = false;
 
-
+                    System.out.println("Recalc Object Dyikstra Grid");
                     createTabooAreaFromObject(object, optionalTabooArea, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared);
                     System.out.println("Second Grid is new calculated");
 
@@ -502,6 +505,7 @@ public class Simulation {
              } else {
                 //objectInMouth, therefore go to goal.
                 if (robotWihtinPickupRange&&!distanceAndAngleToObjectIsWrong) {
+                    System.out.println("Calculating Path To Object and from there to Goal");
                     if (grid[(int) (object.y / stepsize)][(int) (object.x / stepsize)] != null) {
                         shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(object.y, object.x, 0), stepsize);
                     } else {
@@ -514,6 +518,7 @@ public class Simulation {
                     shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), new Node((int)robotCenter.x,(int)robotCenter.y)));
 
                 }else {
+                    System.out.println("Object supposed to be in mouth. Directly Drive to goal");
                     if (grid[(int) (robotY / stepsize)][(int) (robotX / stepsize)] != null) {
                         shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(robotY, robotX, 0), stepsize);
                     } else {
@@ -546,7 +551,7 @@ public class Simulation {
         if (center == null)return false;
         if (object == null) return false;
         double distanceObjectToRobot = Math.pow((object.x - center.x),2) + Math.pow((object.y - center.y),2);
-        double distanceObjectToPickup = Math.pow((object.x - currentSelectedPickUpPoint.x),2) + Math.pow((object.y - currentSelectedPickUpPoint.y),2);
+        double distanceObjectToPickup = Math.pow((object.x - currentSelectedPickUpPoint.x*stepsize),2) + Math.pow((object.y - currentSelectedPickUpPoint.y*stepsize),2);
         if (distanceObjectToRobot <= distanceObjectToPickup) return true;
 
         return false;
