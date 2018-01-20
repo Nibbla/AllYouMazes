@@ -882,7 +882,7 @@ public class Simulation {
         double pauerFactor = 1.1;
 
          mouthaX = mouthBreite * centerNormedDirectionY;
-         mouthaY = -mouthBreite * centerNormedDirectionX;
+         mouthaY = mouthBreite * centerNormedDirectionX;
 
          mouthbX = -mouthBreite * centerNormedDirectionY;
          mouthbY = mouthBreite * centerNormedDirectionX;
