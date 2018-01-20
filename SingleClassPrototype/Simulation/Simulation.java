@@ -19,7 +19,7 @@ import java.util.*;
 
 public class Simulation {
 
-    public final static boolean DEBUG_DURATION = true;
+    public final static boolean DEBUG_DURATION = false;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = true;
     public final static boolean DEBUG_CV_CONTOURS = true;
@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -81,6 +81,8 @@ public class Simulation {
     private LinkedList<Line> shortestPathFromObject;
     private boolean goalChanged =false;
     private double maxRadius;
+    private int latestPathWindowMouseX;
+    private int latestPathWindowMouseY;
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -178,10 +180,18 @@ public class Simulation {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
         if (pathWindow == null) pathWindow = ImgWindow.newWindow();
+
+
+        if ( latestPathWindowMouseX != pathWindow.mouseX &&  latestPathWindowMouseY != pathWindow.mouseY){
+            latestPathWindowMouseX = pathWindow.mouseX;
+            latestPathWindowMouseY = pathWindow.mouseY;
+
         if (!distanceAndAngleToObjectIsWrong(new Point(pathWindow.mouseX,pathWindow.mouseY))){
             System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " are within robot mouth");
         }else{
             System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " not within robot mouth");
+        }
+
         }
         pathWindow.setImage(currentFrame);
 
@@ -301,15 +311,16 @@ public class Simulation {
             if (cv.getObject()!=null)retrieveObjectShortestPath(currentFrame,robotX,robotY,0);
 
             end = outputChangingPathDuration(end);
-			if (debug) {
-				drawPathOnWindowAndStoreFrame(currentFrame);
-			}
+            drawPathOnWindowAndStoreFrame(currentFrame);
+
 
 
             // update representation of the agent, new position, new rotation.
             agent.updateV2(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
+            if (debug) {
+// System.out.println(agent.getCurrentPosition());
+            }
 
-            System.out.println(agent.getCurrentPosition());
 
             end = outputUpdateRobotDuration(end);
 
@@ -356,12 +367,16 @@ public class Simulation {
             }
 
 
+            try{
+                sendCommands(needToSend);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 
-            sendCommands(needToSend);
 
 
             end = outputCommandSendingDuration(end);
-
+            end = System.currentTimeMillis();
 
             outputWholeLoopDuration(start);
 
@@ -495,7 +510,7 @@ public class Simulation {
             if (shortestPathFromObject!=null){
                 shortestPath = shortestPathFromObject;
 				//shortestPath = shortestPathFromObject;
-                System.out.println(shortestPathFromObject);
+               // System.out.println(shortestPathFromObject);
                 agent.getHandler().changePath(shortestPath, 0);
 
 			} 
@@ -786,17 +801,83 @@ public class Simulation {
 
             double calculatedAngleBetweenObjects = angle;
             possibleWayPointsAngleToObjectCenter.add(0,calculatedAngleBetweenObjects);
-            System.out.println("Angle between pickupPoint " +pwp.x + " " + pwp.y + " and path from object calculated: " + calculatedAngleBetweenObjects);
-           System.out.println("PickupToObject vector: " + vectorFromPickUpToObjectX+ " " + vectorFromPickUpToObjectY);
-           System.out.println("path from object vector: " + ofdax+ " " + ofday);
+           // System.out.println("Angle between pickupPoint " +pwp.x + " " + pwp.y + " and path from object calculated: " + calculatedAngleBetweenObjects);
+          // System.out.println("PickupToObject vector: " + vectorFromPickUpToObjectX+ " " + vectorFromPickUpToObjectY);
+          // System.out.println("path from object vector: " + ofdax+ " " + ofday);
         }
 
        // Collections.sort(possibleWayPoints,c);
-        System.out.println("possibleWayPoints2" + possibleWayPoints.size());
+       // System.out.println("possibleWayPoints2" + possibleWayPoints.size());
         return possibleWayPointsAngleToObjectCenter;
     }
 
     public boolean distanceAndAngleToObjectIsWrong(Point object) {
+        Point center = cv.getCenter();
+        if (center == null)return false;
+        if (object == null) return false;
+        Point triangleTip = cv.getAnglePoint();
+
+        double deltaTipToCenterX = center.x - triangleTip.x;
+        double deltaTipToCenterY = center.y - triangleTip.y;
+
+        double normOfTriangleTip = Math.sqrt(deltaTipToCenterX*deltaTipToCenterX+ deltaTipToCenterY*deltaTipToCenterY);
+        double centerNormedDirectionX = deltaTipToCenterX/ normOfTriangleTip;
+        double centerNormedDirectionY = deltaTipToCenterY/ normOfTriangleTip;
+
+        if (maxRadius < cv.getRadius()){
+            maxRadius = cv.getRadius();
+        };
+        double radius = maxRadius;
+
+        double mouthBreite = radius*0.8;
+        double pauerFactor = 1.82;
+
+         mouthaX = mouthBreite * centerNormedDirectionY;
+         mouthaY = -mouthBreite * centerNormedDirectionX;
+
+         mouthbX = -mouthBreite * centerNormedDirectionY;
+         mouthbY = mouthBreite * centerNormedDirectionX;
+
+         mouthcX = mouthbX + centerNormedDirectionX * pauerFactor * radius;
+         mouthcY = mouthbY + centerNormedDirectionY * pauerFactor * radius;
+
+         mouthdX = mouthaX + centerNormedDirectionX * pauerFactor * radius;
+         mouthdY = mouthaY + centerNormedDirectionY * pauerFactor * radius;
+
+        this.mouthaX = mouthaX + center.x;
+        this.mouthaY = mouthaY + center.y;
+
+        this.mouthbX = mouthbX +  center.x;
+        this.mouthbY = mouthbY  + center.y;
+
+        this.mouthcX = mouthcX + center.x;
+        this.mouthcY = mouthcY + center.y;
+
+        this.mouthdX = mouthdX + center.x;
+        this.mouthdY = mouthdY + center.y;
+
+        double deltaAM_x = object.x-mouthaX;
+        double deltaAM_y = object.y-mouthaY;
+
+        double width = Math.sqrt((mouthbX-mouthaX)*(mouthbX-mouthaX)+(mouthbY-mouthaY)*(mouthbY-mouthaY));
+        double height = Math.sqrt((mouthbX-mouthaX)*(mouthbX-mouthaX)+(mouthdY-mouthaY)*(mouthdY-mouthaY));
+
+        double f1 = (mouthbX-mouthaX)/width;
+        double f2= (mouthbY-mouthaY)/height;
+        double f3 =(mouthdX-mouthaX)/width;
+        double f4 = (mouthdY-mouthaY)/height;
+
+        double equation1 = deltaAM_x * f1 + deltaAM_y * f2;
+        double eqaution2= deltaAM_x * f3+ deltaAM_y * f4;
+
+        if (0<= equation1 && equation1<= width && 0<= eqaution2 && eqaution2<= height){
+            return false;
+        }
+
+
+        return true;
+    }
+    public boolean distanceAndAngleToObjectIsWrong2(Point object) {
 
         Point center = cv.getCenter();
         if (center == null)return false;
@@ -827,11 +908,11 @@ public class Simulation {
         double mouthBreite = radius*0.8;
         double pauerFactor = 1.82;
 
-        double mouthaX = radius * centerNormedDirectionY;
-        double mouthaY = -radius * centerNormedDirectionX;
+        double mouthaX = mouthBreite * centerNormedDirectionY;
+        double mouthaY = -mouthBreite * centerNormedDirectionX;
 
-        double mouthbX = -radius * centerNormedDirectionY;
-        double mouthbY = radius * centerNormedDirectionX;
+        double mouthbX = -mouthBreite * centerNormedDirectionY;
+        double mouthbY = mouthBreite * centerNormedDirectionX;
 
         double mouthcX = mouthbX + centerNormedDirectionX * pauerFactor * radius;
         double mouthcY = mouthbY + centerNormedDirectionY * pauerFactor * radius;

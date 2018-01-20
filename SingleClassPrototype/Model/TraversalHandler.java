@@ -33,7 +33,7 @@ public class TraversalHandler {
         this.path = path;
 	
 		//System.out.println("change: " + path);
-	System.out.println("change: " + this.path);
+	//System.out.println("change: " + this.path);
         setState(TraversalStatus.INIT);
         firstT = true;
         firstE = true;
@@ -53,7 +53,7 @@ public class TraversalHandler {
     }
 
     public Line getLine(int index) {
-		System.out.println("get: " + this.path);
+		//System.out.println("get: " + this.path);
         return path.get(index);
     }
 
