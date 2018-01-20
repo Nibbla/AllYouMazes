@@ -69,7 +69,7 @@ public class Simulation {
     private double mouthdY;
     private Node[][] gridToRobotInvertingNeeded;
     private Point gridToRobotNoInvertingNeededObjectPosition;
-    private double minimalAbstand = 10;
+    private double minimalAbstand = 25;
     private double minimalAbstandQuadrat = minimalAbstand*minimalAbstand;
 
 
@@ -423,12 +423,12 @@ public class Simulation {
             Point object = cv.getObject();
 
             //findNodeThatRobotGetsObject
-            boolean robotWihtinPickupRange = robotWihinPickupRange();
+            boolean robotWihtinPickupRangePlus10Percent = robotWihinPickupRangePlus10Percent();
             boolean distanceAndAngleToObjectIsWrong= distanceAndAngleToObjectIsWrong(cv.getObject());
-            System.out.println("RobotWithinPickUpRange: " + robotWihtinPickupRange);
+            System.out.println("RobotWithinPickUpRange: " + robotWihtinPickupRangePlus10Percent);
             System.out.println("object in Pickup Mouth: " + !distanceAndAngleToObjectIsWrong);
 
-            if (distanceAndAngleToObjectIsWrong&& !robotWihtinPickupRange) {
+            if (distanceAndAngleToObjectIsWrong&& !robotWihtinPickupRangePlus10Percent) {
                 System.out.println("Calculating Path To Pickup Point and from there to Goal");
 
                 //find path to object
@@ -503,9 +503,9 @@ public class Simulation {
                 // shortestPathFromObject.addAll(0, shortestPathToObject);
 
              } else {
-                //objectInMouth, therefore go to goal.
-                if (robotWihtinPickupRange&&!distanceAndAngleToObjectIsWrong) {
-                    System.out.println("Calculating Path To Object and from there to Goal");
+
+                if (robotWihtinPickupRangePlus10Percent&&distanceAndAngleToObjectIsWrong) {
+                    System.out.println("Calculating Path within pickup range To Object and from there to Goal");
                     if (grid[(int) (object.y / stepsize)][(int) (object.x / stepsize)] != null) {
                         shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(object.y, object.x, 0), stepsize);
                     } else {
@@ -515,7 +515,10 @@ public class Simulation {
                     }
                     shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
                     Point robotCenter = cv.getCenter();
-                    shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), new Node((int)robotCenter.x,(int)robotCenter.y)));
+                    shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), new Node((int)robotCenter.y,(int)robotCenter.x)));
+                    Line l = shortestPathFromObject.get(0);
+                    System.out.println(l);
+                    System.out.println(shortestPathFromObject.get(1));
 
                 }else {
                     System.out.println("Object supposed to be in mouth. Directly Drive to goal");
@@ -544,15 +547,17 @@ public class Simulation {
         }
     }
 
-    private boolean robotWihinPickupRange() {
+    private boolean robotWihinPickupRangePlus10Percent() {
         if (currentSelectedPickUpPoint == null)return false;
         Point center = cv.getCenter();
         Point object = cv.getObject();
         if (center == null)return false;
         if (object == null) return false;
-        double distanceObjectToRobot = Math.pow((object.x - center.x),2) + Math.pow((object.y - center.y),2);
-        double distanceObjectToPickup = Math.pow((object.x - currentSelectedPickUpPoint.x*stepsize),2) + Math.pow((object.y - currentSelectedPickUpPoint.y*stepsize),2);
-        if (distanceObjectToRobot <= distanceObjectToPickup) return true;
+        double distanceObjectToRobot = Math.sqrt(Math.pow((object.x - center.x),2) + Math.pow((object.y - center.y),2));
+        double distanceObjectToPickup = Math.sqrt(Math.pow((object.x - currentSelectedPickUpPoint.x*stepsize),2) + Math.pow((object.y - currentSelectedPickUpPoint.y*stepsize),2));
+        System.out.println("Distance Object To Robot: " + distanceObjectToRobot);
+        System.out.println("Distance Object To Pickup: " + distanceObjectToPickup*1.1);
+        if (distanceObjectToRobot <= distanceObjectToPickup*1.1) return true;
 
         return false;
     }
@@ -866,8 +871,8 @@ public class Simulation {
         };
         double radius = maxRadius;
 
-        double mouthBreite = radius*0.8;
-        double pauerFactor = 1.82;
+        double mouthBreite = radius*0.7;
+        double pauerFactor = 1.1;
 
          mouthaX = mouthBreite * centerNormedDirectionY;
          mouthaY = -mouthBreite * centerNormedDirectionX;

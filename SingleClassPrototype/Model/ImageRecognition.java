@@ -40,7 +40,7 @@ public class ImageRecognition {
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
-    private Scalar angleScalar1 = new Scalar(85, 35, 90);
+    private Scalar angleScalar1 = new Scalar(70, 35, 75);
     private Scalar angleScalar2 = new Scalar(95, 145, 110);
     private Scalar contourScalar1 =  new Scalar(7, 25, 70);
     private Scalar contourScalar2 = new Scalar(40, 130, 180);
@@ -48,7 +48,7 @@ public class ImageRecognition {
     private Scalar backgroundScalar2 = new Scalar(180, 255, 20);
 
     private Scalar robotBgs1_1 = new Scalar(155, 40, 75);
-    private Scalar robotBgs1_2 = new Scalar(175, 115, 175);
+    private Scalar robotBgs1_2 = new Scalar(175, 135, 175);
     //private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     //private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
@@ -405,8 +405,8 @@ public class ImageRecognition {
         //Core.inRange(cc, new Scalar(170, 90, 130), new Scalar(180, 200, 255), tmp_mask2);
 
         //Core.add(tmp_mask1, tmp_mask2, mask);
-        kernel = Mat.ones(3, 3, CvType.CV_8UC1);
-        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_OPEN, kernel);
+        kernel = Mat.ones(5, 5, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
 
         cc.release();
         //tmp_mask1.release();
