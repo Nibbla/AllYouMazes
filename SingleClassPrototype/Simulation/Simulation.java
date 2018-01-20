@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -173,19 +173,20 @@ public class Simulation {
 
     private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
 
-        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthbX, mouthbY), new org.opencv.core.Point(mouthaX, mouthaY), new Scalar(128), 2);
-        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthbX, mouthbY), new org.opencv.core.Point(mouthcX, mouthcY), new Scalar(128), 2);
-        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthaX, mouthaY), new org.opencv.core.Point(mouthdX, mouthdY), new Scalar(128), 2);
 
         for (Line no : shortestPath) {
             Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
         if (pathWindow == null) pathWindow = ImgWindow.newWindow();
-
+        Imgproc.circle( currentFrame, cv.getAnglePoint(), 5, new Scalar( 23, 65, 255 ), 2 );
+        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthbX, mouthbY), new org.opencv.core.Point(mouthaX, mouthaY), new Scalar(128), 2);
+        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthbX, mouthbY), new org.opencv.core.Point(mouthcX, mouthcY), new Scalar(128), 2);
+        Imgproc.line(currentFrame, new org.opencv.core.Point(mouthaX, mouthaY), new org.opencv.core.Point(mouthdX, mouthdY), new Scalar(128), 2);
 
         if ( latestPathWindowMouseX != pathWindow.mouseX &&  latestPathWindowMouseY != pathWindow.mouseY){
             latestPathWindowMouseX = pathWindow.mouseX;
             latestPathWindowMouseY = pathWindow.mouseY;
+            System.out.println("angle" + cv.getAnglePoint());
 
         if (!distanceAndAngleToObjectIsWrong(new Point(pathWindow.mouseX,pathWindow.mouseY))){
             System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " are within robot mouth");
@@ -865,13 +866,13 @@ public class Simulation {
         if (center == null)return false;
         if (object == null) return false;
         Point triangleTip = cv.getAnglePoint();
-
+        System.out.println(triangleTip);
         double deltaTipToCenterX = center.x - triangleTip.x;
         double deltaTipToCenterY = center.y - triangleTip.y;
 
         double normOfTriangleTip = Math.sqrt(deltaTipToCenterX*deltaTipToCenterX+ deltaTipToCenterY*deltaTipToCenterY);
-        double centerNormedDirectionX = -deltaTipToCenterX/ normOfTriangleTip;
-        double centerNormedDirectionY = -deltaTipToCenterY/ normOfTriangleTip;
+        double centerNormedDirectionX = deltaTipToCenterX/ normOfTriangleTip;
+        double centerNormedDirectionY = deltaTipToCenterY/ normOfTriangleTip;
 
         if (maxRadius < cv.getRadius()){
             maxRadius = cv.getRadius();
@@ -885,7 +886,7 @@ public class Simulation {
          mouthaY = mouthBreite * centerNormedDirectionX;
 
          mouthbX = mouthBreite * centerNormedDirectionY;
-         mouthbY = mouthBreite * centerNormedDirectionX;
+         mouthbY = -mouthBreite * centerNormedDirectionX;
 
          mouthcX = mouthbX + centerNormedDirectionX * pauerFactor * radius;
          mouthcY = mouthbY + centerNormedDirectionY * pauerFactor * radius;
