@@ -44,7 +44,7 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
 
     private double lastSendLinearSpeed = 0;
@@ -205,23 +205,27 @@ public class Simulation {
         goalX = pickWindow.mouseX;
         goalY = pickWindow.mouseY;
         grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, false, null, null, null);
+        setShortestPathToGeal(rp);
 
+
+
+
+
+    }
+
+    private void setShortestPathToGeal(RoboPos rp) {
         if (grid[(int) (rp.getY()/stepsize)][(int) ( rp.getX()/stepsize)] != null){
             shortestPath = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(rp.getY(), rp.getX(), 0, 0), stepsize);
 
 
         }else {
-           // createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
+            // createTabooAreaFromObject(object,optionalTabooArea,optionalTabooAreaCenter,optionalTabooAreaRadiusSquared);
             tabooRadius = (cv.getRadius()+objectRadius)*1.1/ stepsize;
             java.awt.Point p = getAlternativeObjectPoint(cv.getCenter());
             shortestPath = grid[p.y][p.x].getShortestPathLines();
         }
 
         shortestPath = DijkstraPathFinder.reverseLinkedListLine(shortestPath);
-
-
-
-
     }
 
 
@@ -311,6 +315,9 @@ public class Simulation {
             checkIfGoalChangedAndSetGridNew(currentFrame);
             if (cv.getObject()!=null) {
                 retrieveObjectShortestPath(currentFrame, robotX, robotY, 0);
+            }else{
+                setShortestPathToGeal(new RoboPos(robotX,robotY,robotR));
+                agent.getHandler().changePath(shortestPath, 0);
             }
 
             end = outputChangingPathDuration(end);
@@ -863,8 +870,8 @@ public class Simulation {
         double deltaTipToCenterY = center.y - triangleTip.y;
 
         double normOfTriangleTip = Math.sqrt(deltaTipToCenterX*deltaTipToCenterX+ deltaTipToCenterY*deltaTipToCenterY);
-        double centerNormedDirectionX = deltaTipToCenterX/ normOfTriangleTip;
-        double centerNormedDirectionY = deltaTipToCenterY/ normOfTriangleTip;
+        double centerNormedDirectionX = -deltaTipToCenterX/ normOfTriangleTip;
+        double centerNormedDirectionY = -deltaTipToCenterY/ normOfTriangleTip;
 
         if (maxRadius < cv.getRadius()){
             maxRadius = cv.getRadius();
