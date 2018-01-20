@@ -18,7 +18,10 @@ import java.util.List;
 
 public class ImageRecognition {
     ImgWindow camWindow = null;
-    ImgWindow bgsWindow = null;
+    //ImgWindow bgsWindow = null;
+    private ImgWindow bgsWindowRobot;
+    private ImgWindow bgsWindowAngle;
+    private ImgWindow bgsWindowObject;
 
     private Mat bg, frame, diff, hierarchy, cc, mask, tmp_mask1, tmp_mask2, kernel, hsv, r, perspectiveTransform, transformation_x, transformation_y;
     private VideoCapture capture;
@@ -58,6 +61,7 @@ public class ImageRecognition {
     private Mat[] byPassImages = null;
     private boolean byPassCamera = false;
     private long byPassCount = 0;
+
 
 
     public ImageRecognition(boolean debug) {
@@ -103,8 +107,12 @@ public class ImageRecognition {
         if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
             camWindow = ImgWindow.newWindow();
             camWindow.setTitle("CAM");
-            bgsWindow = ImgWindow.newWindow();
-            bgsWindow.setTitle("BGS");
+            bgsWindowRobot = ImgWindow.newWindow();
+            bgsWindowRobot.setTitle("BGSRobot");
+            bgsWindowAngle = ImgWindow.newWindow();
+            bgsWindowAngle.setTitle("BGSAngle");
+            bgsWindowObject = ImgWindow.newWindow();
+            bgsWindowObject.setTitle("BGSObject");
 
         }
     }
@@ -272,7 +280,7 @@ public class ImageRecognition {
         }
 
         if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
-            bgsWindow.setImage(diff);
+            bgsWindowRobot.setImage(diff);
         }
     }
 
@@ -290,7 +298,7 @@ public class ImageRecognition {
         }
 
         if (Simulation.DEBUG_CV_ROBOT_ANGLE_DETECTION || debug) {
-            bgsWindow.setImage(diff);
+            bgsWindowAngle.setImage(diff);
         }
     }
 
@@ -310,7 +318,7 @@ public class ImageRecognition {
         }
 
         if (Simulation.DEBUG_CV_OBJECT || debug) {
-            bgsWindow.setImage(diff);
+            bgsWindowObject.setImage(diff);
         }
     }
 

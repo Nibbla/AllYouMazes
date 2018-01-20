@@ -41,9 +41,14 @@ public class ImgWindow extends JPanel {
     volatile public boolean closed;
     volatile EventQueue eventQueue = new EventQueue();
     private Simulation sim;
+    private static int count = 0;
+    private final int width = 500;
+    private final int height = 260;
 
     public ImgWindow (JFrame frame) {
         this.frame = frame;
+        frame.setLocation(width*(count%3),height*(count/3));
+        count++;
         this.frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed (WindowEvent e) {
@@ -107,6 +112,7 @@ public class ImgWindow extends JPanel {
                 frame.pack();
             }
         }
+
         repaint();
     }
 
