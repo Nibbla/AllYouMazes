@@ -10,6 +10,7 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.File;
 import java.util.*;
 
@@ -28,7 +29,7 @@ public class Simulation {
     public final static boolean DEBUG_SHOW_GRID = false;
     public final static boolean DEBUG_PRINTOUT_PATH = false;
     public final static boolean DEBUG_STORE_EDITEDFRAME = false;
-    public final static boolean DEBUG_ALLOWPATHWINDOWTOBEREDRAWN = false;
+    public final static boolean DEBUG_ALLOWPATHWINDOWTOBEREDRAWN = true;
 
     public boolean debugEveryXFrames = true;
     public int debugFrames = 10;
@@ -931,8 +932,8 @@ public class Simulation {
         };
         double radius = maxRadius;
 
-        double mouthBreite = radius*0.5;
-        double pauerFactor = 0.7;
+        double mouthBreite = radius*0.65;
+        double pauerFactor = 0.9;
 
          mouthaX = -mouthBreite * centerNormedDirectionY;
          mouthaY = mouthBreite * centerNormedDirectionX;
@@ -958,26 +959,33 @@ public class Simulation {
         this.mouthdX = mouthdX + center.x;
         this.mouthdY = mouthdY + center.y;
 
-        double deltaAM_x = object.x-mouthaX;
-        double deltaAM_y = object.y-mouthaY;
+       int[] eckPunkteIX = {(int) mouthaX, (int) mouthbX, (int) mouthcX, (int) mouthdX};
+        int[] eckPunkteIY = {(int) mouthaY, (int) mouthbY, (int) mouthcY, (int) mouthdY};
+        Polygon poly = new Polygon(eckPunkteIX,eckPunkteIY,4);
+        if (poly.contains(object.x,object.y))return false; else return true;
 
-        double width = Math.sqrt((mouthbX-mouthaX)*(mouthbX-mouthaX)+(mouthbY-mouthaY)*(mouthbY-mouthaY));
-        double height = Math.sqrt((mouthbX-mouthaX)*(mouthbX-mouthaX)+(mouthdY-mouthaY)*(mouthdY-mouthaY));
+        //double width = Math.sqrt((mouthbX-mouthaX)*(mouthbX-mouthaX)+(mouthbY-mouthaY)*(mouthbY-mouthaY));
+        //double height = Math.sqrt((mouthbX-mouthaX)*(mouthbX-mouthaX)+(mouthdY-mouthaY)*(mouthdY-mouthaY));
 
-        double f1 = (mouthbX-mouthaX)/width;
-        double f2= (mouthbY-mouthaY)/height;
-        double f3 =(mouthdX-mouthaX)/width;
-        double f4 = (mouthdY-mouthaY)/height;
+        //double f1 = (mouthbX-mouthaX)/width;
+        //double f2= (mouthbY-mouthaY)/height;
+        //double f3 =(mouthdX-mouthaX)/width;
+        //double f4 = (mouthdY-mouthaY)/height;
 
-        double equation1 = deltaAM_x * f1 + deltaAM_y * f2;
-        double eqaution2= deltaAM_x * f3+ deltaAM_y * f4;
-
-        if (0<= equation1 && equation1<= width && 0<= eqaution2 && eqaution2<= height){
-            return false;
-        }
+        //double deltaAM_x = object.x-mouthaX;
+        //double deltaAM_y = object.y-mouthaY;
 
 
-        return true;
+
+        //double equation1 = deltaAM_x * f1 + deltaAM_y * f2;
+        //double eqaution2= deltaAM_x * f3+ deltaAM_y * f4;
+
+        //if (0<= equation1 && equation1<= width && 0<= eqaution2 && eqaution2<= height){
+          //  return false;
+        //}
+
+
+        //return true;
     }
     public boolean distanceAndAngleToObjectIsWrong2(Point object) {
 
