@@ -915,7 +915,7 @@ public class Simulation {
         double radius = maxRadius;
 
         double mouthBreite = radius*0.5;
-        double pauerFactor = 0.9;
+        double pauerFactor = 0.7;
 
          mouthaX = -mouthBreite * centerNormedDirectionY;
          mouthaY = mouthBreite * centerNormedDirectionX;
