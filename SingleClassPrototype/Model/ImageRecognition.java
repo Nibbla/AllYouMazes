@@ -115,6 +115,7 @@ public class ImageRecognition {
             bgsWindowObject.setTitle("BGSObject");
 
         }
+
     }
 
     private void readNextFrame() {
@@ -362,7 +363,8 @@ public class ImageRecognition {
         Rect rect = null;
         int maxX = img.cols();
         int maxY = img.rows();
-
+        ax = 0;
+        ay = 0;
         if ((x - searchSpace) < 0 && (y - searchSpace) < 0) { //top left
             rect = new Rect(new Point(0, 0), new Point(searchSpace, searchSpace));
         } else if ((x + searchSpace) > maxX && (y - searchSpace) < 0) { //top right

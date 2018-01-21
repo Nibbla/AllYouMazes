@@ -29,6 +29,7 @@ import javax.swing.event.ChangeListener;
 import Simulation.Simulation;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 
 @SuppressWarnings("serial")
 public class ImgWindow extends JPanel {
@@ -44,6 +45,7 @@ public class ImgWindow extends JPanel {
     private static int count = 0;
     private final int width = 500;
     private final int height = 260;
+    private Point bypassObject;
 
     public ImgWindow (JFrame frame) {
         this.frame = frame;
@@ -61,9 +63,15 @@ public class ImgWindow extends JPanel {
             public void mouseClicked (MouseEvent e) {
                 synchronized (this) {
                     clicked = true;
+                    if (e.getButton() == MouseEvent.BUTTON3){
+                        bypassObject = new Point(e.getX(),e.getY());
+                    }else{
+
                     mouseX = e.getX();
                     mouseY = e.getY();
                     outPutPixelValue(mouseX,mouseY);
+                    }
+
                 }
             }
         });
@@ -320,5 +328,9 @@ public class ImgWindow extends JPanel {
         }
 
         return null;
+    }
+
+    public Point getByPassObject() {
+        return bypassObject;
     }
 }
