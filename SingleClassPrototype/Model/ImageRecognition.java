@@ -459,8 +459,8 @@ public class ImageRecognition {
 
         Core.inRange(cc, objectBgs1_1, objectBgs1_2, mask);
 
-        kernel = Mat.ones(7, 7, CvType.CV_8UC1);
-        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_CLOSE, kernel);
+        kernel = Mat.ones(5, 5, CvType.CV_8UC1);
+        Imgproc.morphologyEx(mask, mask, Imgproc.MORPH_DILATE, kernel);
 
         cc.release();
         kernel.release();
@@ -502,7 +502,7 @@ public class ImageRecognition {
         }
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 11);
+        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 21);
         contours.clear();
         hierarchy.release();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);

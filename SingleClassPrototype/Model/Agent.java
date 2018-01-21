@@ -20,7 +20,7 @@ public class Agent {
 	private final double DELAYANGLE = 0;
 
 
-    private final double V2_ROTATIONERROR = 20;
+    private final double V2_ROTATIONERROR = 14;
     private final double V2_DELAYANGLE = 0;
 
     // TODO: make use of ROS_ID in controller. this is to anticipate multiple epucks.
