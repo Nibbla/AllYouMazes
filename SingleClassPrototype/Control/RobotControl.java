@@ -38,7 +38,7 @@ public class RobotControl implements IControl {
     private int linearSpeedCountTreshhold = 10;
     private int overWriteSteps;
     private int overWriteStepsThreshold = 2;
-    private boolean byPassCommandAllowed = true;
+    private boolean byPassCommandAllowed = false;
 
 
     /**
@@ -117,7 +117,7 @@ public class RobotControl implements IControl {
     public void sendCommand(double linearSpeed, double angularSpeed) {
         
 
-        if (byPassCommandAllowed&&byPassCommand(linearSpeed,angularSpeed)){return;}
+        if (byPassCommandAllowed)if (byPassCommand(linearSpeed,angularSpeed)){return;}
 
 	if (linearSpeed == 1){
         	setMotorSpeed(linearSpeed * FORWARDSPEED, linearSpeed * FORWARDSPEED);

@@ -44,9 +44,9 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
-    private boolean byPassObject = true;
+    private boolean byPassObject = false;
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
@@ -289,7 +289,14 @@ public class Simulation {
             cv.findRobotPosition(debug);
             Point currentPosition = cv.getCenter();
             end = outputRobotDetectionTime(end);
+            // check if the robot has been found
 
+            checkIfRobotHasBeenFoundAndSetDetected(currentPosition);
+            if (!detected) { //robot has not been detected, start a new loop
+                end = System.currentTimeMillis();
+                outputWholeLoopDuration(start);
+                continue;
+            }
             // find the angle-position of the robot
             cv.findAnglePosition(debug);
             Point anglePosition = cv.getAnglePoint();
@@ -298,15 +305,11 @@ public class Simulation {
             cv.findObjectPostion(debug);
 
 
-            // check if the robot has been found
-            checkIfRobotHasBeenFoundAndSetDetected(currentPosition);
 
 
 
-            if (!detected) { //robot has not been detected, start a new loop
-                outputWholeLoopDuration(start);
-                continue;
-            }
+
+
 
             // if robot has been found, perform further steps
 
@@ -460,7 +463,7 @@ public class Simulation {
                     //object grid is recalculated
                     goalChanged = false;
                     System.out.println("Recalc Object Dyikstra Grid");
-                    fullStopRobot();
+                    //fullStopRobot();
 
                     createTabooAreaFromObject(object);
                     pathToPickup = calculatePickupPointAndCalculateGridFromPickupPoint(pathToPickup,currentFrame, object, robotX, robotY,true);
@@ -509,8 +512,8 @@ public class Simulation {
 
     private void fullStopRobot() {
         System.out.println("Stop Robot whilst recalculating");
-        control.sendCommand(0, 0);
-        agent.fullStop(0.,0.);
+       // control.sendCommand(0, 0);
+        //agent.fullStop(0.,0.);
     }
 
     private LinkedList<Line> calculatePickupPointAndCalculateGridFromPickupPoint(LinkedList<Line> pathToPickup, Mat currentFrame, Point object, int robotX, int robotY,boolean safty) {
