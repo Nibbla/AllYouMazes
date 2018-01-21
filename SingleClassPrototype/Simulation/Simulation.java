@@ -460,6 +460,8 @@ public class Simulation {
                     //object grid is recalculated
                     goalChanged = false;
                     System.out.println("Recalc Object Dyikstra Grid");
+                    System.out.println("Stop Robot whilst recalculating");
+                    control.sendCommand(0, 0);
                     createTabooAreaFromObject(object);
                     pathToPickup = calculatePickupPointAndCalculateGridFromPickupPoint(pathToPickup,currentFrame, object, robotX, robotY,true);
                 }else {
