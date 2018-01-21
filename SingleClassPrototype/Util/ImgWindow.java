@@ -30,6 +30,7 @@ import Simulation.Simulation;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
+import org.opencv.imgcodecs.Imgcodecs;
 
 @SuppressWarnings("serial")
 public class ImgWindow extends JPanel {
@@ -65,6 +66,10 @@ public class ImgWindow extends JPanel {
                     clicked = true;
                     if (e.getButton() == MouseEvent.BUTTON3){
                         bypassObject = new Point(e.getX(),e.getY());
+                        if (frame.getTitle().equals("CAM")){
+                            System.out.println("Stored Cam image");
+                            Imgcodecs.imwrite("SavedImaged.jpg", bufferedImmageToMat(img));
+                        }
                     }else{
 
                     mouseX = e.getX();

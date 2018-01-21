@@ -34,6 +34,10 @@ public class RobotControl implements IControl {
     private boolean isRunning;
     private boolean isSending; 
     private PrintWriter out;
+    private int linearSpeedCount = 0;
+    private int linearSpeedCountTreshhold = 10;
+    private int overWriteSteps;
+    private int overWriteStepsThreshold = 10;
 
 
     /**
@@ -110,6 +114,10 @@ public class RobotControl implements IControl {
      */
     @Override
     public void sendCommand(double linearSpeed, double angularSpeed) {
+        System.out.println("Command sended. Linear: " + linearSpeed + " Angular: " + angularSpeed);
+
+        if (byPassCommand(linearSpeed,angularSpeed)){return;}
+
 	if (linearSpeed == 1){
         	setMotorSpeed(linearSpeed * FORWARDSPEED, linearSpeed * FORWARDSPEED);
 	} else if (angularSpeed == -1){
@@ -120,6 +128,23 @@ public class RobotControl implements IControl {
 		setMotorSpeed(0,0);
 	}
         issueMotorSpeed();
+    }
+
+    private boolean byPassCommand(double linearSpeed, double angularSpeed) {
+        if (linearSpeed == 0){
+            linearSpeedCount++;
+        }else {linearSpeedCount = 0;}
+        if (overWriteSteps > overWriteStepsThreshold){
+            overWriteSteps = 0;
+            linearSpeedCount = 0;
+            return false;
+        }
+        if (linearSpeed > linearSpeedCountTreshhold|| overWriteSteps++ < overWriteStepsThreshold){
+            setMotorSpeed(240,240);
+            issueMotorSpeed();
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -202,8 +227,8 @@ public class RobotControl implements IControl {
      * This is used to prepare the rostopic process with a linear and angular speed.
      * <p>
      *
-     * @param linear  a linear speed. a positive value is for forward, a negative value is for backward.
-     * @param angular an anguar speed. a positive value is for counterclockwise, a negative value for clockwise.
+     * @param left  linear speed. a positive value is for forward, a negative value is for backward.
+     * @param right linear speed. a positive value is for forward, a negative value is for backward.
      */
     private void setMotorSpeed(double left, double right) {
         movementCommand[0] = (int) left;

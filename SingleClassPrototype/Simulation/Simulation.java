@@ -44,9 +44,9 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
-    private boolean byPassObject = false;
+    private boolean byPassObject = true;
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
