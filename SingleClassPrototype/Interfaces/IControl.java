@@ -17,4 +17,6 @@ public interface IControl extends Cloneable {
     void closeConnection();
 
     void sendCommand(double linearSpeed, double angularSpeed);
+
+
 }

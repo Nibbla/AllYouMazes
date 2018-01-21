@@ -37,7 +37,7 @@ public class RobotControl implements IControl {
     private int linearSpeedCount = 0;
     private int linearSpeedCountTreshhold = 10;
     private int overWriteSteps;
-    private int overWriteStepsThreshold = 10;
+    private int overWriteStepsThreshold = 2;
     private boolean byPassCommandAllowed = true;
 
 
@@ -115,7 +115,7 @@ public class RobotControl implements IControl {
      */
     @Override
     public void sendCommand(double linearSpeed, double angularSpeed) {
-        System.out.println("Command sended. Linear: " + linearSpeed + " Angular: " + angularSpeed);
+        
 
         if (byPassCommandAllowed&&byPassCommand(linearSpeed,angularSpeed)){return;}
 
@@ -131,6 +131,8 @@ public class RobotControl implements IControl {
         issueMotorSpeed();
     }
 
+
+
     private boolean byPassCommand(double linearSpeed, double angularSpeed) {
         if (linearSpeed == 0){
             linearSpeedCount++;
@@ -138,11 +140,13 @@ public class RobotControl implements IControl {
         if (overWriteSteps > overWriteStepsThreshold){
             overWriteSteps = 0;
             linearSpeedCount = 0;
+			System.out.println("Stop Bypassing command");
             return false;
         }
         if (linearSpeed > linearSpeedCountTreshhold|| overWriteSteps++ < overWriteStepsThreshold){
             setMotorSpeed(240,240);
             issueMotorSpeed();
+			System.out.println("Bypass command");
             return true;
         }
         return false;
@@ -208,6 +212,7 @@ public class RobotControl implements IControl {
 		try{
     out = new PrintWriter("/home/pi/Desktop/test.txt");
     out.println( ((int)movementCommand[0]) + " " + ((int)movementCommand[1]));
+System.out.println("Command sended. Linear: " +  movementCommand[0] + " linaer2: " + movementCommand[1]);
 
 		}catch(Exception e){
 		

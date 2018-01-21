@@ -310,4 +310,11 @@ public class Agent {
 	public boolean isStuck(){
 		return lastPosition.equals(currentPosition);
 	}
+
+    public void fullStop(double v, double v1) {
+        prevRotationCoefficient = 0;
+        prevLinearCoefficient = 0;
+        linearCoefficient = 0;
+        rotationCoefficient = 0;
+    }
 }

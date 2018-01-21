@@ -460,8 +460,8 @@ public class Simulation {
                     //object grid is recalculated
                     goalChanged = false;
                     System.out.println("Recalc Object Dyikstra Grid");
-                    System.out.println("Stop Robot whilst recalculating");
-                    control.sendCommand(0, 0);
+                    fullStopRobot();
+
                     createTabooAreaFromObject(object);
                     pathToPickup = calculatePickupPointAndCalculateGridFromPickupPoint(pathToPickup,currentFrame, object, robotX, robotY,true);
                 }else {
@@ -505,6 +505,12 @@ public class Simulation {
             e.printStackTrace();
             System.out.println("No path retrievable. Robot possibly within Contours");
         }
+    }
+
+    private void fullStopRobot() {
+        System.out.println("Stop Robot whilst recalculating");
+        control.sendCommand(0, 0);
+        agent.fullStop(0.,0.);
     }
 
     private LinkedList<Line> calculatePickupPointAndCalculateGridFromPickupPoint(LinkedList<Line> pathToPickup, Mat currentFrame, Point object, int robotX, int robotY,boolean safty) {
