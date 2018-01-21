@@ -21,11 +21,14 @@ public class Simulation {
 
     public final static boolean DEBUG_DURATION = false;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
-    public final static boolean DEBUG_CONTROLLER = true;
-    public final static boolean DEBUG_CV_CONTOURS = true;
-    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
-    public final static boolean DEBUG_CV_OBJECT = true;
-
+    public final static boolean DEBUG_CONTROLLER = false;
+    public final static boolean DEBUG_CV_CONTOURS = false;
+    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
+    public final static boolean DEBUG_CV_OBJECT = false;
+    public final static boolean DEBUG_SHOW_GRID = false;
+    public final static boolean DEBUG_PRINTOUT_PATH = false;
+    public final static boolean DEBUG_STORE_EDITEDFRAME = false;
+    public final static boolean DEBUG_ALLOWPATHWINDOWTOBEREDRAWN = false;
 
     public boolean debugEveryXFrames = true;
     public int debugFrames = 10;
@@ -44,9 +47,9 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
-    private boolean byPassObject = false;
+    private boolean byPassObject = true;
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
@@ -87,6 +90,9 @@ public class Simulation {
     private int latestPathWindowMouseY;
     private java.awt.Point currentSelectedPickUpPointStepsized;
     private double distanceObjectToPickup;
+    private boolean allowFullStopRobot = false;
+
+
 
     /**
      * Method to create an initial scene (requires the robot to be detected, will fail otherwise)
@@ -205,7 +211,7 @@ public class Simulation {
         pathWindow.setImage(currentFrame);
 
         // store the edited frame (e.g for inspection)
-        Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
+        if (DEBUG_STORE_EDITEDFRAME)Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
     }
 
     private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
@@ -339,7 +345,7 @@ public class Simulation {
             }
 
             end = outputChangingPathDuration(end);
-            drawPathOnWindowAndStoreFrame(currentFrame);
+            if (DEBUG_ALLOWPATHWINDOWTOBEREDRAWN) drawPathOnWindowAndStoreFrame(currentFrame);
 
 
 
@@ -463,7 +469,7 @@ public class Simulation {
                     //object grid is recalculated
                     goalChanged = false;
                     System.out.println("Recalc Object Dyikstra Grid");
-                    //fullStopRobot();
+                    if (allowFullStopRobot)fullStopRobot();
 
                     createTabooAreaFromObject(object);
                     pathToPickup = calculatePickupPointAndCalculateGridFromPickupPoint(pathToPickup,currentFrame, object, robotX, robotY,true);
@@ -512,8 +518,9 @@ public class Simulation {
 
     private void fullStopRobot() {
         System.out.println("Stop Robot whilst recalculating");
-       // control.sendCommand(0, 0);
-        //agent.fullStop(0.,0.);
+        agent.fullStop(0.,0.);
+       control.sendCommand(0, 0);
+
     }
 
     private LinkedList<Line> calculatePickupPointAndCalculateGridFromPickupPoint(LinkedList<Line> pathToPickup, Mat currentFrame, Point object, int robotX, int robotY,boolean safty) {
@@ -541,11 +548,12 @@ public class Simulation {
             distanceObjectToPickup = Math.sqrt(Math.pow((object.x - selectedPickUpPoint.x * stepsize), 2) + Math.pow((object.y - selectedPickUpPoint.y * stepsize), 2));
 
             System.out.println("Second Grid is new calculated");
-            drawGrid(gridToRobotInvertingNeeded, possiblePickUpPoints, currentFrame, stepsize);
+            if (DEBUG_SHOW_GRID)drawGrid(gridToRobotInvertingNeeded, possiblePickUpPoints, currentFrame, stepsize);
             try {
                 pathToPickup = getPathToPickup(robotX, robotY,true);
             }catch (java.lang.IndexOutOfBoundsException index){
                 System.out.println("That pickup point is unfeasable");
+                System.out.println("Continue Search for Pickup Point");
             }
 
             if (pathToPickup == null){

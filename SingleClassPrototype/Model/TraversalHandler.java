@@ -34,7 +34,7 @@ public class TraversalHandler {
         Line n = path.getLast();
         this.path.add(new Line(n.getA(),n.getA()));
 		//System.out.println("change: " + path);
-	//System.out.println("change: " + this.path);
+	    //System.out.println("change: " + this.path);
         setState(TraversalStatus.INIT);
         firstT = true;
         firstE = true;
