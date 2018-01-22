@@ -100,6 +100,7 @@ public class Simulation {
     private double[] moveOverwriteOrder;
     private double errorThreshold = 10;
     private long thresholdTime = 0;
+    private boolean allowThressholdOverwrite = true;
 
 
     /**
@@ -409,12 +410,12 @@ public class Simulation {
                 needToSend = true;
             }
 
-            updateMinimumThreshold();
+            if (allowThressholdOverwrite) updateMinimumThreshold();
             try{
                 if (moveOverwrite){
                     System.out.println("overwriting Move");
                     RobotControl rc = (RobotControl) control;
-                    rc.setMotorSpeed(0,0);
+                    rc.setMotorSpeed(moveOverwriteOrder[0],moveOverwriteOrder[0]);
                     rc.issueMotorSpeed();
                     //control.sendCommand(moveOverwriteOrder, agent.getRotationCoefficient());
                 }else{
@@ -459,8 +460,8 @@ public class Simulation {
             moveOverwrite = true;
             moveOverwriteOrder = new double[2];
             double move = Math.signum(Math.random()-0.5);
-            moveOverwriteOrder[0] = move;
-            moveOverwriteOrder[1] = move;
+            moveOverwriteOrder[0] = move*500;
+            moveOverwriteOrder[1] = move*500;
             thresholdTime = System.currentTimeMillis();
         }
         }
