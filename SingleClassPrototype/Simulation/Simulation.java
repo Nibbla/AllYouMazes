@@ -361,7 +361,7 @@ public class Simulation {
             // update representation of the agent, new position, new rotation.
             agent.updateV2(new RoboPos(robotX, robotY, robotR), new RoboPos((int) (anglePosition.x), (int) (anglePosition.y), 0));
             if (debug) {
-// System.out.println(agent.getCurrentPosition());
+                // System.out.println(agent.getCurrentPosition());
             }
 
 
@@ -412,6 +412,7 @@ public class Simulation {
             updateMinimumThreshold();
             try{
                 if (moveOverwrite){
+                    System.out.println("overwriting Move");
                     RobotControl rc = (RobotControl) control;
                     rc.setMotorSpeed(0,0);
                     rc.issueMotorSpeed();
