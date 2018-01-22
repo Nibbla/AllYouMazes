@@ -27,7 +27,7 @@ public class Simulation {
     public final static boolean DEBUG_CV_CONTOURS = false;
     public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
     public final static boolean DEBUG_CV_OBJECT = false;
-    public final static boolean DEBUG_SHOW_GRID = false;
+    public final static boolean DEBUG_SHOW_GRID = true;
     public final static boolean DEBUG_PRINTOUT_PATH = false;
     public final static boolean DEBUG_STORE_EDITEDFRAME = false;
     public final static boolean DEBUG_ALLOWPATHWINDOWTOBEREDRAWN = true;
@@ -45,13 +45,14 @@ public class Simulation {
     private int stepsize = 4;
     private Agent agent;
     private MatOfPoint contour;
+    private MatOfPoint2f contourWithoutDialation;
 
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
-    private boolean byPassObject = false;
+    private boolean byPassObject = true;
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
@@ -137,6 +138,8 @@ public class Simulation {
 
         // scan contours of the maze
         contour = cv.getCurrentContours();
+
+        contourWithoutDialation = new MatOfPoint2f(cv.getContourWithoutDialation().toArray());
         pathWindow = ImgWindow.newWindow();
         pathWindow.setImage(currentFrame);
 
@@ -527,9 +530,11 @@ public class Simulation {
                     pathToPickup = getPathToPickup(robotX, robotY,true);
                 }
 
+                if(shortestPathFromObject == null) shortestPathFromObject =new LinkedList<>();
+                shortestPathFromObject = checkIfWallHasHitAndProfideAlternative(shortestPathFromObject,pathToPickup);
 
 
-                shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), pathToPickup.getLast().getA()));
+
                 shortestPathFromObject.addAll(0, pathToPickup);
 
 
@@ -566,6 +571,32 @@ public class Simulation {
         }
     }
 
+    private LinkedList<Line> checkIfWallHasHitAndProfideAlternative(LinkedList<Line> shortestPathFromObject, LinkedList<Line> pathToPickup) {
+       int py1 = this.shortestPathFromObject.getFirst().getB().getX()/stepsize;
+        int px1 = this.shortestPathFromObject.getFirst().getB().getY()/stepsize;
+
+        int py2 = pathToPickup.getLast().getA().getX()/stepsize;
+        int px2 = pathToPickup.getLast().getA().getY()/stepsize;
+        while (doesHitWall(contourWithoutDialation, px1, py1,px2, py2)||shortestPathFromObject == null){
+            int deltaPx1 = (px2 - px1)/2;
+            int deltaPy1 = (py2 - py1)/2;
+            px1 = px1 + deltaPx1;
+            py1 = py1 + deltaPy1;
+            if (deltaPx1 == 0&&deltaPy1==0){
+                px1 = px2;
+                py1 = py2;
+            }
+
+            shortestPathFromObject =   getShortestPathFromPointToGoal(new Point(px1*stepsize,py1*stepsize));
+        }
+        if(shortestPathFromObject != null) {
+            //shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), pathToPickup.getLast().getA()));
+            shortestPathFromObject.add(0, new Line(new Node(py1*stepsize,px1*stepsize), new Node(py2*stepsize,px2*stepsize)));
+        }
+
+        return shortestPathFromObject;
+    }
+
     private void fullStopRobot() {
         System.out.println("Stop Robot whilst recalculating");
         agent.fullStop(0.,0.);
@@ -588,7 +619,7 @@ public class Simulation {
             int i = getBest(possibleScores, possiblePickUpPoints);
             java.awt.Point selectedPickUpPoint = possiblePickUpPoints.get(i);
            //if (doesHitWall(grid,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize))
-            if (safty&&doesHitWall(grid,selectedPickUpPoint.y,selectedPickUpPoint.x,objectYStepsited, objectXStepsized)){
+            if (safty&&doesHitWall(contourWithoutDialation,selectedPickUpPoint.x,selectedPickUpPoint.y,objectXStepsized, objectYStepsited)){
                 possibleScores.remove(i);
                 possiblePickUpPoints.remove(i);
                 continue;
@@ -750,7 +781,7 @@ public class Simulation {
 
         //check if flip of x and y nexxessary
 
-            if (shortestPathToObject==null||doesHitWall(grid,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize)){
+            if (shortestPathToObject==null||doesHitWall(contourWithoutDialation,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize)){
                 possiblePickUpPoints.remove(i);
                 possibleWayPointsLengths.remove(i);
                 possibleWayPointsAngleToObjectCenter.remove(i);
@@ -1117,6 +1148,56 @@ public class Simulation {
 
 
 
+    private boolean doesHitWall(MatOfPoint2f contourWithoutDialation, int x1, int y1, int x2, int y2) {
+        // delta of exact value and rounded value of the dependent variable
+        int d = 0;
+
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+
+        int dx2 = 2 * dx; // slope scaling factors to
+        int dy2 = 2 * dy; // avoid floating point
+
+        int ix = x1 < x2 ? 1 : -1; // increment direction
+        int iy = y1 < y2 ? 1 : -1;
+
+        int x = x1;
+        int y = y1;
+
+        if (dx >= dy) {
+            while (true) {
+                double t = Imgproc.pointPolygonTest(contourWithoutDialation, new org.opencv.core.Point(x * stepsize, y * stepsize), false);
+                if (t != -1) {
+                    return true;
+                }
+
+                if (x == x2)
+                    break;
+                x += ix;
+                d += dy2;
+                if (d > dx) {
+                    y += iy;
+                    d -= dx2;
+                }
+            }
+        } else {
+            while (true) {
+                double t = Imgproc.pointPolygonTest(contourWithoutDialation, new org.opencv.core.Point(x * stepsize, y * stepsize), false);
+                if (t != -1) {
+                    return true;
+                }
+                if (y == y2)
+                    break;
+                y += iy;
+                d += dx2;
+                if (d > dy) {
+                    x += ix;
+                    d -= dy2;
+                }
+            }
+        }
+        return false;
+    }
 
     private boolean doesHitWall(Node[][] grid, int x1, int y1, int x2, int y2) {
         // delta of exact value and rounded value of the dependent variable

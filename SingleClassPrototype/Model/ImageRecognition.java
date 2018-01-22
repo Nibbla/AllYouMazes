@@ -61,7 +61,7 @@ public class ImageRecognition {
     private Mat[] byPassImages = null;
     private boolean byPassCamera = false;
     private long byPassCount = 0;
-
+    private MatOfPoint currentContoursWithoutDialation;
 
 
     public ImageRecognition(boolean debug) {
@@ -468,7 +468,7 @@ public class ImageRecognition {
         return mask;
     }
 
-    private MatOfPoint contours(Mat img) {
+    private MatOfPoint contours(Mat img, boolean counturWindow, int contourDialtation) {
         Imgproc.cvtColor(img, hsv, Imgproc.COLOR_BGR2HSV);
 
         Imgproc.GaussianBlur(hsv, hsv, new Size(15, 15), 2, 2);
@@ -487,7 +487,7 @@ public class ImageRecognition {
         //Need to make sure that robot is removed.
         contours.clear();
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
-		ImgWindow.newWindow(mask);
+
 
         while (contours.size() != 1) {
             for (int i = 0; i < contours.size(); i++) {
@@ -502,9 +502,10 @@ public class ImageRecognition {
         }
 
         //iterations = radius
-        Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), 21);
+        if (contourDialtation>0)Imgproc.dilate(mask, mask, new Mat(), new Point(-1, -1), contourDialtation);
         contours.clear();
         hierarchy.release();
+        if (counturWindow) ImgWindow.newWindow(mask.clone());
         Imgproc.findContours(mask, contours, hierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
         if (Simulation.DEBUG_CV_CONTOURS) {
@@ -564,7 +565,7 @@ public class ImageRecognition {
 
     public void determineMazeContours() {
         frame.copyTo(bg);
-        currentContours = contours(bg);
+        currentContours = contours(bg,true,21);
         bg.release();
     }
 
@@ -763,7 +764,10 @@ public class ImageRecognition {
 
     public MatOfPoint getCurrentContours() {
         readNextFrame();
-        currentContours = contours(frame);
+        currentContoursWithoutDialation = contours(frame.clone(),true, 0);
+        currentContours = contours(frame,true, 21);
+
+
         return currentContours;
     }
 
@@ -842,6 +846,10 @@ public class ImageRecognition {
         this.byPassImages = images;
         this.byPassCamera = byPassCamera;
 
+    }
+
+    public MatOfPoint getContourWithoutDialation() {
+        return currentContoursWithoutDialation;
     }
 }
 
