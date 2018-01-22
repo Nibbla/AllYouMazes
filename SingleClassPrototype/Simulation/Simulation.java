@@ -50,9 +50,9 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
-    private boolean byPassObject = true;
+    private boolean byPassObject = false;
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
@@ -97,9 +97,9 @@ public class Simulation {
     private boolean moveOverwrite = false;
 
     ArrayList<Point> lastPoint = new ArrayList<>();
-    private int lastPointMaxSize = 20;
+    private int lastPointMaxSize = 30;
     private double[] moveOverwriteOrder;
-    private double errorThreshold = 10;
+    private double errorThreshold = 15;
     private long thresholdTime = 0;
     private boolean allowThressholdOverwrite = true;
 
@@ -196,7 +196,7 @@ public class Simulation {
 
 
         for (Line no : shortestPath) {
-            Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
+           if (no!=null) Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }
         if (pathWindow == null) pathWindow = ImgWindow.newWindow();
         Imgproc.circle( currentFrame, cv.getAnglePoint(), 5, new Scalar( 23, 65, 255 ), 2 );
@@ -416,7 +416,7 @@ public class Simulation {
             if (allowThressholdOverwrite) updateMinimumThreshold();
             try{
                 if (moveOverwrite){
-                    System.out.println("overwriting Move");
+                    System.out.println("overwriting Move" + moveOverwriteOrder[0]);
                     RobotControl rc = (RobotControl) control;
                     rc.setMotorSpeed(moveOverwriteOrder[0],moveOverwriteOrder[0]);
                     rc.issueMotorSpeed();
@@ -445,6 +445,7 @@ public class Simulation {
             if (System.currentTimeMillis()-thresholdTime>1000){
                 moveOverwrite = false;
                 thresholdTime = System.currentTimeMillis();
+                System.out.println("stop overwriting Move" + thresholdTime);
             }
             lastPoint.clear();
         }else {
@@ -466,6 +467,7 @@ public class Simulation {
             moveOverwriteOrder[0] = move*500;
             moveOverwriteOrder[1] = move*500;
             thresholdTime = System.currentTimeMillis();
+            System.out.println("start overwriting Move" + thresholdTime);
         }
         }
 
@@ -531,7 +533,7 @@ public class Simulation {
                 }
 
                 if(shortestPathFromObject == null) shortestPathFromObject =new LinkedList<>();
-                shortestPathFromObject = checkIfWallHasHitAndProfideAlternative(shortestPathFromObject,pathToPickup);
+                shortestPathFromObject = checkIfWallHasHitAndProfideAlternative(object,shortestPathFromObject,pathToPickup);
 
 
 
@@ -571,9 +573,19 @@ public class Simulation {
         }
     }
 
-    private LinkedList<Line> checkIfWallHasHitAndProfideAlternative(LinkedList<Line> shortestPathFromObject, LinkedList<Line> pathToPickup) {
-       int py1 = this.shortestPathFromObject.getFirst().getB().getX()/stepsize;
-        int px1 = this.shortestPathFromObject.getFirst().getB().getY()/stepsize;
+    private LinkedList<Line> checkIfWallHasHitAndProfideAlternative(Point object , LinkedList<Line> shortestPathFromObject, LinkedList<Line> pathToPickup) {
+        int py1;
+        int px1;
+        if(shortestPathFromObject == null) {
+            py1 = (int) (object.x/stepsize);
+            px1 = (int) (object.y/stepsize);
+
+
+        }else{
+            py1 = this.shortestPathFromObject.getFirst().getB().getX()/stepsize;
+            px1 = this.shortestPathFromObject.getFirst().getB().getY()/stepsize;
+        }
+
 
         int py2 = pathToPickup.getLast().getA().getX()/stepsize;
         int px2 = pathToPickup.getLast().getA().getY()/stepsize;
@@ -615,7 +627,7 @@ public class Simulation {
         ArrayList<Double> possibleScores = settleScore(possiblePickUpPoints, possibleWayPointsAngleToObjectCenter);
 
         //addwhile stuff
-        while(pathToPickup == null&&(possiblePickUpPoints.size()>0)) {
+        while(pathToPickup == null||pathToPickup.size()==0&&(possiblePickUpPoints.size()>0)) {
             int i = getBest(possibleScores, possiblePickUpPoints);
             java.awt.Point selectedPickUpPoint = possiblePickUpPoints.get(i);
            //if (doesHitWall(grid,shortestPathToObject.getLast().getB().getX()/stepsize,shortestPathToObject.getLast().getB().getY()/stepsize,shortestPathFromObject.getFirst().getA().getX()/stepsize, shortestPathFromObject.getFirst().getA().getY()/stepsize))
@@ -637,7 +649,7 @@ public class Simulation {
                 System.out.println("Continue Search for Pickup Point");
             }
 
-            if (pathToPickup == null){
+            if (pathToPickup == null||pathToPickup.size()==0){
                 possibleScores.remove(i);
                 possiblePickUpPoints.remove(i);
             }

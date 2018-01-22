@@ -30,6 +30,7 @@ public class TraversalHandler {
 
     public void changePath(LinkedList<Line> path, int state) {
         //this.path.clear();
+        if (path == null||path.size()== 0) return;
         this.path = path;
         Line n = path.getLast();
         this.path.add(new Line(n.getA(),n.getA()));

@@ -85,7 +85,7 @@ public class Node{
             }
 
             if (aPath.size()>0)tmp = new Line(start, aPath.get(aPath.size() - 1));
-            shortestPathLines.add(tmp);
+             if (tmp != null)shortestPathLines.add(tmp);
         //}
 
     }
