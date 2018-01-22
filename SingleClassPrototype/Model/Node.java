@@ -50,13 +50,13 @@ public class Node{
 
     private void resolveShortestPathLines() {
         if (!shortestPathLines.isEmpty()) shortestPathLines.clear();
-        if (shortestPath.size() < 3){
-            System.out.println("Path too small");
+        //if (shortestPath.size() < 3){
+         //   System.out.println("Path too small");
 
-            Line tmp = new Line(shortestPath.get(0), shortestPath.get(1));
-            shortestPathLines.add(tmp);
+         //   Line tmp = new Line(shortestPath.get(0), shortestPath.get(1));
+          //  shortestPathLines.add(tmp);
 
-        } else {
+       // } else {
             ArrayList<Node> aPath = new ArrayList<>(shortestPath);
 
             Node start = null;
@@ -86,7 +86,7 @@ public class Node{
 
             tmp = new Line(start, aPath.get(aPath.size() - 1));
             shortestPathLines.add(tmp);
-        }
+        //}
 
     }
 

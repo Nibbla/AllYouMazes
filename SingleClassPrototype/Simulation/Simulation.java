@@ -8,6 +8,7 @@ import org.opencv.core.*;
 import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
+import sun.plugin.javascript.navig.Array;
 
 import javax.swing.*;
 import java.awt.*;
@@ -92,7 +93,13 @@ public class Simulation {
     private java.awt.Point currentSelectedPickUpPointStepsized;
     private double distanceObjectToPickup;
     private boolean allowFullStopRobot = false;
+    private boolean moveOverwrite = false;
 
+    ArrayList<Point> lastPoint = new ArrayList<>();
+    private int lastPointMaxSize = 20;
+    private double[] moveOverwriteOrder;
+    private double errorThreshold = 10;
+    private long thresholdTime = 0;
 
 
     /**
@@ -282,6 +289,7 @@ public class Simulation {
             waitMinimumTime(diff);
 
 
+
             // used to measure execution time
             start = System.currentTimeMillis();
             // CV frame used during each simulation step
@@ -401,9 +409,17 @@ public class Simulation {
                 needToSend = true;
             }
 
-
+            updateMinimumThreshold();
             try{
-                sendCommands(needToSend);
+                if (moveOverwrite){
+                    RobotControl rc = (RobotControl) control;
+                    rc.setMotorSpeed(0,0);
+                    rc.issueMotorSpeed();
+                    //control.sendCommand(moveOverwriteOrder, agent.getRotationCoefficient());
+                }else{
+                    sendCommands(needToSend);
+                }
+
             }catch (Exception e){
                 e.printStackTrace();
             }
@@ -417,6 +433,37 @@ public class Simulation {
 
 
         }
+    }
+
+    private void updateMinimumThreshold() {
+        if ( moveOverwrite ){
+            if (System.currentTimeMillis()-thresholdTime>1000){
+                moveOverwrite = false;
+                thresholdTime = System.currentTimeMillis();
+            }
+            lastPoint.clear();
+        }else {
+        lastPoint.add(cv.getCenter());
+        if (lastPoint.size()>lastPointMaxSize){
+            lastPoint.remove(0);
+        }
+        double error = 0;
+        for (int i = 0; i < lastPoint.size()-1; i++) {
+             Point point = lastPoint.get(i);
+             Point point2 = lastPoint.get(i+1);
+            error += Math.abs(point2.x-point.x);
+            error += Math.abs(point2.y-point.y);
+        }
+        if (lastPoint.size()>=lastPointMaxSize && error < errorThreshold){
+            moveOverwrite = true;
+            moveOverwriteOrder = new double[2];
+            double move = Math.signum(Math.random()-0.5);
+            moveOverwriteOrder[0] = move;
+            moveOverwriteOrder[1] = move;
+            thresholdTime = System.currentTimeMillis();
+        }
+        }
+
     }
 
     private void checkIfGoalChangedAndSetGridNew(Mat currentFrame) {

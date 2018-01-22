@@ -25,14 +25,14 @@ public class RobotControl implements IControl {
     // The basic structure of a movement command. For more information check the ROS documentation.
     private final double[] movementCommand = {0,0};
     // Values used for moving either forward or angular
-    private final double FORWARDSPEED = 800; // with a max of 3.5
-    private final double ANGULARSPEED = 200; // with a max of 1.5
+    private final double FORWARDSPEED = 650; // with a max of 3.5
+    private final double ANGULARSPEED = 250; // with a max of 1.5
     // These are used to spawn the processes that Control the epuck.
     private ProcessBuilder processGenerator;
     private Process initRosProcess;
     private Process motorSpeedProcess;
     private boolean isRunning;
-    private boolean isSending; 
+    private boolean isSending;
     private PrintWriter out;
     private int linearSpeedCount = 0;
     private int linearSpeedCountTreshhold = 10;
@@ -199,7 +199,7 @@ public class RobotControl implements IControl {
     /**
      * Starts the rostopic process with the correct parameters for the previously set speed. This will 'broadcast' the desired speed once and upon receiving it will be executed by the epuck.
      */
-    private void issueMotorSpeed() {
+    public void issueMotorSpeed() {
         try {
 
             if (Simulation.DEBUG_CONTROLLER) {
@@ -236,7 +236,7 @@ System.out.println("Command sended. Linear: " +  movementCommand[0] + " linaer2:
      * @param left  linear speed. a positive value is for forward, a negative value is for backward.
      * @param right linear speed. a positive value is for forward, a negative value is for backward.
      */
-    private void setMotorSpeed(double left, double right) {
+    public void setMotorSpeed(double left, double right) {
         movementCommand[0] = (int) left;
 	movementCommand[1] = (int) right;
     }
