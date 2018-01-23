@@ -8,7 +8,7 @@ import org.opencv.core.*;
 import org.opencv.core.Point;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import sun.plugin.javascript.navig.Array;
+
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,12 +21,12 @@ import java.util.*;
 
 public class Simulation {
 
-    public final static boolean DEBUG_DURATION = false;
+    public final static boolean DEBUG_DURATION = true;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = false;
-    public final static boolean DEBUG_CV_CONTOURS = false;
-    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
-    public final static boolean DEBUG_CV_OBJECT = false;
+    public final static boolean DEBUG_CV_CONTOURS = true;
+    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
+    public final static boolean DEBUG_CV_OBJECT = true;
     public final static boolean DEBUG_SHOW_GRID = true;
     public final static boolean DEBUG_PRINTOUT_PATH = false;
     public final static boolean DEBUG_STORE_EDITEDFRAME = false;
@@ -152,7 +152,7 @@ public class Simulation {
         // TODO: currently the 'Nodes' returned in the ArrayList shortest-path have X and Y swapped. When change also adapt input parameters for angle calculations, see below.
 
         //cv.findObjectPostion(false);
-        setGridAndShortestPath(rp,currentFrame);
+        setGridAndShortestPath(rp,currentFrame, 0, 0);
 
 
         // draw the path to the goal on the initial frame
@@ -194,10 +194,10 @@ public class Simulation {
 
     private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
 
-
+try{
         for (Line no : shortestPath) {
            if (no!=null) Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
-        }
+        }}catch(Exception e){}
         if (pathWindow == null) pathWindow = ImgWindow.newWindow();
         Imgproc.circle( currentFrame, cv.getAnglePoint(), 5, new Scalar( 23, 65, 255 ), 2 );
         Imgproc.line(currentFrame, new org.opencv.core.Point(mouthbX, mouthbY), new org.opencv.core.Point(mouthaX, mouthaY), new Scalar(128), 2);
@@ -226,10 +226,14 @@ public class Simulation {
         if (DEBUG_STORE_EDITEDFRAME)Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
     }
 
-    private void setGridAndShortestPath(RoboPos rp, Mat currentFrame) {
+    private void setGridAndShortestPath(RoboPos rp, Mat currentFrame, int x, int y) {
         System.out.println("Calculate Path...");
         goalX = pathWindow.mouseX;
         goalY = pathWindow.mouseY;
+		if(x != 0 && y != 0){
+			goalX = x;
+			goalY = y;
+		}
         grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, false, null, null, null);
         setShortestPathToGeal(rp, false);
 
@@ -277,6 +281,8 @@ public class Simulation {
 
         // variable for current image
         Mat currentFrame;
+
+        long start2 = System.currentTimeMillis();
 
         // TODO: Implement end-condition, e.g. check if the robot has reached the goal. This should be placed in the while loop instead of 'true'.
         while (agent.getHandler().getState() != TraversalStatus.FINISH) {
@@ -435,14 +441,19 @@ public class Simulation {
             end = System.currentTimeMillis();
 
             outputWholeLoopDuration(start);
-
+  			long end2 = System.currentTimeMillis();
+        	System.out.println("DURATION not Finsihed: " + (end2 - start2));
 
         }
+
+
+        long end2 = System.currentTimeMillis();
+        System.out.println("DURATION: " + (end2 - start2));
     }
 
     private void updateMinimumThreshold() {
         if ( moveOverwrite ){
-            if (System.currentTimeMillis()-thresholdTime>1000){
+            if (System.currentTimeMillis()-thresholdTime>800){
                 moveOverwrite = false;
                 thresholdTime = System.currentTimeMillis();
                 System.out.println("stop overwriting Move" + thresholdTime);
@@ -1024,8 +1035,8 @@ public class Simulation {
         };
         double radius = maxRadius;
 
-        double mouthBreite = radius*0.65;
-        double pauerFactor = 0.9;
+        double mouthBreite = radius*0.50;
+        double pauerFactor = 0.65;
 
          mouthaX = -mouthBreite * centerNormedDirectionY;
          mouthaY = mouthBreite * centerNormedDirectionX;

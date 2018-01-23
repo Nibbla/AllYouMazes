@@ -565,7 +565,7 @@ public class ImageRecognition {
 
     public void determineMazeContours() {
         frame.copyTo(bg);
-        currentContours = contours(bg,true,21);
+        currentContours = contours(bg,true,17);
         bg.release();
     }
 
