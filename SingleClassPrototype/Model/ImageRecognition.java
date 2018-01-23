@@ -510,11 +510,9 @@ public class ImageRecognition {
 
         if (Simulation.DEBUG_CV_CONTOURS) {
             Imgproc.drawContours(img, contours, -1, new Scalar(0, 0, 255), 2);
-            ImgWindow contourWindow = ImgWindow.newWindow();
-            contourWindow.setTitle("contours");
-            Simulation.setContourMask(img);
-            Simulation.setContourWindow(contourWindow);
-            contourWindow.setImage(img);
+            ImgWindow w = ImgWindow.newWindow();
+            w.setTitle("contours");
+            w.setImage(img);
         }
 
         hsv.release();
@@ -767,7 +765,7 @@ public class ImageRecognition {
     public MatOfPoint getCurrentContours() {
         readNextFrame();
         currentContoursWithoutDialation = contours(frame.clone(),true, 0);
-        currentContours = contours(frame.clone(),true, 15);
+        currentContours = contours(frame,true, 21);
 
 
         return currentContours;

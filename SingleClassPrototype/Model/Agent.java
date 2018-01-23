@@ -170,7 +170,7 @@ public class Agent {
 
         prevGoalA = currentGoalA;
         prevGoalB = currentGoalB;
-        if (currentGoalA == null || currentGoalB == null) return;
+
         currentGoalA = handler.getLine(handler.getIndex()).getA();
         currentGoalB = handler.getLine(handler.getIndex()).getB();
 
@@ -180,7 +180,6 @@ public class Agent {
         // while loop in order to .step() the path as long as the next nodes are too close.
         // TODO: maybe rework current tracing of path as it is not that 'Closed-loopish'
         // TODO: swap Y and X as soon as path returns X and Y
-
         while(Math.abs(currentGoalB.getX() - y) <= (PROXIMITY) && Math.abs(x - currentGoalB.getY()) <= (PROXIMITY) && handler.getState() != TraversalStatus.FINISH){
             handler.step();
             currentGoalA = handler.getLine(handler.getIndex()).getA();
