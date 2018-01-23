@@ -20,14 +20,15 @@ import java.util.*;
  */
 
 public class Simulation {
+private int stepsize = 4;
 
     public final static boolean DEBUG_DURATION = true;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = false;
-    public final static boolean DEBUG_CV_CONTOURS = true;
-    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
-    public final static boolean DEBUG_CV_OBJECT = true;
-    public final static boolean DEBUG_SHOW_GRID = true;
+    public final static boolean DEBUG_CV_CONTOURS = false;
+    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
+    public final static boolean DEBUG_CV_OBJECT = false;
+    public final static boolean DEBUG_SHOW_GRID = false;
     public final static boolean DEBUG_PRINTOUT_PATH = false;
     public final static boolean DEBUG_STORE_EDITEDFRAME = false;
     public final static boolean DEBUG_ALLOWPATHWINDOWTOBEREDRAWN = true;
@@ -42,7 +43,7 @@ public class Simulation {
 
     public IControl control;
     private LinkedList<Line> shortestPath;
-    private int stepsize = 4;
+    
     private Agent agent;
     private MatOfPoint contour;
     private MatOfPoint2f contourWithoutDialation;
@@ -97,9 +98,9 @@ public class Simulation {
     private boolean moveOverwrite = false;
 
     ArrayList<Point> lastPoint = new ArrayList<>();
-    private int lastPointMaxSize = 30;
+    private int lastPointMaxSize = 50;
     private double[] moveOverwriteOrder;
-    private double errorThreshold = 15;
+    private double errorThreshold = 35;
     private long thresholdTime = 0;
     private boolean allowThressholdOverwrite = true;
 
@@ -453,7 +454,7 @@ try{
 
     private void updateMinimumThreshold() {
         if ( moveOverwrite ){
-            if (System.currentTimeMillis()-thresholdTime>800){
+            if (System.currentTimeMillis()-thresholdTime>700){
                 moveOverwrite = false;
                 thresholdTime = System.currentTimeMillis();
                 System.out.println("stop overwriting Move" + thresholdTime);
@@ -474,7 +475,7 @@ try{
         if (lastPoint.size()>=lastPointMaxSize && error < errorThreshold){
             moveOverwrite = true;
             moveOverwriteOrder = new double[2];
-            double move = Math.signum(Math.random()-0.5);
+            double move = Math.signum(Math.random()-0.6);
             moveOverwriteOrder[0] = move*500;
             moveOverwriteOrder[1] = move*500;
             thresholdTime = System.currentTimeMillis();
@@ -533,12 +534,15 @@ try{
                 LinkedList<Line> pathToPickup = null;
                 if (gridToRobotInvertingNeeded == null || objectMoved(object) || goalChanged || shortestPathFromObject == null ) {
                     //object grid is recalculated
+					
                     goalChanged = false;
                     System.out.println("Recalc Object Dyikstra Grid");
                     if (allowFullStopRobot)fullStopRobot();
 
                     createTabooAreaFromObject(object);
                     pathToPickup = calculatePickupPointAndCalculateGridFromPickupPoint(pathToPickup,currentFrame, object, robotX, robotY,true);
+					
+ 					
                 }else {
                     pathToPickup = getPathToPickup(robotX, robotY,true);
                 }
