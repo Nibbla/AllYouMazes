@@ -31,6 +31,7 @@ public class Simulation {
     public final static boolean DEBUG_PRINTOUT_PATH = false;
     public final static boolean DEBUG_STORE_EDITEDFRAME = false;
     public final static boolean DEBUG_ALLOWPATHWINDOWTOBEREDRAWN = true;
+    private static Mat countourMask;
 
     public boolean debugEveryXFrames = true;
     public int debugFrames = 10;
@@ -50,9 +51,9 @@ public class Simulation {
     private boolean detected;
 
     private ImageRecognition cv = new ImageRecognition(debugEveryXFrames);
-    private boolean byPassCamera = false; //set this to true in case you rather have different images selected
+    private boolean byPassCamera = true; //set this to true in case you rather have different images selected
                                            //then using the camera. still needs open cv installed though.
-    private boolean byPassObject = false;
+    private boolean byPassObject = true;
 
     private double lastSendLinearSpeed = 0;
     private double lastSentAngularSpeed = 0;
@@ -102,6 +103,7 @@ public class Simulation {
     private double errorThreshold = 15;
     private long thresholdTime = 0;
     private boolean allowThressholdOverwrite = true;
+    private static ImgWindow contourWindow;
 
 
     /**
@@ -185,6 +187,10 @@ public class Simulation {
         startSimulation();
     }
 
+    public static void setContourWindow(ImgWindow contourWindow) {
+        Simulation.contourWindow = contourWindow;
+    }
+
     private File[] getCammeraByPassImages() {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
@@ -195,6 +201,11 @@ public class Simulation {
     private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
 
 try{
+        if (contourWindow != null && contour != null){
+            Imgproc.circle( countourMask, cv.getCenter(), 5, new Scalar( 0, 255, 255 ), 2 );
+            contourWindow.setImage(countourMask);
+        }
+
         for (Line no : shortestPath) {
            if (no!=null) Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }}catch(Exception e){}
@@ -446,7 +457,7 @@ try{
 
         }
 
-
+        Imgcodecs.imwrite("Trazer.jpg", countourMask);
         long end2 = System.currentTimeMillis();
         System.out.println("DURATION: " + (end2 - start2));
     }
@@ -457,6 +468,9 @@ try{
                 moveOverwrite = false;
                 thresholdTime = System.currentTimeMillis();
                 System.out.println("stop overwriting Move" + thresholdTime);
+                RobotControl rc = (RobotControl) control;
+                rc.setMotorSpeed(0,0);
+                rc.issueMotorSpeed();
             }
             lastPoint.clear();
         }else {
@@ -1431,4 +1445,7 @@ try{
     }
 
 
+    public static void setContourMask(Mat img) {
+        countourMask = img;
+    }
 }
