@@ -25,7 +25,7 @@ private int stepsize = 4;
     public final static boolean DEBUG_DURATION = true;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = false;
-    public final static boolean DEBUG_CV_CONTOURS = false;
+    public final static boolean DEBUG_CV_CONTOURS = true;
     public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
     public final static boolean DEBUG_CV_OBJECT = false;
     public final static boolean DEBUG_SHOW_GRID = true;
@@ -571,8 +571,8 @@ try{
                 if (robotWihtinPickupRangePlus10Percent&&distanceAndAngleToObjectIsWrong) {
 
                     System.out.println("Calculating Path within pickup range To Object and from there to Goal");
-                    double deltaPX = (int) ((object.x - robotX)*1.5);
-                    double deltaPY= (int) ((object.y - robotY)*1.5);
+                    double deltaPX = (int) ((object.x - robotX)*1.1);
+                    double deltaPY= (int) ((object.y - robotY)*1.1);
                     Point p = new Point(robotX+deltaPX,robotY+deltaPY);
                     shortestPathFromObject = getShortestPathFromPointToGoal(object);
                     //shortestPathFromObject = getShortestPathFromPointToGoal(object);
@@ -1065,7 +1065,7 @@ try{
         double radius = maxRadius;
 
         double mouthBreite = radius*0.50;
-        double pauerFactor = 0.65;
+        double pauerFactor = 1.2;
 
          mouthaX = -mouthBreite * centerNormedDirectionY;
          mouthaY = mouthBreite * centerNormedDirectionX;
