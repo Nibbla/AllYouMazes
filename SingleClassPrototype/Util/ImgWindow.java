@@ -338,4 +338,12 @@ public class ImgWindow extends JPanel {
     public Point getByPassObject() {
         return bypassObject;
     }
+
+    public BufferedImage getImg() {
+        return img;
+    }
+
+    public void setImg(BufferedImage img) {
+        this.img = img;
+    }
 }

@@ -28,7 +28,7 @@ private int stepsize = 4;
     public final static boolean DEBUG_CV_CONTOURS = false;
     public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
     public final static boolean DEBUG_CV_OBJECT = false;
-    public final static boolean DEBUG_SHOW_GRID = false;
+    public final static boolean DEBUG_SHOW_GRID = true;
     public final static boolean DEBUG_PRINTOUT_PATH = false;
     public final static boolean DEBUG_STORE_EDITEDFRAME = false;
     public final static boolean DEBUG_ALLOWPATHWINDOWTOBEREDRAWN = true;
@@ -93,7 +93,7 @@ private int stepsize = 4;
     private int latestPathWindowMouseX;
     private int latestPathWindowMouseY;
     private java.awt.Point currentSelectedPickUpPointStepsized;
-    private double distanceObjectToPickup;
+    private double distanceObjectToPickup = 37;
     private boolean allowFullStopRobot = false;
     private boolean moveOverwrite = false;
 
@@ -103,6 +103,7 @@ private int stepsize = 4;
     private double errorThreshold = 35;
     private long thresholdTime = 0;
     private boolean allowThressholdOverwrite = true;
+    private HashMap<Point, java.awt.Point> alternaMap = new HashMap<>(1000);
 
 
     /**
@@ -183,7 +184,11 @@ private int stepsize = 4;
         connect();
 
         // start controlling thread
-        startSimulation();
+        while(true) {
+            startSimulation();
+            while(!pathWindow.isClicked()){ }
+            agent.getHandler().setState(TraversalStatus.INIT);
+        }
     }
 
     private File[] getCammeraByPassImages() {
@@ -196,6 +201,7 @@ private int stepsize = 4;
     private void drawPathOnWindowAndStoreFrame(Mat currentFrame) {
 
 try{
+    Imgproc.circle( currentFrame, cv.getCenter(), 3, new Scalar( 0, 240, 255 ), 2 );
         for (Line no : shortestPath) {
            if (no!=null) Imgproc.line(currentFrame, new org.opencv.core.Point(no.getA().getY(), no.getA().getX()), new org.opencv.core.Point(no.getB().getY(), no.getB().getX()), new Scalar(255), 3);
         }}catch(Exception e){}
@@ -227,22 +233,7 @@ try{
         if (DEBUG_STORE_EDITEDFRAME)Imgcodecs.imwrite("editedInitialFrame.jpg", currentFrame);
     }
 
-    private void setGridAndShortestPath(RoboPos rp, Mat currentFrame, int x, int y) {
-        System.out.println("Calculate Path...");
-        goalX = pathWindow.mouseX;
-        goalY = pathWindow.mouseY;
-		if(x != 0 && y != 0){
-			goalX = x;
-			goalY = y;
-		}
-        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, false, null, null, null);
-        setShortestPathToGeal(rp, false);
 
-
-
-
-
-    }
 
     private void setShortestPathToGeal(RoboPos rp, boolean checkIfInsideTaboo) {
         if (grid[(int) (rp.getY()/stepsize)][(int) ( rp.getX()/stepsize)] != null){
@@ -447,9 +438,12 @@ try{
 
         }
 
-
+        Imgcodecs.imwrite("pathTraced.jpg", ImgWindow.bufferedImmageToMat(pathWindow.getImg()));;
         long end2 = System.currentTimeMillis();
         System.out.println("DURATION: " + (end2 - start2));
+
+
+
     }
 
     private void updateMinimumThreshold() {
@@ -485,11 +479,28 @@ try{
 
     }
 
+    private void setGridAndShortestPath(RoboPos rp, Mat currentFrame, int x, int y) {
+        System.out.println("Calculate Path...");
+        goalX = pathWindow.mouseX;
+        goalY = pathWindow.mouseY;
+        if(x != 0 && y != 0){
+            goalX = x;
+            goalY = y;
+        }
+
+        grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, false, null, null, null);
+        setShortestPathToGeal(rp, false);
+    }
+
     private void checkIfGoalChangedAndSetGridNew(Mat currentFrame) {
        if (goalX != pathWindow.mouseX || goalY != pathWindow.mouseY) {
+           MatOfPoint2f mop2 = new MatOfPoint2f(contour.toArray());
+           double t = Imgproc.pointPolygonTest(mop2, new org.opencv.core.Point(pathWindow.mouseX, pathWindow.mouseY), false);
+           if (t != -1) {return;}
+
            goalX = pathWindow.mouseX;
            goalY = pathWindow.mouseY;
-           grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), goalX, goalY, stepsize, false, null, null, null);
+           grid = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, mop2, goalX, goalY, stepsize, false, null, null, null);
            goalChanged = true;
        }
     }
@@ -560,10 +571,19 @@ try{
                 if (robotWihtinPickupRangePlus10Percent&&distanceAndAngleToObjectIsWrong) {
 
                     System.out.println("Calculating Path within pickup range To Object and from there to Goal");
+                    double deltaPX = (int) ((object.x - robotX)*1.5);
+                    double deltaPY= (int) ((object.y - robotY)*1.5);
+                    Point p = new Point(robotX+deltaPX,robotY+deltaPY);
                     shortestPathFromObject = getShortestPathFromPointToGoal(object);
-
+                    //shortestPathFromObject = getShortestPathFromPointToGoal(object);
+                    int objecty = (int) object.y;
+                    int objectx = (int) object.x;
+                    Node n = new Node(objecty,objectx);
+                    Node simplePickup = new Node((int)p.y,(int)p.x);
                     //addLineAtBeginning From Robot to the First Path Point
-                    shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), new Node(robotY,robotX)));
+
+                    shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), simplePickup));
+                    shortestPathFromObject.add(0, new Line(simplePickup, new Node(robotY,robotX)));
                     Line l = shortestPathFromObject.get(0);
 
                     System.out.println(l);
@@ -696,16 +716,21 @@ try{
         if (grid[(int) (startPoint.y / stepsize)][(int) (startPoint.x / stepsize)] != null) {
             shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(startPoint.y, startPoint.x, 0), stepsize);
         } else {
-            tabooRadius = (cv.getRadius()+objectRadius)*1.1/ stepsize;
-            java.awt.Point p = getAlternativeObjectPoint(startPoint,false);
+            java.awt.Point p = alternaMap.get(startPoint);
+            if (p == null){
+                tabooRadius = (cv.getRadius() + objectRadius) * 1.1 / stepsize;
+                p = getAlternativeObjectPoint(startPoint, false);
+                alternaMap.put(startPoint,p);
+            }
             shortestPathFromObject = DijkstraPathFinder.getShortestPathFromGridLine(grid, new RoboPos(p.y * stepsize, p.x * stepsize, 0), stepsize);
+            shortestPathFromObject.add(new Line(new Node(p.y * stepsize, p.x * stepsize),new Node((int)startPoint.y ,(int)startPoint.x)));
         }
         shortestPathFromObject = DijkstraPathFinder.reverseLinkedListLine(shortestPathFromObject);
         return shortestPathFromObject;
     }
 
     private boolean robotWihinPickupRangePlus10Percent(Point object) {
-        if (currentSelectedPickUpPointStepsized == null)return false;
+        //if (currentSelectedPickUpPointStepsized == null)return false;
         Point center = cv.getCenter();
 
         if (center == null)return false;

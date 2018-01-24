@@ -59,7 +59,7 @@ public class Node{
        // } else {
             ArrayList<Node> aPath = new ArrayList<>(shortestPath);
 
-            Node start = null;
+            Node start = this;
             Line tmp = null;
 
             for (int i = 0; i < aPath.size() - 2; i++) {
