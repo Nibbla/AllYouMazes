@@ -1064,8 +1064,8 @@ try{
         };
         double radius = maxRadius;
 
-        double mouthBreite = radius*0.50;
-        double pauerFactor = 1.2;
+        double mouthBreite = radius*0.60;
+        double pauerFactor = 1.0 - centerNormedDirectionY * 0.3;
 
          mouthaX = -mouthBreite * centerNormedDirectionY;
          mouthaY = mouthBreite * centerNormedDirectionX;
