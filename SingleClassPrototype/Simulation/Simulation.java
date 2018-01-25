@@ -110,7 +110,7 @@ private int stepsize = 4;
      */
     public Simulation() {
         // One-time initialization of camera
-        System.out.println("Init Camera...");
+        //System.out.println("Init Camera...");
         if (byPassCamera){
             File[] files = getCammeraByPassImages();
             cv.setByPass(byPassCamera,files);
@@ -145,7 +145,7 @@ private int stepsize = 4;
         pathWindow.setImage(currentFrame);
 
         while(!pathWindow.isClicked()){ }
-        System.out.println("X: " + pathWindow.mouseX + " | Y: " + pathWindow.mouseY);
+        //System.out.println("X: " + pathWindow.mouseX + " | Y: " + pathWindow.mouseY);
 
         // TODO: around here the contours should be displayed in a window as well, s.t. a goal position can be extracted via click and passed as goalX, goalY below. Note that they have to be scaled onto the 'stepsize' grid,
 
@@ -175,7 +175,7 @@ private int stepsize = 4;
 
 
         if (agent == null || contour == null || shortestPath == null) {
-            System.out.println("null pointer constructing simulation");
+            //System.out.println("null pointer constructing simulation");
             return;
         }
 
@@ -208,12 +208,12 @@ try{
         if ( latestPathWindowMouseX != pathWindow.mouseX &&  latestPathWindowMouseY != pathWindow.mouseY){
             latestPathWindowMouseX = pathWindow.mouseX;
             latestPathWindowMouseY = pathWindow.mouseY;
-            System.out.println("angle" + cv.getAnglePoint());
+            //System.out.println("angle" + cv.getAnglePoint());
 
         if (!distanceAndAngleToObjectIsWrong(new Point(pathWindow.mouseX,pathWindow.mouseY))){
-            System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " are within robot mouth");
+            //System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " are within robot mouth");
         }else{
-            System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " not within robot mouth");
+            //System.out.println(pathWindow.mouseX + " " + pathWindow.mouseY + " not within robot mouth");
         }
 
         }
@@ -228,7 +228,7 @@ try{
     }
 
     private void setGridAndShortestPath(RoboPos rp, Mat currentFrame, int x, int y) {
-        System.out.println("Calculate Path...");
+        //System.out.println("Calculate Path...");
         goalX = pathWindow.mouseX;
         goalY = pathWindow.mouseY;
 		if(x != 0 && y != 0){
@@ -388,7 +388,7 @@ try{
 
                 debugWindow.setImage(currentFrame);
 
-                System.out.println("Updating real-time debug window took " + (System.currentTimeMillis() - end) + " ms");
+                //System.out.println("Updating real-time debug window took " + (System.currentTimeMillis() - end) + " ms");
                 end = System.currentTimeMillis();
             }
 
@@ -400,21 +400,21 @@ try{
             if (agent.canMove() && lastSendLinearSpeed != agent.getLinearCoefficient()) {
 
                 if (DEBUG_CONTROLLER) {
-                    System.out.println("needs to move");
+                    //System.out.println("needs to move");
                 }
 
                 needToSend = true;
             } else if (agent.needsToTurn() && lastSentAngularSpeed != agent.getRotationCoefficient()) {
 
                 if (DEBUG_CONTROLLER) {
-                    System.out.println("needs to turn");
+                    //System.out.println("needs to turn");
                 }
 
                 needToSend = true;
             } else if (agent.getHandler().getState() == TraversalStatus.FINISH){
 
                 if (DEBUG_CONTROLLER) {
-                    System.out.println("goal reached");
+                    //System.out.println("goal reached");
                 }
 
                 needToSend = true;
@@ -423,7 +423,7 @@ try{
             if (allowThressholdOverwrite) updateMinimumThreshold();
             try{
                 if (moveOverwrite){
-                    System.out.println("overwriting Move" + moveOverwriteOrder[0]);
+                    //System.out.println("overwriting Move" + moveOverwriteOrder[0]);
                     RobotControl rc = (RobotControl) control;
                     rc.setMotorSpeed(moveOverwriteOrder[0],moveOverwriteOrder[0]);
                     rc.issueMotorSpeed();
@@ -443,13 +443,13 @@ try{
 
             outputWholeLoopDuration(start);
   			long end2 = System.currentTimeMillis();
-        	System.out.println("DURATION not Finsihed: " + (end2 - start2));
+        	//System.out.println("DURATION not Finsihed: " + (end2 - start2));
 
         }
 
 
         long end2 = System.currentTimeMillis();
-        System.out.println("DURATION: " + (end2 - start2));
+        //System.out.println("DURATION: " + (end2 - start2));
     }
 
     private void updateMinimumThreshold() {
@@ -457,7 +457,7 @@ try{
             if (System.currentTimeMillis()-thresholdTime>700){
                 moveOverwrite = false;
                 thresholdTime = System.currentTimeMillis();
-                System.out.println("stop overwriting Move" + thresholdTime);
+                //System.out.println("stop overwriting Move" + thresholdTime);
             }
             lastPoint.clear();
         }else {
@@ -479,7 +479,7 @@ try{
             moveOverwriteOrder[0] = move*500;
             moveOverwriteOrder[1] = move*500;
             thresholdTime = System.currentTimeMillis();
-            System.out.println("start overwriting Move" + thresholdTime);
+            //System.out.println("start overwriting Move" + thresholdTime);
         }
         }
 
@@ -523,11 +523,11 @@ try{
             //findNodeThatRobotGetsObject
             boolean robotWihtinPickupRangePlus10Percent = robotWihinPickupRangePlus10Percent(object);
             boolean distanceAndAngleToObjectIsWrong= distanceAndAngleToObjectIsWrong(object);
-            System.out.println("RobotWithinPickUpRange: " + robotWihtinPickupRangePlus10Percent);
-            System.out.println("object in Pickup Mouth: " + !distanceAndAngleToObjectIsWrong);
+            //System.out.println("RobotWithinPickUpRange: " + robotWihtinPickupRangePlus10Percent);
+            //System.out.println("object in Pickup Mouth: " + !distanceAndAngleToObjectIsWrong);
 
             if (distanceAndAngleToObjectIsWrong&& !robotWihtinPickupRangePlus10Percent) {
-                System.out.println("Calculating Path To Pickup Point and from there to Goal");
+                //System.out.println("Calculating Path To Pickup Point and from there to Goal");
 
                 //find path to object
                 shortestPathFromObject = getShortestPathFromPointToGoal(object);
@@ -536,7 +536,7 @@ try{
                     //object grid is recalculated
 					
                     goalChanged = false;
-                    System.out.println("Recalc Object Dyikstra Grid");
+                    //System.out.println("Recalc Object Dyikstra Grid");
                     if (allowFullStopRobot)fullStopRobot();
 
                     createTabooAreaFromObject(object);
@@ -556,21 +556,21 @@ try{
 
 
              } else {
-                System.out.println("Robot either close to object or within pickup range");
+                //System.out.println("Robot either close to object or within pickup range");
                 if (robotWihtinPickupRangePlus10Percent&&distanceAndAngleToObjectIsWrong) {
 
-                    System.out.println("Calculating Path within pickup range To Object and from there to Goal");
+                    //System.out.println("Calculating Path within pickup range To Object and from there to Goal");
                     shortestPathFromObject = getShortestPathFromPointToGoal(object);
 
                     //addLineAtBeginning From Robot to the First Path Point
                     shortestPathFromObject.add(0, new Line(shortestPathFromObject.getFirst().getB(), new Node(robotY,robotX)));
                     Line l = shortestPathFromObject.get(0);
 
-                    System.out.println(l);
-                    System.out.println(shortestPathFromObject.get(1));
+                    //System.out.println(l);
+                    //System.out.println(shortestPathFromObject.get(1));
 
                 }else {
-                    System.out.println("Object supposed to be in mouth. Directly Drive to goal");
+                    //System.out.println("Object supposed to be in mouth. Directly Drive to goal");
                     shortestPathFromObject = getShortestPathFromPointToGoal(new Point(robotX, robotY));
 
                 }
@@ -584,7 +584,7 @@ try{
 			}
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("No path retrievable. Robot possibly within Contours");
+            //System.out.println("No path retrievable. Robot possibly within Contours");
         }
     }
 
@@ -625,7 +625,7 @@ try{
     }
 
     private void fullStopRobot() {
-        System.out.println("Stop Robot whilst recalculating");
+        //System.out.println("Stop Robot whilst recalculating");
         agent.fullStop(0.,0.);
        control.sendCommand(0, 0);
 
@@ -636,7 +636,7 @@ try{
         int objectYStepsited = (int) (object.y / stepsize);
 
         possiblePickUpPoints = getPickUpPoints(objectXStepsized, objectYStepsited, (int) (tabooRadius - 1), grid.length, grid[0].length, true);
-        System.out.println("Possible pick up points");
+        //System.out.println("Possible pick up points");
 
         LinkedList<Double> possibleWayPointsAngleToObjectCenter = createPossibleWayPointsAngles(object, possiblePickUpPoints, shortestPathFromObject.getFirst());
         ArrayList<Double> possibleScores = settleScore(possiblePickUpPoints, possibleWayPointsAngleToObjectCenter);
@@ -655,13 +655,13 @@ try{
             gridToRobotInvertingNeeded = DijkstraPathFinder.retrieveDijcstraGrid(currentFrame, new MatOfPoint2f(contour.toArray()), selectedPickUpPoint.x * stepsize, selectedPickUpPoint.y * stepsize, stepsize, true, optionalTabooAreaCenter, optionalTabooAreaRadiusSquared, optionalTabooArea);
             distanceObjectToPickup = Math.sqrt(Math.pow((object.x - selectedPickUpPoint.x * stepsize), 2) + Math.pow((object.y - selectedPickUpPoint.y * stepsize), 2));
 
-            System.out.println("Second Grid is new calculated");
+            //System.out.println("Second Grid is new calculated");
             if (DEBUG_SHOW_GRID)drawGrid(gridToRobotInvertingNeeded, possiblePickUpPoints, currentFrame, stepsize);
             try {
                 pathToPickup = getPathToPickup(robotX, robotY,true);
             }catch (java.lang.IndexOutOfBoundsException index){
-                System.out.println("That pickup point is unfeasable");
-                System.out.println("Continue Search for Pickup Point");
+                //System.out.println("That pickup point is unfeasable");
+                //System.out.println("Continue Search for Pickup Point");
             }
 
             if (pathToPickup == null||pathToPickup.size()==0){
@@ -712,8 +712,8 @@ try{
         if (object == null) return false;
         double distanceObjectToRobot = Math.sqrt(Math.pow((object.x - center.x),2) + Math.pow((object.y - center.y),2));
 
-        System.out.println("Distance Object To Robot: " + distanceObjectToRobot);
-        System.out.println("Distance Object To Pickup: " + distanceObjectToPickup*1.1);
+        //System.out.println("Distance Object To Robot: " + distanceObjectToRobot);
+        //System.out.println("Distance Object To Pickup: " + distanceObjectToPickup*1.1);
         if (distanceObjectToRobot <= distanceObjectToPickup*1.1) return true;
 
         return false;
@@ -736,11 +736,11 @@ try{
             double newX = object.x;
             double newY = object.y;
             if ((oldX - newX) * (oldX - newX) + (oldY - newY) * (oldY - newY) < minimalAbstandQuadrat) {
-                System.out.println("Not Moved");
+                //System.out.println("Not Moved");
                 return false;
             }
         }
-        System.out.println("Moved");
+        //System.out.println("Moved");
         gridToRobotNoInvertingNeededObjectPosition = object;
         return true;
     }
@@ -788,7 +788,7 @@ try{
                 solutionfound = false;
             }else{
                 shortestPathFromObject.add( new Line(shortestPathToObject.getLast().getA(), shortestPathFromObject.getFirst().getB()));
-                System.out.println("Point Selected: x" + pointSelected.x + " y" + pointSelected.y + " i" + i);
+                //System.out.println("Point Selected: x" + pointSelected.x + " y" + pointSelected.y + " i" + i);
                 solutionfound = true;
             }
         }
@@ -815,7 +815,7 @@ try{
                 solutionfound = false;
         }else{
              shortestPathFromObject.add( new Line(shortestPathToObject.getLast().getA(), shortestPathFromObject.getFirst().getB()));
-                System.out.println("Point Selected: x" + pointSelected.x + " y" + pointSelected.y + " i" + i);
+                //System.out.println("Point Selected: x" + pointSelected.x + " y" + pointSelected.y + " i" + i);
                 solutionfound = true;
             }
         }
@@ -961,7 +961,7 @@ try{
     }
 
     private LinkedList<Double> createPossibleWayPointsAngles(Point object, ArrayList<java.awt.Point> possibleWayPoints, Line objectFirstStep) {
-        System.out.println("possibleWayPoints" + possibleWayPoints.size());
+        //System.out.println("possibleWayPoints" + possibleWayPoints.size());
       //  LinkedList<Node>
 
         //double angle = getAngleBetweenTwoPoint();
@@ -1026,7 +1026,7 @@ try{
         if (center == null)return false;
         if (object == null) return false;
         Point triangleTip = cv.getAnglePoint();
-        System.out.println(triangleTip);
+        //System.out.println(triangleTip);
         double deltaTipToCenterX = center.x - triangleTip.x;
         double deltaTipToCenterY = center.y - triangleTip.y;
 
@@ -1335,7 +1335,7 @@ try{
         if (needToSend) {
 
             if (DEBUG_CONTROLLER) {
-                System.out.println("Sending command: " + agent.getLinearCoefficient() + " | " + agent.getRotationCoefficient());
+                //System.out.println("Sending command: " + agent.getLinearCoefficient() + " | " + agent.getRotationCoefficient());
             }
 
             // sending command and storing it for comparison in next frame
@@ -1347,7 +1347,7 @@ try{
 
     private long outputUpdateRobotDuration(long end) {
         if (DEBUG_DURATION) {
-            System.out.println("Updating robot took" + (System.currentTimeMillis() - end) + " ms");
+            //System.out.println("Updating robot took" + (System.currentTimeMillis() - end) + " ms");
             end = System.currentTimeMillis();
         }
         return end;
@@ -1360,13 +1360,13 @@ try{
             agent.getHandler().changePath(shortestPath, 0);
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("No path retrievable. Robot possibly within Contours");
+            //System.out.println("No path retrievable. Robot possibly within Contours");
         }
     }
 
     private long outputChangingPathDuration(long end) {
         if (DEBUG_DURATION) {
-            System.out.println("Changing path took " + (System.currentTimeMillis() - end) + " ms");
+            //System.out.println("Changing path took " + (System.currentTimeMillis() - end) + " ms");
             end = System.currentTimeMillis();
         }
         return end;
@@ -1374,7 +1374,7 @@ try{
 
     private long outputCommandSendingDuration(long end) {
         if (DEBUG_DURATION) {
-            System.out.println("Sending command took " + (System.currentTimeMillis() - end) + " ms");
+            //System.out.println("Sending command took " + (System.currentTimeMillis() - end) + " ms");
             end = System.currentTimeMillis();
         }
         return end;
@@ -1383,13 +1383,13 @@ try{
     private void outputWholeLoopDuration(long start) {
         if (DEBUG_DURATION) {
             long end = System.currentTimeMillis();
-            System.out.println("Complete update took " + (end - start) + " ms");
+            //System.out.println("Complete update took " + (end - start) + " ms");
         }
     }
 
     private void checkIfRobotHasBeenFoundAndSetDetected(Point currentPosition) {
         if (currentPosition == null) {
-            System.out.println("Robot position not found, will skip frame.");
+            //System.out.println("Robot position not found, will skip frame.");
             detected = false;
         } else {
             detected = true;
@@ -1398,7 +1398,7 @@ try{
 
     private long outputRotationDetectionTime(long end) {
         if (DEBUG_DURATION) {
-            System.out.println("Determining Rotation " + (System.currentTimeMillis() - end) + " ms");
+            //System.out.println("Determining Rotation " + (System.currentTimeMillis() - end) + " ms");
             end = System.currentTimeMillis();
         }
         return end;
@@ -1406,7 +1406,7 @@ try{
 
     private long outputRobotDetectionTime(long end) {
         if (DEBUG_DURATION) {
-            System.out.println("Determining Robot " + (System.currentTimeMillis() - end) + " ms");
+            //System.out.println("Determining Robot " + (System.currentTimeMillis() - end) + " ms");
             end = System.currentTimeMillis();
         }
         return end;
@@ -1415,7 +1415,7 @@ try{
     private long outputPictureTakingTime(long start, long end) {
         if (DEBUG_DURATION) {
             end = System.currentTimeMillis();
-            System.out.println("Taking picture took " + (end - start) + " ms");
+            //System.out.println("Taking picture took " + (end - start) + " ms");
         }
         return end;
     }
@@ -1426,7 +1426,7 @@ try{
                 Thread.sleep((TIME_STEP - diff));
             }
         } catch (Exception e) {
-            System.out.println("unable to wait");
+            //System.out.println("unable to wait");
         }
     }
 

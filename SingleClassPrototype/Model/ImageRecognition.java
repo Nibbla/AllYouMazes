@@ -565,7 +565,7 @@ public class ImageRecognition {
 
     public void determineMazeContours() {
         frame.copyTo(bg);
-        currentContours = contours(bg,true,17);
+        currentContours = contours(bg,true,25);
         bg.release();
     }
 
@@ -765,7 +765,7 @@ public class ImageRecognition {
     public MatOfPoint getCurrentContours() {
         readNextFrame();
         currentContoursWithoutDialation = contours(frame.clone(),true, 0);
-        currentContours = contours(frame,true, 21);
+        currentContours = contours(frame,true, 17);
 
 
         return currentContours;
