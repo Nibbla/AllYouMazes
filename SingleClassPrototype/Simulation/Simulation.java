@@ -20,13 +20,13 @@ import java.util.*;
  */
 
 public class Simulation {
-private int stepsize = 4;
+private int stepsize = 10;
 
-    public final static boolean DEBUG_DURATION = true;
+    public final static boolean DEBUG_DURATION = false;
     public final static boolean DEBUG_REAL_TIME_POSITION = false;
     public final static boolean DEBUG_CONTROLLER = false;
     public final static boolean DEBUG_CV_CONTOURS = true;
-    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = false;
+    public final static boolean DEBUG_CV_ROBOT_ANGLE_DETECTION = true;
     public final static boolean DEBUG_CV_OBJECT = false;
     public final static boolean DEBUG_SHOW_GRID = true;
     public final static boolean DEBUG_PRINTOUT_PATH = false;

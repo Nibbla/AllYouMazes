@@ -25,7 +25,7 @@ public class RobotControl implements IControl {
     // The basic structure of a movement command. For more information check the ROS documentation.
     private final double[] movementCommand = {0,0};
     // Values used for moving either forward or angular
-    private final double FORWARDSPEED = 650; // with a max of 3.5
+    private final double FORWARDSPEED = 500; // with a max of 3.5
     private final double ANGULARSPEED = 200; // with a max of 1.5
     // These are used to spawn the processes that Control the epuck.
     private ProcessBuilder processGenerator;
@@ -210,7 +210,7 @@ public class RobotControl implements IControl {
                 
             }
 		try{
-    out = new PrintWriter("/home/pi/Desktop/test.txt");
+    out = new PrintWriter("/home/pi/Desktop/moveCommand.txt");
     out.println( ((int)movementCommand[0]) + " " + ((int)movementCommand[1]));
 System.out.println("Command sended. Linear: " +  movementCommand[0] + " linaer2: " + movementCommand[1]);
 

@@ -43,20 +43,20 @@ public class ImageRecognition {
     private boolean found;
     private boolean croppingAreaKnown;
     private Rect croppedArea;
-    private Scalar angleScalar1 = new Scalar(70, 35, 75);
-    private Scalar angleScalar2 = new Scalar(95, 145, 110);
-    private Scalar contourScalar1 =  new Scalar(7, 25, 70);
-    private Scalar contourScalar2 = new Scalar(40, 130, 180);
-    private Scalar backgroundScalar1 =new Scalar(0, 0, 0);
-    private Scalar backgroundScalar2 = new Scalar(180, 255, 20);
+    private Scalar angleScalar1 = new Scalar(85, 55, 130);
+    private Scalar angleScalar2 = new Scalar(115, 115, 210);
+    private Scalar contourScalar1 =  new Scalar(15, 10, 150);
+    private Scalar contourScalar2 = new Scalar(40, 105, 230);
+    private Scalar backgroundScalar1 =new Scalar(0, 0, 10);
+    private Scalar backgroundScalar2 = new Scalar(180, 255, 60);
 
-    private Scalar robotBgs1_1 = new Scalar(155, 40, 75);
-    private Scalar robotBgs1_2 = new Scalar(175, 135, 175);
+    private Scalar robotBgs1_1 = new Scalar(135, 30, 160);
+    private Scalar robotBgs1_2 = new Scalar(165, 80, 235);
     //private Scalar robotBgs2_1 = new Scalar(170, 90, 100);
     //private Scalar robotBgs2_2 = new Scalar(180, 200, 210);
 
-    private Scalar objectBgs1_1 = new Scalar(98, 100, 12);
-    private Scalar objectBgs1_2 =new Scalar(102, 220, 105);
+    private Scalar objectBgs1_1 = new Scalar(65, 60, 75);
+    private Scalar objectBgs1_2 =new Scalar(75, 115, 170);
 
     private Mat[] byPassImages = null;
     private boolean byPassCamera = false;
